@@ -47,17 +47,31 @@ def test_dist_holds_exactly_one_wheel_per_package():
             "install.py installs from it.")
 
 
+def _released_version(package: str) -> str:
+    """The version this tree releases for ``package``.
+
+    estimating_tools: its pyproject, present in both trees. bimforge has its
+    own release line (PyPI, from BrandonLewis/BIMForge) and the public
+    estimating-tools tree carries no bimforge source, so its authority is the
+    wheel the estimating-core plugin bundles -- the dist copies here are copies
+    of that wheel. Pinning it to estimating_tools' version would block an
+    estimating_tools release that keeps the current bimforge.
+    """
+    if package == "estimating_tools":
+        return re.search(
+            r'^version = "([^"]+)"',
+            (ROOT / "packages" / "estimating-tools" / "pyproject.toml").read_text(
+                encoding="utf-8"), re.M).group(1)
+    (bundled,) = (ROOT / "plugins" / "estimating-core" / "dist").glob(f"{package}-*.whl")
+    return bundled.name.split("-")[1]
+
+
 def test_dist_wheel_versions_match_the_released_version():
-    # One version for the whole repo; estimating-tools' pyproject carries it in
-    # both trees (the public export has no packages/bimforge, only its wheel).
-    version = re.search(
-        r'^version = "([^"]+)"',
-        (ROOT / "packages" / "estimating-tools" / "pyproject.toml").read_text(
-            encoding="utf-8"), re.M).group(1)
     for package in PACKAGES:
+        version = _released_version(package)
         (wheel,) = DIST.glob(f"{package}-*.whl")
         assert wheel.name == f"{package}-{version}-py3-none-any.whl", (
-            f"{wheel.name} does not carry the committed version {version} — "
+            f"{wheel.name} does not carry the released version {version} — "
             "re-run `python openworker/port_skills.py` after bumping")
 
 
