@@ -1,0 +1,557 @@
+# The alt pack's units. Same row grammar as estimate_spec/units.yaml.
+# Authored for tests, no client content — mirrors the reference pack's
+# MECHANISM (rate table with a dynamically-growing VLOOKUP range, a
+# production-factor crew stack, a boxed rollup, a header-price cost-detail
+# convention) so the engine's generic layout features (box/box_region/
+# merge_down/fill_region) stay exercised once the reference pack is gone,
+# under entirely different unit names, columns, and labels. The takeoff
+# field names (ftg_cy/ftg_cf/wall_cy/wall_cf) are the one deliberate
+# exception — see vocabulary.yaml's provenance note.
+units:
+
+  id_strip:
+    doc: "Project strip + the item identity row (Item # / desc / qty / uom)."
+    params:
+      item_no:     { type: string }
+      description: { type: string }
+      qty:         { type: formula }
+      uom:         { type: string }
+      bid_date:    { type: string, default: "" }
+    rows:
+      - cells:
+          A: { formula: "=Recap!A2", style: cover_title }
+          H: { value: "{p.bid_date}", style: date_stamp }
+        merge: "A:G"
+      - cells:
+          A: { value: "{p.item_no}",     style: identity }
+          B: { value: "{p.description}", style: identity }
+          G: { formula: "{p.qty}",       style: identity, number_format: qty }
+          H: { value: "{p.uom}",         style: identity }
+        merge: "B:F"
+        mark: identity
+    exports:
+      qty:  "$G${row:identity}"
+      uom:  "$H${row:identity}"
+      name: "$B${row:identity}"
+
+  scope_band:
+    doc: "Free-form scope & assumptions band."
+    params: { lines: { type: list, of: string } }
+    rows:
+      - repeat: p.lines
+        cells: { A: { value: "{it}", style: notes } }
+        fill_row: notes
+        merge: "A:H"
+
+  # ===========================================================================
+  # quantity take-off — GEOMETRY. Field names (ftg_cy/ftg_cf/wall_cy/wall_cf)
+  # are locked (summarize.py/artifact.py hardcode them); the column LABELS
+  # below ("BASE"/"MOUNT") are this pack's own story, not the reference
+  # pack's footings/walls.
+  # ===========================================================================
+  geo_takeoff:
+    doc: "Per-line geometry take-off. BASE + MOUNT each carry CY + CF; the
+          double-border SUM row totals to the item quantity."
+    params:
+      lines:
+        type: list
+        of:
+          label:   { type: string }
+          length:  { type: number }
+          height:  { type: number }
+          ftg_cy:  { type: number }
+          ftg_cf:  { type: number }
+          wall_cy: { type: number }
+          wall_cf: { type: number }
+    rows:
+      - cells:
+          D: { value: "BASE",  style: takeoff_head }
+          F: { value: "MOUNT", style: takeoff_head }
+      - cells:
+          B: { value: "Run", style: label }
+          C: { value: "H",   style: label }
+          D: { value: "CY", style: takeoff_head }
+          E: { value: "CF", style: takeoff_head }
+          F: { value: "CY", style: takeoff_head }
+          G: { value: "CF", style: takeoff_head }
+      - repeat: p.lines
+        cells:
+          A: { value: "{it.label}",   style: takeoff_item }
+          B: { value: "{it.length}",  style: takeoff_num }
+          C: { value: "{it.height}",  style: takeoff_num, size: tiny }
+          D: { value: "{it.ftg_cy}",  style: takeoff_num }
+          E: { value: "{it.ftg_cf}",  style: takeoff_num }
+          F: { value: "{it.wall_cy}", style: takeoff_num }
+          G: { value: "{it.wall_cf}", style: takeoff_num }
+        mark_first: line_first
+        mark_last:  line_last
+      - cells:
+          B: { formula: "=SUM(B{row:line_first}:B{row:line_last})", style: takeoff_sum }
+          D: { formula: "=SUM(D{row:line_first}:D{row:line_last})", style: takeoff_sum }
+          E: { formula: "=SUM(E{row:line_first}:E{row:line_last})", style: takeoff_sum }
+          F: { formula: "=SUM(F{row:line_first}:F{row:line_last})", style: takeoff_sum }
+          G: { formula: "=SUM(G{row:line_first}:G{row:line_last})", style: takeoff_sum }
+        mark: sum
+      - cells:
+          D: { formula: "=D{row:sum}+F{row:sum}", style: takeoff_num }
+          E: { formula: "=E{row:sum}+G{row:sum}", style: takeoff_num }
+        mark: total
+    exports:
+      total_cy: "$D${row:total}"
+      total_cf: "$E${row:total}"
+      ftg_cy:   "$D${row:sum}"
+      wall_cy:  "$F${row:sum}"
+      wall_cf:  "$G${row:sum}"
+
+  # ===========================================================================
+  # quantity take-off — SUBCONTRACTOR. item/qty/uom/unit_price and the
+  # galvanize/tax_rate/freight roll are locked (artifact.py/summarize.py);
+  # the labels are this pack's own.
+  # ===========================================================================
+  sub_takeoff:
+    doc: "Vendor-priced spread: qty x $/unit, then Galvanize/Tax/Freight roll
+          into a vendor-spread total."
+    params:
+      lines:
+        type: list
+        of:
+          item:       { type: string }
+          qty:        { type: number }
+          uom:        { type: string }
+          unit_price: { type: number }
+      galvanize: { type: formula, default: 0 }
+      tax_rate:  { type: number, default: 0.08 }
+      freight:   { type: number, default: 0 }
+    rows:
+      - repeat: p.lines
+        cells:
+          A: { value: "{it.item}", style: label }
+          B: { value: "Unit", style: label }
+          D: { value: "{it.qty}",        style: takeoff_num }
+          E: { value: "{it.uom}",        style: label }
+          F: { value: "{it.unit_price}", style: takeoff_num }
+          G: { formula: "=F{r}*D{r}",    style: result_money }
+        mark_first: line_first
+        mark_last:  line_last
+      - cells:
+          F: { value: "Subtotal", style: label }
+          G: { formula: "=SUM(G{row:line_first}:G{row:line_last})", style: block_subtotal }
+        mark: subtotal
+      - cells:
+          F: { value: "Galvanize", style: label }
+          G: { formula: "{p.galvanize}", style: result_money }
+        mark: galv
+      - cells:
+          F: { value: "Tax", style: label }
+          G: { formula: "=SUM(G{row:subtotal}:G{row:galv})*{p.tax_rate}", style: result_money }
+      - cells:
+          F: { value: "Freight", style: label }
+          G: { value: "{p.freight}", style: result_money }
+        mark: freight
+      - cells:
+          A: { value: "Vendor Spread", style: label }
+          G: { formula: "=SUM(G{row:subtotal}:G{row:freight})", style: subtotal_money }
+        mark: total
+        merge: "A:F"
+    exports:
+      sub_spread_total: "$G${row:total}"
+
+  crew_banner:
+    doc: "Repeats the item name as a thick-boxed strip with a Manhours label."
+    rows:
+      - cells:
+          A: { formula: "={ref:id_strip.name}", style: section_banner }
+          H: { value: "Manhours", style: section_banner }
+        merge: "A:F"
+
+  # ===========================================================================
+  # CREW STACK — the repeating unit (mirrors the reference pack's PART A-E
+  # labor_block mechanism: title / production factors / a boxed "Unit"
+  # driver row / crew rows against the rate-sheet VLOOKUP / a
+  # double-border subtotal).
+  # ===========================================================================
+  crew_stack:
+    repeat_over: labor
+    params:
+      slot:        { type: string }
+      description: { type: string }
+      note:        { type: string, default: "" }
+      activities:
+        type: list
+        of:
+          name:   { type: string }
+          factor: { type: number }
+      crew_factor: { type: number, default: 2 }
+      driver:      { type: formula, default: 1 }
+      uom:         { type: string, default: "" }
+      crew:
+        type: list
+        of:
+          trade: { type: string }
+          count: { type: integer, default: 1 }
+          days:  { type: formula }
+    rows:
+      - cells:
+          A: { value: "[ {p.slot} ]", style: label }
+          B: { value: "CREW : ",      style: label }
+          D: { value: "{p.description}", style: section_title }
+          G: { value: "{p.note}", style: annotation, optional: true }
+      - blank: 1
+      - repeat: p.activities
+        cells:
+          D: { value: "{it.name}",   style: prod_activity }
+          E: { value: "{it.factor}", style: prod_factor }
+        mark_first: factor_first
+        mark_last:  factor_last
+      - blank: 1
+      - cells:                      # production-summary bar spans D:G
+          D: { style: prod_sum }
+          E: { formula: "=SUM(E{row:factor_first}:E{row:factor_last})", style: prod_sum }
+          F: { style: prod_sum }
+          G: { style: prod_sum }
+        mark: factor_sum
+        when: p.activities
+      - cells:
+          C: { value: "{p.crew_factor}", style: crew_count }
+          D: { formula: "=E{row:factor_sum}*C{r}", style: prod_sum }
+        mark: prod_days
+        when: p.activities
+      - blank: 1
+      - cells:                      # "Unit" driver row (one thick box B:G)
+          B: { value: "Unit", style: label }
+          D: { formula: "{p.driver}", style: driver_open }
+          E: { value: "{p.uom}", style: label }
+          F: { formula: "=F{row:subtotal}/D{r}", style: result_money }
+          G: { formula: "=F{r}*D{r}", style: result_money }
+        mark: unit_row
+        box: "B:G"
+      - blank: 1
+      - cells:
+          D: { value: "Rate", style: crew_head }
+          E: { value: "DAYS", style: crew_head }
+      - repeat: p.crew
+        cells:
+          B: { value: "{it.trade}", style: label }
+          C: { value: "{it.count}", style: crew_count }
+          D: { formula: "=VLOOKUP($B{r},{crew_rate_lookup},2,FALSE)*C{r}", style: rate }
+          E: { formula: "{it.days}", style: days }
+          F: { formula: "=E{r}*D{r}*8", style: ext_money }
+          H: { formula: "=E{r}*C{r}*8", style: manhours }
+        mark_first: crew_first
+        mark_last:  crew_last
+      - cells:                      # double-border subtotal + guard
+          C: { formula: "=SUM(C{row:crew_first}:C{row:crew_last})", style: block_subtotal }
+          D: { formula: "=SUM(D{row:crew_first}:D{row:crew_last})", style: block_subtotal }
+          F: { formula: "=SUM(F{row:crew_first}:F{row:crew_last})", style: block_subtotal }
+          G: { formula: "=IF((G{row:unit_row}<0),F{r},0)", style: ext_money }
+        mark: subtotal
+      - blank: 1
+    exports:
+      labor_cost:     "$G${row:unit_row}"
+      driver:         "$D${row:unit_row}"
+      prod_days:      "$D${row:prod_days}"
+      manhours_range: "H{row:crew_first}:H{row:crew_last}"
+
+  crew_rollup:
+    doc: "Totals all crew-stack costs & manhours; lead-trade days; unit metrics."
+    box_region: "E:H"                     # thick box around the whole rollup
+    params:
+      labor_first_row: { type: anchor }
+      labor_last_row:  { type: anchor }
+    rows:
+      - cells:
+          E: { formula: "={ref:id_strip.name}", style: rollup_title }
+          G: { formula: "=SUM(G{p.labor_first_row}:G{p.labor_last_row})", style: result_money, size: headline }
+          H: { value: "Manhours", style: label }
+        merge: "E:F"
+        merge_down: 1            # title spans 2 rows x 2 cols
+        mark: labor_total
+      - cells:
+          H: { formula: "=SUM(H{p.labor_first_row}:H{p.labor_last_row})", style: manhours }
+        mark: mh_total
+      - blank: 1
+      - cells:
+          E: { value: "Lead Days", style: metric }
+          G: { formula: '=SUMIF(B{p.labor_first_row}:B{p.labor_last_row}, "FITTER", E{p.labor_first_row}:E{p.labor_last_row})', style: metric, number_format: manhours_int }
+        mark: foreman_days
+        merge: "E:F"
+      - blank: 1
+      - cells:
+          E: { value: "Unit", style: metric }
+          F: { formula: "=G{row:labor_total}/{unit_qty}", style: metric }
+          G: { formula: "=G{row:labor_total}/H{row:mh_total}", style: metric }
+          H: { formula: "={ref:takeoff.total_cf}/H{row:mh_total}", style: metric, if_ref: takeoff.total_cf }
+      - cells:
+          F: { value: "$ Per Unit",   style: label }
+          G: { value: "$ / Manhour",  style: label }
+          H: { value: "CF / Manhour", style: label }
+    exports:
+      labor_total:  "$G${row:labor_total}"
+      foreman_days: "$G${row:foreman_days}"
+
+  # ===========================================================================
+  # SPREADS. ftg_qty/wall_qty/ftg_waste/wall_waste and materials'
+  # name/qty/uom/unit_price are locked; the row labels ("BASE"/"MOUNT") are
+  # this pack's own.
+  # ===========================================================================
+  spread_block:
+    doc: "Quantities x (1 + waste%) -> subtotal; then vendor materials priced."
+    params:
+      ftg_qty:    { type: formula, default: 0 }
+      wall_qty:   { type: formula, default: 0 }
+      ftg_waste:  { type: number, default: 0.1 }
+      wall_waste: { type: number, default: 0.05 }
+      materials:
+        type: list
+        of:
+          name:       { type: string }
+          qty:        { type: formula }
+          uom:        { type: string }
+          unit_price: { type: number }
+    rows:
+      - cells:
+          A: { value: "SPREADS", style: label, border: thick_box }
+        merge: "A:F"
+      - cells:
+          A: { value: "BASE", style: label }
+          B: { formula: "{p.ftg_qty}", style: driver, number_format: acct_nosym }
+          D: { value: "CY", style: label, size: micro }
+          E: { value: "Waste", style: label }
+          F: { value: "{p.ftg_waste}", style: percent }
+        mark: ftg
+      - cells:
+          A: { value: "MOUNT", style: label }
+          B: { formula: "{p.wall_qty}", style: driver, number_format: acct_nosym }
+          D: { value: "CY", style: label, size: micro }
+          E: { value: "Waste", style: label }
+          F: { value: "{p.wall_waste}", style: percent }
+        mark: wall
+      - cells:
+          A: { value: "Subtotal", style: label }
+          B: { formula: "=((B{row:ftg}*(1+F{row:ftg}))+(B{row:wall}*(1+F{row:wall})))", style: driver, border: double_top, number_format: acct_nosym }
+        mark: qty_subtotal
+      - repeat: p.materials
+        cells:
+          A: { value: "{it.name}", style: label }
+          B: { formula: "{it.qty}", style: driver, number_format: acct_nosym }
+          D: { value: "{it.uom}", style: label, size: micro }
+          E: { value: "{it.unit_price}", style: price_input }
+          F: { formula: "=E{r}*B{r}", style: result_money }
+        mark_first: mat_first
+        mark_last:  mat_last
+      - cells:
+          F: { formula: "=SUM(F{row:mat_first}:F{row:mat_last})", style: subtotal_money }
+        mark: total
+    exports:
+      materials_total: "$F${row:total}"
+      concrete_qty:    "$B${row:qty_subtotal}"
+
+  block_rollup:
+    doc: "Pulls each cost-detail block's subtotal x factor into one roll."
+    params:
+      lines:
+        type: list
+        of:
+          name:       { type: string }
+          factor:     { type: number, default: 1 }
+          source_ref: { type: formula }
+    rows:
+      - cells: { A: { value: "SUMMARY", style: label, border: thick_box } }
+        merge: "A:H"
+      - repeat: p.lines
+        cells:
+          B: { value: "{it.name}", style: label }
+          D: { value: "{it.factor}", style: label }
+          E: { formula: "{it.source_ref}", style: result_money, number_format: acct_nosym }
+          F: { formula: "=E{r}*D{r}", style: result_money }
+        mark_first: line_first
+        mark_last:  line_last
+      - cells:
+          F: { formula: "=SUM(F{row:line_first}:F{row:line_last})", style: subtotal_money }
+        mark: total
+    exports:
+      summary_total: "$F${row:total}"
+
+  item_total:
+    doc: "TOTAL = labor + materials + summary. UNIT = TOTAL / item qty."
+    fill_region: answer_block
+    params: { total_formula: { type: formula } }
+    rows:
+      - blank: 1
+      - cells:
+          E: { value: "TOTAL", style: label }
+          G: { formula: "{p.total_formula}", style: total }
+        mark: total
+      - blank: 1
+      - cells:
+          F: { value: "UNIT COSTS", style: label, size: micro }
+          G: { formula: "=G{row:total}/{unit_qty}", style: total }
+          H: { formula: "={unit_uom}", style: total }
+        mark: unit
+    exports:
+      grand_total: "$G${row:total}"
+
+  # ===========================================================================
+  # COST-DETAIL BLOCK. CONVENTION (this pack's own): PARTS & LEASE carry
+  # their $/unit allowance in the Unit HEADER (header_price x item qty), not
+  # as a line below it — see recipes.yaml's instance_defaults.
+  # ===========================================================================
+  cost_slate:
+    repeat_over: cost_details
+    params:
+      name:         { type: string }
+      header_price: { type: number }
+      lines:
+        type: list
+        of:
+          name:       { type: string }
+          uom:        { type: string }
+          qty:        { type: formula }
+          unit_price: { type: number }
+    rows:
+      - cells: { A: { value: "{p.name}", style: label } }
+      - cells:
+          A: { value: "Unit", style: label }
+          B: { formula: "={unit_qty}", style: driver_open, number_format: acct_nosym }
+          C: { formula: "={unit_uom}", style: driver_open, align: center, number_format: acct_nosym }
+          E: { value: "{p.header_price}", style: price_input, if_param: header_price }
+          F: { formula: "=E{r}*B{r}", style: result_money, if_param: header_price }
+        mark: header
+        box: "A:F"
+      - repeat: p.lines
+        cells:
+          A: { value: "{it.name}", style: label }
+          B: { value: "{it.uom}",  style: label }
+          D: { formula: "{it.qty}", style: takeoff_num }
+          E: { value: "{it.unit_price}", style: price_input }
+          F: { formula: "=D{r}*E{r}", style: result_money }
+        mark_first: line_first
+        mark_last:  line_last
+      - cells:
+          D: { value: "{p.name} SUBTOTAL", style: label, size: micro, align: right }
+          F: { formula: "=SUM(F{row:header}:F{r-1})", style: subtotal_money }
+          G: { formula: "=F{r}/{unit_qty}", style: unit_cost }
+          H: { value: " $ / UNIT", style: label }
+        mark: subtotal
+      - blank: 1
+    exports:
+      subtotal: "$F${row:subtotal}"
+
+  rate_sheet:
+    doc: "Trade -> $/hr, on its own sheet (recipe `sheet: Crew Rates`); the
+          exported range grows with however many trades are declared, so a
+          new trade never lands outside the VLOOKUP's range."
+    anchor: { col: A, row: 1 }
+    params:
+      rates:
+        type: list
+        of:
+          trade: { type: string }
+          rate:  { type: number }
+    rows:
+      - cells:
+          A: { value: "TRADE", style: summary_head }
+          B: { value: "$/HR",  style: summary_head }
+      - repeat: p.rates
+        cells:
+          A: { value: "{it.trade}", style: label }
+          B: { value: "{it.rate}",  style: rate }
+        mark_first: rate_first
+        mark_last:  rate_last
+    exports:
+      table: "$A${row:rate_first}:$B${row:rate_last}"
+
+  recap_cover:
+    doc: "Bid recap: one row per item sheet, each pulling that sheet's grand
+          total; a markup row scales every line into the bid number."
+    params:
+      project:  { type: string }
+      package:  { type: string, default: "Base Package" }
+      markup:   { type: formula }
+      items:                              # generator fills sheet refs
+        type: list
+        of:
+          sheet_ref:    { type: string }
+          total_export: { type: formula }
+    rows:
+      - blank: 1
+      - cells: { A: { value: "{p.project}", style: cover_title } }
+        merge: "A:G"
+        mark: project
+      - blank: 1
+      - cells: { A: { value: "{p.package}", style: cover_title } }
+        merge: "A:G"
+      - blank: 1
+      - cells:
+          A: { value: "ITEM",   style: summary_head }
+          B: { value: "DESCRIPTION", style: summary_head }
+          C: { value: "QTY", style: summary_head }
+          D: { value: "U/P ", style: summary_head }
+          E: { value: "TOTAL", style: summary_head }
+          G: { value: "TOTALS", style: label, align: center }
+        mark: header
+      - blank: 1
+      - repeat: p.items
+        cells:
+          A: { formula: "={it.sheet_ref}!A2", style: label }
+          B: { formula: "={it.sheet_ref}!B2", style: label }
+          E: { formula: "{it.total_export}", style: summary_money }
+          G: { formula: "=E{r}*(1+$D${row:markup})", style: summary_money }
+        mark_first: item_first
+        mark_last:  item_last
+      - blank: 1
+      - cells:
+          E: { formula: "=SUM(E{row:item_first}:E{row:item_last})", style: result_money }
+        mark: subtotal
+      - cells:
+          D: { formula: "=E{r}/E{row:subtotal}", style: percent }
+          E: { value: "{p.markup}", style: result_money }
+        mark: markup
+      - cells:
+          E: { formula: "=E{row:subtotal}+E{row:markup}", style: result_money }
+          G: { formula: "=SUM(G{row:item_first}:G{row:item_last})", style: result_money }
+        mark: bid_total
+    exports:
+      bid_total: "$G${row:bid_total}"
+
+  # ===========================================================================
+  # CROSS-SHEET PROBE. Authored for the test suite, not for a real estimate:
+  # it exists only to exercise the engine's `{ref:SHEET!NAME}` form, in both
+  # directions — at one address on a sheet laid out BEFORE this one (the rate
+  # sheet) and one on a sheet laid out AFTER it (a later bid item's TOTAL).
+  # The sheet name may be spelled inline or arrive as a param; both spellings
+  # are here, because a param is expanded first and the ref resolves after.
+  # ===========================================================================
+  crosslink:
+    doc: "Reads two addresses off other sheets — one behind, one ahead."
+    params:
+      rate_sheet:  { type: string }
+      later_sheet: { type: string }
+    rows:
+      - cells:
+          A: { value: "CROSS-SHEET PROBE", style: label, border: thick_box }
+        merge: "A:C"
+      - cells:
+          A: { value: "rate rows (sheet named by a param)", style: label }
+          B: { formula: "=ROWS({ref:{p.rate_sheet}!rate_sheet.table})", style: driver }
+        mark: backward
+      - cells:
+          A: { value: "rate rows (sheet named inline, quoted)", style: label }
+          B: { formula: "=ROWS({ref:'Crew Rates'!rate_sheet.table})", style: driver }
+        mark: backward_quoted
+      - cells:
+          A: { value: "a later sheet's TOTAL", style: label }
+          B: { formula: "={ref:{p.later_sheet}!item_total.grand_total}", style: result_money }
+        mark: forward
+      - cells:
+          A: { value: "guarded — target published", style: label }
+          B: { formula: "=ROWS({ref:'Crew Rates'!rate_sheet.table})", style: driver,
+               if_ref: "Crew Rates!rate_sheet.table" }
+        mark: guard_on
+      - cells:
+          A: { value: "guarded — target absent", style: label }
+          B: { formula: "={ref:'Crew Rates'!nothing_here}", style: driver,
+               if_ref: "Crew Rates!nothing_here" }
+        mark: guard_off
+    exports:
+      probe_total: "$B${row:forward}"

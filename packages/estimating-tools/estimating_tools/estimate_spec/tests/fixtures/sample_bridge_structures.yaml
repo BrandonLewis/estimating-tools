@@ -1,0 +1,11 @@
+# Minimal structures.yaml for bridge 38C0366 (the Phase 4 validation frame):
+# deck / footing / stem+wing rollups onto the three structural-concrete items.
+structures:
+  - id: 38c0366
+    name: Sample Bridge (38C0366)
+    count: 1
+    cost_codes: [FTG-CONC, STR-CONC, PF-DECK]
+    bid_items:
+      - {item_number: "2217-38", schedule: "Base Bid"}
+      - {item_number: "2217-39", schedule: "Base Bid"}
+      - {item_number: "2217-40", schedule: "Base Bid"}

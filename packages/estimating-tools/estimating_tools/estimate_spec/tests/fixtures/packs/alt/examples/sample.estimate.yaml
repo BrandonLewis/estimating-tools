@@ -1,0 +1,104 @@
+# An alt-pack estimate, authored for tests only (Plan C, Task 6, fix round
+# 1). Exercises both locked takeoff kinds (geometry on item 2, subcontractor
+# on item 3), spreads, and the PARTS/LEASE header-price cost-detail
+# convention — the shapes summarize.py/artifact.py hardcode — under this
+# pack's own rigging/ductwork vocabulary and arithmetic.
+#   est-estimate build sample.estimate.yaml --format <this pack>
+project: Alt Pack Duct Package
+bid_date: "2026-11-01"
+markup: "=E{row:subtotal}*0.10"
+rate_table:
+  - { trade: FITTER, rate: 88 }
+  - { trade: RIGGER, rate: 79 }
+  - { trade: WELDER, rate: 91 }
+  - { trade: OPER,   rate: 84 }
+  - { trade: HELPER, rate: 55 }
+crews:
+  - id: DUCT-CREW
+    members:
+      - { trade: FITTER, count: 1 }
+      - { trade: WELDER, count: 1 }
+      - { trade: RIGGER, count: 1 }
+      - { trade: HELPER, count: 1 }
+items:
+  - recipe: preamble
+    sheet: PRE
+    item_no: "Item 1"
+    description: Preamble and mobilization
+    qty: 1
+    uom: LS
+    cost_code: "10-100"
+    labor:
+      - slot: "AA"
+        description: Mobilize crew and equipment
+        crew:
+          - { trade: FITTER, count: 1, days: 1 }
+          - { trade: HELPER, count: 1, days: 1 }
+
+  - recipe: work_item
+    sheet: 2 - DUCT RUN
+    item_no: "Item 2"
+    description: 24-inch duct run, level 2
+    qty: "={ref:takeoff.total_cy}"
+    uom: CY
+    wbs: "3.1"
+    cost_code: "10-210"
+    crew_id: DUCT-CREW
+    notes: ["Fabricate off-site; hang per hanger schedule."]
+    takeoff:
+      kind: geometry
+      lines:
+        - { label: "Run A", length: 20, height: 6, ftg_cy: 3.5, ftg_cf: 94.5, wall_cy: 8, wall_cf: 216 }
+        - { label: "Run B", length: 15, height: 5, ftg_cy: 2.5, ftg_cf: 67.5, wall_cy: 5, wall_cf: 135 }
+    labor:
+      - slot: "AA"
+        description: Fabricate and hang duct
+        activities:
+          - { name: Layout, factor: 0.3 }
+          - { name: Hang,   factor: 0.2 }
+        crew:
+          - { trade: FITTER, count: 1, days: "=D{row:prod_days}" }
+          - { trade: WELDER, count: 1, days: "=E{row:crew_first}" }
+          - { trade: RIGGER, count: 1, days: 2 }
+      - slot: "BB"
+        description: Insulate and seal joints
+        crew:
+          - { trade: HELPER, count: 1, days: 3 }
+    spreads:
+      ftg_qty: "={ref:takeoff.ftg_cy}"
+      wall_qty: "={ref:takeoff.wall_cy}"
+      ftg_waste: 0.1
+      wall_waste: 0.05
+      materials:
+        - { name: Rigid hanger kit, qty: "=B{row:qty_subtotal}", uom: EA, unit_price: 12 }
+        - { name: Isolation pads, qty: 8, uom: EA, unit_price: 5.5 }
+    cost_details:
+      - name: PARTS
+        header_price: 0.5
+        lines: []
+      - name: LEASE
+        lines:
+          - { name: Man lift, uom: DAY, qty: 6, unit_price: 210 }
+
+  - recipe: work_item
+    sheet: 3 - HANGER SET
+    item_no: "Item 3"
+    description: Vendor-furnished spring hangers
+    qty: 24
+    uom: EA
+    cost_code: "10-510"
+    takeoff:
+      kind: subcontractor
+      freight: 150
+      lines:
+        - { item: "Spring hangers, 3/8 in", qty: 24, uom: EA, unit_price: 18 }
+    labor:
+      - slot: "AA"
+        description: Receive and stage hangers
+        crew:
+          - { trade: FITTER, count: 1, days: 1 }
+          - { trade: HELPER, count: 1, days: 1 }
+    cost_details:
+      - name: VENDOR
+        lines:
+          - { name: Hanger install (subcontract), uom: EA, qty: 24, unit_price: 9 }

@@ -1,0 +1,14 @@
+{
+  "bidmanager": {
+    "type": "http",
+    "url": "https://www.bidsheet.ai/mcp/"
+  },
+  "conformed": {
+    "type": "http",
+    "url": "https://conformed-production.up.railway.app/mcp/"
+  },
+  "artifact-editor": {
+    "type": "stdio",
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/launch"
+  }
+}

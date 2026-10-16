@@ -1,0 +1,32 @@
+# Provenance: authored from scratch for the test suite (Plan C, Task 6, fix
+# round 1). Second-pack coverage AND the fixture that exercises
+# summarize.py/artifact.py — the two modules that still hardcode one format's
+# takeoff/spreads field shapes (kind: geometry/subcontractor;
+# ftg_cy/ftg_cf/wall_cy/wall_cf; ftg_qty/wall_qty/ftg_waste/wall_waste). That
+# is the engine's own residual format assumption, not client identity, so
+# this pack's vocabulary.yaml carries those exact field names — nothing else
+# does. Every OTHER value (trades, cost-block names, recipe names, sheet
+# names, slot pattern, cover sheet name, example content) is authored fresh
+# for this test suite; nothing is copied from the reference pack or from any
+# customer's vocabulary. The demo pack remains the structurally-different
+# pack that declares no capabilities, so refusal is still exercised there.
+name: alt
+version: 1
+# Already true per the header comment above (authored from scratch, nothing
+# copied from any customer's vocabulary) -- declared explicitly too, though
+# this fixture lives under tests/fixtures/ and is not shipped (pyproject.toml
+# package-data covers packs/*/*.yaml only), so test_no_org_data.py's shipped-
+# pack provenance assertion does not walk it.
+provenance: authored
+files:
+  units: units.yaml
+  tokens: tokens.yaml
+  recipes: recipes.yaml
+  vocabulary: vocabulary.yaml
+  seed: seed.yaml
+supports: [summarize, artifact]
+# Org labor policy: this pack's own crew_factor_default, chosen distinct from
+# the reference pack's 1 (an arbitrary but stated value — this pack's policy,
+# not a copy of anyone else's).
+labor:
+  crew_factor_default: 2

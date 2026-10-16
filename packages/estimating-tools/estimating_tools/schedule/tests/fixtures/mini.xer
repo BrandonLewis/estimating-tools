@@ -1,0 +1,30 @@
+ERMHDR	20.12	2026-08-07	Project	admin	admin			USD
+%T	PROJECT
+%F	proj_id	proj_short_name	plan_start_date
+%R	1	Sample Bridge	2026-07-10 08:00
+%T	PROJWBS
+%F	wbs_id	proj_id	parent_wbs_id	seq_num	wbs_name	proj_node_flag
+%R	100	1		0	Sample Bridge	Y
+%R	110	1	100	1	Substructure	N
+%R	120	1	100	2	Superstructure	N
+%T	TASK
+%F	task_id	proj_id	wbs_id	task_code	task_name	task_type	target_drtn_hr_cnt	act_start_date	act_end_date	early_start_date	early_end_date	target_start_date	target_end_date
+%R	1001	1	110	A1010	Drill abutment piles	TT_Task	40			2026-07-10 08:00	2026-07-14 17:00	2026-07-10 08:00	2026-07-14 17:00
+%R	1002	1	110	A1020	Pour abutment footing	TT_Task	24			2026-07-15 08:00	2026-07-17 17:00	2026-07-15 08:00	2026-07-17 17:00
+%R	1003	1	120	B1010	Erect girders	TT_Task	80			2026-07-20 08:00	2026-07-31 17:00	2026-07-20 08:00	2026-07-31 17:00
+%R	1004	1	120	B1099	Deck complete	TT_FinMile	0			2026-08-01 08:00	2026-08-01 08:00	2026-08-01 08:00	2026-08-01 08:00
+%T	TASKPRED
+%F	task_pred_id	task_id	pred_task_id	pred_type	lag_hr_cnt
+%R	1	1002	1001	PR_FS	0
+%R	2	1003	1002	PR_FS	16
+%R	3	1004	1003	PR_FS	0
+%T	ACTVTYPE
+%F	actv_code_type_id	actv_code_type
+%R	200	Subcontractor
+%T	ACTVCODE
+%F	actv_code_id	actv_code_type_id	actv_code_name	short_name
+%R	300	200	SUB-A	SUBA
+%T	TASKACTV
+%F	taskactv_id	task_id	actv_code_type_id	actv_code_id	proj_id
+%R	1	1001	200	300	1
+%E

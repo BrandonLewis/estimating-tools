@@ -1,0 +1,19 @@
+#!/bin/sh
+# POSIX launcher for the artifact-editor MCP server. Windows twin: launch.cmd
+# (Claude Code resolves the extensionless command to launch.cmd via PATHEXT).
+#
+# It used to exec bare `python3`, which is why the host reported
+# CONNECTION_CLOSED: the server imports estimating_tools, and the system
+# interpreter has never had it. Now the runtime resolver makes the shared
+# runtime current and hands it the process, so the server runs on the same
+# interpreter the skills' shims do. stdout is the MCP stdio protocol, so
+# plugin_runtime's `serve` keeps every diagnostic on stderr.
+dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+for py in python3 python; do
+  if command -v "$py" >/dev/null 2>&1; then
+    exec "$py" "$dir/plugin_runtime.py" serve "$dir/artifact_app_server.py" "$@"
+  fi
+done
+echo "estimating-core: no python3 on PATH, so the artifact-editor server cannot" \
+     "start; sessions fall back to the artifact/file display path" >&2
+exit 1

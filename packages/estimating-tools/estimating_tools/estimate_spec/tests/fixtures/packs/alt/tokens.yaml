@@ -1,0 +1,108 @@
+# tokens.yaml — the alt pack's visual grammar. Authored for tests only: a
+# placeholder palette, not derived from any workbook. Style KEY NAMES (fill
+# roles, font kinds, composite style names) are generic engine vocabulary
+# reused across packs the way "bold"/"center" would be; only the trades,
+# cost-block names, recipe names, slot pattern, sheet names, and example
+# content are pack identity, and those are authored fresh (see format.yaml's
+# provenance note).
+# =============================================================================
+
+meta:
+  basis: 'authored placeholder palette (Plan C, Task 6 fix round 1)'
+  base_font: { name: Calibri, size: 10 }
+
+# --- primitive palettes ------------------------------------------------------
+
+fills:
+  input_yellow:   'FFE699'   # live input / key computed value to watch
+  driver_qty:     'FFF2CC'   # the quantity a cost is spread over ("Unit" rows)
+  item_identity:  'B4C7E7'   # row-2 identity strip (Item # / desc / qty / uom)
+  section_banner: 'D9E1F2'   # repeated =B2 zone title that opens the crew stack
+  answer_block:   'C6E0B4'   # TOTAL / UNIT COSTS — the final-answer zone
+  notes:          'FCE4D6'   # assumptions callout band
+  takeoff_header: 'E2EFDA'   # geometry column heads + rollup title
+  takeoff_grid:   'F2F2F2'   # near-white shaded takeoff grid
+  summary_header: 'DDEBF7'   # cover-sheet column headers
+
+font_colors:
+  money:       'C00000'      # red       — $ & key totals, takeoff item labels
+  price_input: '375623'      # green     — $/unit PRICE inputs
+  production:  '2E75B6'      # blue      — derived production metrics
+  days:        '7030A0'      # purple    — crew "days" driver cells / section titles
+  ink:         '000000'      # default   — labels & structure
+
+font_sizes:
+  headline: 12
+  body:     10
+  small:     9
+  micro:     8
+  tiny:      6
+
+borders:
+  thick_box:  { style: thick,  sides: [left, right, top, bottom] }
+  thick_band: { style: thick,  sides: [top, bottom] }
+  double_top: { style: double, sides: [top] }
+  double_box: { style: double, sides: [top, bottom] }
+
+number_formats:
+  money_acct:   '_("$"* #,##0.00_);_("$"* \(#,##0.00\);_("$"* "-"??_);_(@_)'
+  acct_nosym:   '_(* #,##0.00_);_(* \(#,##0.00\);_(* "-"??_);_(@_)'
+  manhours_int: '#,##0'
+  qty:          '0.00'
+  percent:      '0.00%'
+  unit_cost:    '"$"#,##0.00'
+  long_date:    '[$-F800]dddd\, mmmm dd\, yyyy'
+
+alignments:
+  center: { horizontal: center, vertical: center }
+  right:  { horizontal: right }
+  left:   { horizontal: left }
+
+# --- composite cell-styles  (THIS is what units.yaml references) -------------
+styles:
+
+  # -- header / identity -------------------------------------------------------
+  identity:       { fill: item_identity, bold: true, italic: true, border: thick_box }
+  date_stamp:     { fill: input_yellow, font_color: money, size: tiny, number_format: long_date }
+  notes:          { fill: notes, bold: true, italic: true }
+  section_banner: { fill: section_banner, bold: true, italic: true, border: thick_box, align: center }
+
+  # -- quantity takeoff ---------------------------------------------------------
+  takeoff_head:   { fill: takeoff_header, bold: true, align: center }
+  takeoff_grid:   { fill: takeoff_grid, bold: true, align: center }
+  takeoff_item:   { font_color: money, bold: true, italic: true }
+  takeoff_num:    { bold: true, align: center, number_format: qty }
+  takeoff_sum:    { font_color: money, bold: true, align: center, number_format: qty, border: double_top }
+
+  # -- crew stack ---------------------------------------------------------------
+  label:          { bold: true }
+  section_title:  { font_color: money, size: headline, bold: true, fill: input_yellow }
+  prod_activity:  { font_color: money, size: headline, bold: true }
+  annotation:     { italic: true, size: micro }
+  prod_factor:    { bold: true, align: center }
+  prod_sum:       { font_color: production, bold: true, fill: input_yellow, align: center, border: double_box }
+  unit_label:     { bold: true, border: thick_box }
+  driver:         { fill: driver_qty, bold: true, border: thick_box, number_format: acct_nosym }
+  driver_open:    { fill: driver_qty, bold: true, number_format: acct_nosym }
+  crew_head:      { font_color: days, size: micro, bold: true, align: right }
+  crew_count:     { size: headline, number_format: manhours_int }
+  rate:           { font_color: money, bold: true, fill: input_yellow, number_format: money_acct }
+  days:           { font_color: days, bold: true }
+  ext_money:      { number_format: acct_nosym }
+  manhours:       { bold: true, align: center, number_format: manhours_int }
+  block_subtotal: { bold: true, border: double_top, number_format: acct_nosym }
+
+  # -- rollups / spreads / cost-detail -------------------------------------------
+  rollup_title:   { fill: takeoff_header, size: headline, bold: true, align: center }
+  metric:         { bold: true, italic: true, align: center, number_format: qty }
+  result_money:   { bold: true, number_format: money_acct }
+  price_input:    { font_color: price_input, bold: true, number_format: money_acct }
+  unit_cost:      { bold: true, number_format: unit_cost }
+  subtotal_money: { bold: true, size: headline, border: double_top, number_format: money_acct }
+  total:          { fill: answer_block, bold: true, number_format: money_acct }
+
+  # -- recap cover sheet ----------------------------------------------------------
+  cover_title:    { fill: input_yellow, font_color: ink, bold: true, border: thick_band, align: left }
+  summary_head:   { fill: summary_header, font_color: money, bold: true, align: center }
+  summary_money:  { font_color: money, bold: true, fill: input_yellow, align: center, number_format: money_acct }
+  percent:        { number_format: percent }

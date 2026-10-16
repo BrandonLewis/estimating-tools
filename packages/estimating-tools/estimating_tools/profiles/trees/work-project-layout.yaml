@@ -1,0 +1,9 @@
+# Mirror of the Work repo's Tools/work/templates/project-tree.yaml (folders
+# only — the `work` CLI owns the canonical file; keep in sync by hand).
+folders:
+  - Addenda
+  - Plans
+  - Specs
+  - Supplemental-Info
+  - Correspondence
+  - Notes

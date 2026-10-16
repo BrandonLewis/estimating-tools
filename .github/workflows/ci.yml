@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: packages/estimating-tools/pyproject.toml
+      - name: Install
+        # upgrade the runner's preinstalled pip/setuptools first: pip-audit below
+        # audits the whole environment, and a stale tool-cache setuptools is not
+        # one of our dependencies. bimforge resolves from PyPI through the
+        # [all] extra's floor.
+        run: |
+          python -m pip install -U pip setuptools wheel
+          pip install -e 'packages/estimating-tools[all]'
+          python -c "from importlib.metadata import version; import bimforge, estimating_tools; print('bimforge', version('bimforge'), 'estimating_tools', version('estimating_tools'))"
+      - run: python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests -q
+      - name: Dependency vulnerability audit (pip-audit)
+        run: |
+          pip install pip-audit
+          pip-audit --skip-editable
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # gitleaks walks the history
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: packages/estimating-tools/pyproject.toml
+      - run: pip install -e packages/estimating-tools build
+      - name: Manifest drift guard
+        run: python manifest/generate.py --check
+      - name: Plugin wheel drift guard (estimating_tools; the bimforge wheel is the PyPI release)
+        run: python scripts/build_plugin_wheel.py plugins/estimating-core --check
+      - name: Vendored plugin runtime drift guard
+        run: python scripts/vendor_runtime.py --check
+      - name: Skills name their tools by shim path
+        run: python scripts/shim_skill_paths.py --check
+      - name: OpenWorker port drift guard
+        run: python openworker/port_skills.py --check
+      - name: Skill frontmatter names match folders
+        run: |
+          fail=0
+          for d in plugins/*/skills/*/; do
+            n=$(basename "$d")
+            grep -q "^name: $n$" "$d/SKILL.md" || { echo "frontmatter MISMATCH: $d (expected 'name: $n')"; fail=1; }
+          done
+          exit $fail
+      - name: Provenance scan (bid numbers, machine paths, credentials; wheels included)
+        # scripts/deorg_scan.py. The maintainer adds project-specific tokens
+        # through the DEORG_EXTRA_PATTERNS repository secret so the list itself
+        # never lands in the tree.
+        env:
+          DEORG_EXTRA_PATTERNS: ${{ secrets.DEORG_EXTRA_PATTERNS }}
+        run: python scripts/deorg_scan.py
+      - name: Secret scan (gitleaks)
+        run: |
+          curl -sSL -o gitleaks.tgz \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
+          echo "5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba  gitleaks.tgz" | sha256sum -c
+          tar xzf gitleaks.tgz gitleaks
+          ./gitleaks git --no-banner --redact --exit-code 1 --config .gitleaks.toml .
+
+  wheel-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install the bundled wheels with plugin-core extras (clean env)
+        # What a plugin install gives a session: the two wheels under
+        # plugins/estimating-core/dist, nothing from this checkout.
+        run: |
+          WHEEL=$(ls plugins/estimating-core/dist/estimating_tools-*.whl)
+          BIMFORGE=$(ls plugins/estimating-core/dist/bimforge-*.whl)
+          pip install "${BIMFORGE}" "${WHEEL}[plugin-core]"
+      - name: Import every module the skills reference
+        run: |
+          python - <<'PY'
+          import importlib
+          MODULES = [
+              "estimating_tools.importers.mapping_artifact",
+              "estimating_tools.importers.push",
+              "estimating_tools.importers.pricing",
+              "estimating_tools.importers.model",
+              "estimating_tools.assemblies.artifact",
+              "estimating_tools.assemblies.plan",
+              "estimating_tools.assemblies.model",
+              "estimating_tools.assemblies.excel",
+              "estimating_tools.artifacts_html",
+              "estimating_tools.artifact_app",
+              "estimating_tools.artifact_app.server",
+              "estimating_tools.estimate_spec.artifact",
+              "estimating_tools.estimate_spec.sync",
+              "estimating_tools.estimate_spec.sync_executor",
+              "estimating_tools.estimate_spec.scaffold",
+              "estimating_tools.estimate_spec.scaffold_save",
+              "estimating_tools.estimate_spec.apply",
+              "estimating_tools.estimate_spec.cli",
+              "estimating_tools.historicals.model",
+              "estimating_tools.historicals.tabs",
+              "estimating_tools.historicals.suggest",
+              "estimating_tools.historicals.estimates",
+              "estimating_tools.historicals.cli",
+              "estimating_tools.pdf.extract_text",
+              "estimating_tools.excel.excel_reader",
+              "estimating_tools.profiles",
+              "estimating_tools.rates.excel",
+              "estimating_tools.schedule.gantt_to_ganttwarrior",
+              "estimating_tools.schedule.model",
+              "estimating_tools.schedule.importers",
+              "estimating_tools.quotes.plan",
+              "estimating_tools.spreads",
+              "estimating_tools.takeoff.push",
+              "estimating_tools.takeoff.core",
+              "estimating_tools.directory.excel",
+              "estimating_tools.costcodes.excel",
+          ]
+          for m in MODULES:
+              importlib.import_module(m)
+          print(f"ok: {len(MODULES)} skill-referenced modules import from the bundled wheel")
+          PY
+      - name: CLI entry points respond
+        run: |
+          est-import --help >/dev/null
+          est-estimate --help >/dev/null
+          est-artifact-app --version >/dev/null
+          echo "CLIs ok"

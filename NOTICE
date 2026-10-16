@@ -1,0 +1,14 @@
+estimating-tools
+Copyright 2025-2026 Brandon Lewis
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This repository includes:
+
+- `openworker/` — a port of the plugin's skills, MCP configuration and
+  personas to OpenWorker (https://github.com/andrewyng/openworker), which is
+  MIT licensed, Copyright (c) 2024 Andrew Ng. The port reads OpenWorker's
+  extension surfaces; it does not redistribute OpenWorker's code.
+- `data/caltrans-2025/` — tables transcribed from the Caltrans Standard Plans,
+  2025 edition (California Department of Transportation), a public-agency
+  source; `manifest.json` records the sheets, URLs and checksums they came from.

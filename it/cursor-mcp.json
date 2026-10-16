@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "bidmanager": {
+      "url": "https://www.bidsheet.ai/mcp/"
+    },
+    "conformed": {
+      "url": "https://conformed-production.up.railway.app/mcp/"
+    }
+  }
+}

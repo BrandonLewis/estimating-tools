@@ -1,0 +1,7 @@
+{
+  "title": "Morning estimate rollup",
+  "cron": "30 6 * * 1-5",
+  "timezone": "local",
+  "instructions": "Pull the current estimate summary for this project with mcp__bidmanager__get_estimate_summary and write `reports/rollup-<date>.md` containing the estimate total, the delta from the previous rollup file in that folder, and every bid item still unpriced. Read-only against BidSheet.ai.",
+  "permissions": []
+}

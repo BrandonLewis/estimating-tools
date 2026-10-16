@@ -1,0 +1,32 @@
+tools/.venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+packages/estimating-tools/build/
+packages/bimforge/build/
+
+# worktrees for parallel branch work (superpowers)
+.worktrees/
+
+# Caltrans standard-plan source files (DGN) and their DXF conversions -- large
+# (79 MB) and re-downloadable from dot.ca.gov via manifest.json's per-sheet
+# url + sha256, so they stay out of the repo.
+#
+# Note the trailing `*`: git will NOT re-include a path whose parent directory
+# is itself excluded, so `/data/caltrans-2025/` (no star) would make the
+# negations below silently do nothing.
+/data/caltrans-2025/*
+# ...but the hand-transcribed TABLES are ours, not a re-download: ~64 KB of
+# diffable YAML that is the ground truth five gated tests check against
+# (D80/D81 concrete CF/LF + LB/LF, B3 walls, D89 headwalls, D84 wingwalls).
+# While they were excluded CI SKIPPED all five, so the strongest checks in the
+# suite ran nowhere but one developer's disk.
+!/data/caltrans-2025/tables/
+# ...and the manifest is what makes ignoring the binaries safe in the first
+# place: 27 KB recording which 91 sheets, from which URLs, at which sha256.
+# Ignored alongside the very files it describes, it was self-defeating -- the
+# only copy sat on the same disk as the 79 MB it was insurance for.
+!/data/caltrans-2025/manifest.json
+

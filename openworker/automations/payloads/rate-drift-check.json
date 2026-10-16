@@ -1,0 +1,7 @@
+{
+  "title": "Weekly rate-library drift check",
+  "cron": "0 7 * * 1",
+  "timezone": "local",
+  "instructions": "Load the `estimating-reference` skill. List the organization's labor and equipment rates with mcp__bidmanager__list_labor_rates and mcp__bidmanager__list_equipment_rates, and compare them to `rates/baseline.json`. Write `reports/rate-drift-<date>.md` listing every rate that moved more than 3%. Do not modify the baseline file or any rate.",
+  "permissions": []
+}

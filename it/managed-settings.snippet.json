@@ -1,0 +1,11 @@
+{
+  "extraKnownMarketplaces": {
+    "estimating-platform": {
+      "source": { "source": "github", "repo": "BrandonLewis/estimating-tools" }
+    }
+  },
+  "enabledPlugins": {
+    "estimating-core@estimating-platform": true
+  },
+  "allowedMcpServers": ["https://www.bidsheet.ai/mcp/"]
+}

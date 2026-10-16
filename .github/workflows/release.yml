@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}   # release the committed version from this branch; the run tags it
+
+permissions:
+  contents: write
+  id-token: write   # PyPI trusted publishing (no API token stored anywhere)
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: packages/estimating-tools/pyproject.toml
+      - name: Resolve version (tag == committed versions; dispatch takes pyproject's)
+        id: ver
+        run: |
+          python - <<'PY'
+          import os, re, subprocess, sys
+          pp = open("packages/estimating-tools/pyproject.toml", encoding="utf-8").read()
+          ver = re.search(r'^version\s*=\s*"([^"]+)"', pp, re.M).group(1)
+          if os.environ["GITHUB_EVENT_NAME"] == "workflow_dispatch":
+              refs = subprocess.run(["git", "ls-remote", "--tags", "origin", f"v{ver}"],
+                                    capture_output=True, text=True, check=True).stdout
+              if refs.strip():
+                  sys.exit(f"v{ver} already exists on origin; bump the version first")
+              os.environ["GITHUB_REF_NAME"] = f"v{ver}"
+          # every committed version string must equal the tag (plugins included)
+          env = dict(os.environ, GITHUB_REF_NAME=os.environ.get("GITHUB_REF_NAME", f"v{ver}"))
+          subprocess.run([sys.executable, "scripts/check_release_version.py"], check=True, env=env)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"version={ver}\n")
+          print(f"releasing v{ver}")
+          PY
+      - name: Test gate
+        run: |
+          pip install -e 'packages/estimating-tools[all]'
+          python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests -q
+      - name: Build estimating_tools sdist + wheel
+        run: |
+          pip install build
+          python -m build packages/estimating-tools --outdir dist
+      - name: Publish estimating_tools to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Tag the released commit (dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.ver.outputs.version }}" -m "estimating-tools ${{ steps.ver.outputs.version }}"
+          git push origin "v${{ steps.ver.outputs.version }}"
+      - name: GitHub release (the marketplace tag; wheels attached)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ steps.ver.outputs.version }}" dist/* --title "v${{ steps.ver.outputs.version }}" --generate-notes

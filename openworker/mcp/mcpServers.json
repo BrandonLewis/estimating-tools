@@ -1,0 +1,33 @@
+{
+  "_comment": [
+    "OpenWorker MCP servers for the estimating platform.",
+    "install.py merges these into <state-dir>/mcp.json under `mcpServers`.",
+    "The server KEY is what OpenWorker uses to namespace tools as mcp__<key>__<tool>",
+    "(coworker/mcp/tools.py::tool_name) — the ported skills call mcp__bidmanager__*,",
+    "so do not rename `bidmanager`.",
+    "`auth: oauth` makes OpenWorker run browser OAuth 2.1 + PKCE with Dynamic Client",
+    "Registration (coworker/mcp/oauth.py); tokens land in the SecretStore, never here.",
+    "The plugin's third server, artifact-editor, is deliberately absent. Since",
+    "estimating_tools 0.1.8 it WOULD serve tools-only hosts (browser mode:",
+    "open_artifact_editor + collect_artifact_edits over loopback HTTP), so shipping it",
+    "here is a viable follow-up — see the README. Until that decision the skills use",
+    "their HTML fallback.",
+    "Keys beginning with _ are ignored by install.py and never written."
+  ],
+  "mcpServers": {
+    "bidmanager": {
+      "type": "http",
+      "url": "https://www.bidsheet.ai/mcp/",
+      "auth": "oauth",
+      "enabled": true,
+      "requires_approval": true
+    },
+    "conformed": {
+      "type": "http",
+      "url": "https://conformed-production.up.railway.app/mcp/",
+      "auth": "oauth",
+      "enabled": true,
+      "requires_approval": true
+    }
+  }
+}

@@ -1,0 +1,55 @@
+rate_table_trades: [FITTER, RIGGER, WELDER, OPER, HELPER]
+default_crew:
+  - { trade: HELPER, count: 1, days: 0 }
+crews:
+  - id: DUCT-CREW
+    description: Duct fabrication and hanging crew
+    members:
+      - { trade: FITTER, count: 1 }
+      - { trade: WELDER, count: 1 }
+      - { trade: RIGGER, count: 1 }
+      - { trade: HELPER, count: 1 }
+  - id: HOIST-CREW
+    description: Hoist and rigging crew
+    members:
+      - { trade: RIGGER, count: 2 }
+      - { trade: OPER, count: 1 }
+cost_codes:
+  - { code: "10-100", description: Preamble and mobilization }
+  - { code: "10-210", description: Duct fabrication }
+  - { code: "10-220", description: Duct hanging }
+  - { code: "10-510", description: Fixture installation }
+  - { code: "10-900", description: Disposal and cleanup }
+
+# scaffold: what `est-estimate scaffold` builds a fresh item from — the alt
+# pack's own recipe/sheet/slot names, structurally distinct from both the
+# demo pack's and the reference pack's.
+scaffold:
+  default_item_recipe: work_item
+  rate_host_recipe:    preamble
+  rate_host_sheet:     "Crew Rates"
+  rate_host_prefix:    PRE
+  default_prefix:      WRK
+  first_slot:          "AA"
+  placeholder_takeoff:                 # a zeroed geometry line, so a freshly
+    kind: geometry                     # scaffolded work_item validates before
+    fields: [ftg_cy, ftg_cf, wall_cy, wall_cf]   # apply-takeoff fills real geometry
+
+# takeoff_mapping: what `est-estimate apply-takeoff` writes for this pack —
+# the alt pack's own takeoff kind (geometry — see vocabulary.yaml's
+# provenance note on why this pack shares that kind name and its line
+# fields with the reference pack) and a section_type -> {cy, cf} field-pair
+# routing. section_type keys here are generic bridge-structural terms
+# (footing/wall/wing-wall/deck are standard engineering vocabulary, not any
+# org's identity) so this pack can be exercised against the test suite's
+# shared, synthetic sample-bridge measured-takeoff fixture (tests/fixtures/
+# sample_bridge_takeoff.json) the same way the demo and reference packs are; the
+# label_prefix ("SPAN", not the reference pack's "DECK") is this pack's own.
+takeoff_mapping:
+  kind: geometry
+  line_fields: [ftg_cy, ftg_cf, wall_cy, wall_cf]
+  section_types:
+    footing:   { cy: ftg_cy,  cf: ftg_cf }
+    walls:     { cy: wall_cy, cf: wall_cf }
+    wing_wall: { cy: wall_cy, cf: wall_cf }
+    decks:     { cy: wall_cy, cf: wall_cf, label_prefix: "SPAN" }

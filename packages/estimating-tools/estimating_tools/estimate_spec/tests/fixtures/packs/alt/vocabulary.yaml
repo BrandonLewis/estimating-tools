@@ -1,0 +1,84 @@
+# The alt pack's vocabulary. Authored for tests only — a rigging/ductwork
+# shop's trades, cost blocks, slot pattern, and item rules, sharing none of
+# them with the demo pack or the reference pack.
+#
+# defs.takeoff / defs.spreads are the one deliberate exception: their FIELD
+# NAMES (kind: geometry/subcontractor; ftg_cy/ftg_cf/wall_cy/wall_cf;
+# ftg_qty/wall_qty/ftg_waste/wall_waste) are hardcoded in summarize.py and
+# artifact.py (render/parse columns, formula field lookups) — that is the
+# engine's own residual format assumption, not this or any client's
+# identity, so this pack carries the exact same shapes the reference pack
+# did, as the one fixture proving those two modules still work. What each
+# field MEANS in this pack's own story (rigging/ductwork, not footings/
+# walls) is this pack's own choice, expressed in units.yaml's labels.
+trades: [FITTER, RIGGER, WELDER, OPER, HELPER]
+cost_blocks: [PARTS, LEASE, VENDOR]
+slot_pattern: "^[A-Z]{2}$"               # labor slots AA, BB, ...
+foreman_trade: FITTER
+item_rules:
+  - comment: "work items carry a quantity takeoff; the preamble does not."
+    if:   { properties: { recipe: { const: work_item } } }
+    then: { required: [takeoff] }
+defs:
+  takeoff:
+    type: object
+    required: [kind]
+    properties: { kind: { enum: [geometry, subcontractor] } }
+    oneOf:
+      - properties:
+          kind: { const: geometry }
+          lines:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              additionalProperties: false
+              required: [label, length, ftg_cy, wall_cy, wall_cf]
+              properties:
+                label:   { type: string }
+                length:  { type: number }
+                height:  { type: number }
+                ftg_cy:  { type: number }
+                ftg_cf:  { type: number }
+                wall_cy: { type: number }
+                wall_cf: { type: number }
+        required: [lines]
+        additionalProperties: false
+      - properties:
+          kind:      { const: subcontractor }
+          galvanize: { $ref: "#/$defs/numOrFormula" }
+          tax_rate:  { type: number }
+          freight:   { type: number }
+          lines:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              additionalProperties: false
+              required: [item, qty, uom, unit_price]
+              properties:
+                item:       { type: string }
+                qty:        { $ref: "#/$defs/numOrFormula" }
+                uom:        { type: string }
+                unit_price: { type: number }
+        required: [lines]
+        additionalProperties: false
+  spreads:
+    type: object
+    additionalProperties: false
+    properties:
+      ftg_qty:    { $ref: "#/$defs/numOrFormula" }
+      wall_qty:   { $ref: "#/$defs/numOrFormula" }
+      ftg_waste:  { type: number }
+      wall_waste: { type: number }
+      materials:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [name, qty, uom, unit_price]
+          properties:
+            name:       { type: string }
+            qty:        { $ref: "#/$defs/numOrFormula" }
+            uom:        { type: string }
+            unit_price: { type: number }

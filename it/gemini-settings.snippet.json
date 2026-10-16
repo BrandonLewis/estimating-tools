@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "bidmanager": {
+      "httpUrl": "https://www.bidsheet.ai/mcp/",
+      "oauth": {
+        "authProviderType": "dynamic_discovery"
+      }
+    },
+    "conformed": {
+      "httpUrl": "https://conformed-production.up.railway.app/mcp/",
+      "oauth": {
+        "authProviderType": "dynamic_discovery"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+# estimating_tools ships inside the plugin wheel; keep its sources LF so wheel
+# contents don't vary by platform line endings (the drift gate compares
+# LF-normalized content, not raw zip bytes — those still differ by timestamps).
+packages/estimating-tools/** text=auto eol=lf
+
+# POSIX sh launcher must stay LF everywhere (CRLF breaks sh); its .cmd twin
+# is CRLF-safe either way but Windows batch prefers CRLF.
+plugins/estimating-core/scripts/launch text eol=lf
+plugins/estimating-core/scripts/launch.cmd text eol=crlf

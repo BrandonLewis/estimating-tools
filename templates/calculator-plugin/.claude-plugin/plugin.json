@@ -1,0 +1,6 @@
+{
+  "name": "calc-example",
+  "version": "0.1.0",
+  "description": "EXAMPLE calculator plugin — copy this directory, rename, and replace the example skill with your own calculation.",
+  "author": { "name": "Your Organization" }
+}

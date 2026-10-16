@@ -1,0 +1,5 @@
+{
+  "env": {
+    "ESTIMATING_PROFILES": "/opt/estimating/profiles/base:/opt/estimating/profiles/org-acme:/opt/estimating/profiles/agency-caltrans"
+  }
+}

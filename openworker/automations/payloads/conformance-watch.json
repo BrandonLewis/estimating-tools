@@ -1,0 +1,7 @@
+{
+  "title": "Post-award conformance watch",
+  "cron": "0 17 * * *",
+  "timezone": "local",
+  "instructions": "Check this project's plans and specs against their addenda using the conformed MCP tools, and write `conformance/<date>.md` describing anything newly non-conforming. If nothing changed since the previous file, write a one-line file saying so.",
+  "permissions": []
+}

@@ -1,0 +1,19 @@
+# Starter profile. Copy this directory, set kind to `org` or `agency`, and fill
+# in your own values. See the profile-system design doc for the full schema.
+kind: org
+name: "Your Organization"
+
+# Org branding for generated letters/reports (kind: org).
+letterhead:
+  # template: "letterhead.docx"      # uncomment + drop a .docx here (using {{r body }}) to enable letterhead rendering
+  company_name: "Your Organization, Inc."
+  address: "Street, City, ST"
+
+# Project folder structure created by the scaffold-project skill.
+folder_conventions:
+  tree: "trees/project-tree.yaml"
+
+# For an agency profile (kind: agency) you would instead provide, e.g.:
+#   argot:
+#     compliance_label: "Compliance (<agency> <spec section>)"
+#     spec_note: "<agency> <spec citation>. PE seal required."

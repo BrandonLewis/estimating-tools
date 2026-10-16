@@ -1,0 +1,23 @@
+# A demo format: a small underground-utility contractor's estimate workbook.
+# Shipped so the plugin works out of the box, and so the engine is proven
+# against a format that shares nothing with any customer's.
+# It declares no `supports:` — summarize and the artifact editor only work
+# against a pack's own declared shapes (labor policy, cost-detail layout,
+# etc.), and this pack has not opted into either, so both tools refuse it
+# rather than guess at shapes it never promised. An org's own pack opts in
+# by adding `supports: [summarize, artifact]` once its vocabulary and labor
+# policy are ready to back those tools.
+# (No `labor:` either, for the same reason: a pack only owes labor policy —
+# e.g. crew_factor_default — once it opts into supports: summarize.)
+name: demo
+version: 1
+# Authored from scratch for this plugin (Plan C Task 10) -- not derived from
+# any customer's workbook. Every shipped pack under ES/packs/ declares this;
+# a consumer's own pack (outside this repo) is never required to.
+provenance: authored
+files:
+  units: units.yaml
+  tokens: tokens.yaml
+  recipes: recipes.yaml
+  vocabulary: vocabulary.yaml
+  seed: seed.yaml

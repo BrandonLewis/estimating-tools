@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/ensure_tools.py\" || python \"${CLAUDE_PLUGIN_ROOT}/scripts/ensure_tools.py\" || py -3 \"${CLAUDE_PLUGIN_ROOT}/scripts/ensure_tools.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

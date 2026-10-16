@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://estimating-tools.local/estimate_spec/estimate.schema.json",
+  "title": "Estimate config",
+  "description": "Validates the hand-authored estimate config (examples/*.estimate.yaml). YAML is parsed to JSON before validation. Structure, styling, and formulas come from units.yaml + tokens.yaml; this file is only quantities, crews, and prices.",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": { "description": "Namespaced consumer passthrough (#257): any key prefixed 'x-' is accepted verbatim so a consumer can persist its own metadata (e.g. which basis produced the sheet) without a schema bump. Non-prefixed unknown keys still fail." }
+  },
+  "required": ["project", "markup", "rate_table", "items"],
+  "properties": {
+    "project":  { "type": "string", "minLength": 1 },
+    "package":  { "type": "string" },
+    "bid_date": { "type": "string", "description": "ISO date, e.g. 2026-04-28" },
+    "markup":   { "$ref": "#/$defs/numOrFormula", "description": "Bond/markup dollars, or a formula such as '=E{row:subtotal}*0.10' for a percentage markup that reflows when items change. The cover derives the % from it." },
+    "output":   { "type": "string", "description": "Optional output .xlsx path." },
+    "cost_code_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "description": "Which coding library the item/labor/cost-detail cost_code strings belong to. Documentation only - the builder does not resolve codes. Generic across every pack.",
+      "properties": {
+        "name":    { "type": "string" },
+        "edition": { "type": "string" },
+        "source":  { "type": "string", "description": "Where the library lives, e.g. a BidSheet.ai cost code system id." }
+      }
+    },
+    "schedule": { "$vocab": "schedule" },
+    "rate_table": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Master crew rates -> MOB!J13 down, the global VLOOKUP target; the range spans the trades declared.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trade", "rate"],
+        "properties": {
+          "trade": { "type": "string" },
+          "rate":  { "type": "number" }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/item" }
+    },
+    "crews": {
+      "type": "array",
+      "description": "Optional crew composition table. Referenced from item.crew_id.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "members"],
+        "properties": {
+          "id":          { "type": "string", "minLength": 1, "description": "Unique crew identifier across crews[]. Cross-uniqueness enforced at build time." },
+          "description": { "type": "string" },
+          "members": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["trade", "count"],
+              "properties": {
+                "trade": { "$vocab": "trades" },
+                "count": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+
+    "numOrFormula": {
+      "description": "A literal number or an Excel formula string beginning with '='.",
+      "oneOf": [
+        { "type": "number" },
+        { "type": "string", "pattern": "^=" }
+      ]
+    },
+
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": { "description": "Namespaced consumer passthrough (#257): any key prefixed 'x-' is accepted verbatim (e.g. the work-type profile that produced the item's cost blocks). Non-prefixed unknown keys still fail." }
+      },
+      "required": ["recipe", "sheet", "item_no", "description", "uom"],
+      "properties": {
+        "recipe":      { "$vocab": "recipes" },
+        "sheet":       { "type": "string", "maxLength": 31, "description": "Excel sheet name (<=31 chars). The mobilization item's sheet name is what crew VLOOKUPs reference." },
+        "item_no":     { "type": "string" },
+        "description": { "type": "string" },
+        "qty":         { "$ref": "#/$defs/numOrFormula" },
+        "uom":         { "type": "string" },
+        "notes":       { "type": "array", "items": { "type": "string" } },
+        "takeoff":     { "$ref": "#/$defs/takeoff" },
+        "labor":       { "type": "array", "items": { "$ref": "#/$defs/labor_block" }, "description": "Optional: an item priced purely from spreads/cost_details, with no labor block, is legitimate." },
+        "spreads":     { "$ref": "#/$defs/spreads" },
+        "cost_details":{ "type": "array", "items": { "$ref": "#/$defs/cost_detail" } },
+        "rebar_spread":{ "$vocab": "rebar_spread" },
+        "wbs":       { "type": "string", "description": "Optional WBS identifier, free-form (e.g. '1.2.3' or 'A.10.4'). No format validation." },
+        "cost_code": { "type": "string", "description": "Optional cost-code reference (e.g. '02-110'). Free-form string; resolution to a category is a profile / render concern." },
+        "optional":  { "type": "boolean", "description": "Optional: true when the item is an alternate / optional bid item. Documentation only - resolution to a bid-item grouping is a profile / render concern." },
+        "in_summary": { "type": "boolean", "default": true, "description": "False on a shared-cost sheet whose TOTAL is pushed into the items that pay for it (each holds a share of it as a cross-sheet {ref:SHEET!NAME} formula). The cover then omits the sheet, so its dollars reach the bid exactly once. The sheet is still rendered and still publishes its total." },
+        "crew_id":   { "type": "string", "description": "Optional reference to an id in the top-level 'crews:' array. Cross-reference is enforced at build time by validate.py, not by the schema." },
+        "estimate_item_id": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Optional mirror of BidSheet.ai EstimateItem.pk. Set by BM sync; absent on locally-drafted items until first push. Used by parse_compact as the primary row-identity anchor."
+        },
+        "scaffold_meta": { "$ref": "#/$defs/scaffold_meta" }
+      },
+      "allOf": { "$vocab": "item_rules" }
+    },
+
+    "scaffold_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "field_hashes"],
+      "description": "Provenance written by `est-estimate scaffold` (scaffold.py). `source` names where the item's prefill came from (bid_frame / bm:scaffold:<id> / profile:estimate_scaffolds.yaml); `field_hashes` holds a content hash per scaffold-owned field so apply-takeoff can detect hand edits. `schedule` and `official_qty` mirror the bid frame for row matching and the official-vs-measured advisory.",
+      "properties": {
+        "source":       { "type": "string", "minLength": 1 },
+        "schedule":     { "type": ["string", "null"] },
+        "official_qty": { "type": ["number", "null"] },
+        "generated_at": { "type": "string" },
+        "field_hashes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+
+    "takeoff": { "$vocab": "takeoff" },
+
+    "labor_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slot", "description", "crew"],
+      "properties": {
+        "slot":        { "$vocab": "slot" },
+        "description": { "type": "string" },
+        "note":        { "type": "string", "description": "Optional aside shown on the title row, e.g. \"@ 8 hours / pours\"." },
+        "crew_factor": { "type": "number" },
+        "driver":      { "$ref": "#/$defs/numOrFormula" },
+        "uom":         { "type": "string" },
+        "cost_code":   { "type": "string", "description": "Optional cost-code reference for this labor block. Free-form; resolution to a category is a profile / render concern." },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "factor"],
+            "properties": {
+              "name":   { "type": "string" },
+              "factor": { "type": "number" }
+            }
+          }
+        },
+        "crew": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["trade"],
+            "properties": {
+              "trade": { "$vocab": "trades" },
+              "count": { "type": "number", "minimum": 0, "description": "A half-crew (e.g. one operator shared across two crews) is legitimate; not only whole members." },
+              "days":  { "$ref": "#/$defs/numOrFormula", "description": "Optional: a crew priced by factor rather than by days carries none." }
+            }
+          }
+        }
+      }
+    },
+
+    "spreads": { "$vocab": "spreads" },
+
+    "cost_detail": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "lines"],
+      "properties": {
+        "name":         { "$vocab": "cost_blocks" },
+        "header_price": { "type": "number" },
+        "cost_code":    { "type": "string", "description": "Optional cost-code reference for this cost-detail block. Free-form; resolution to a category is a profile / render concern." },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "qty", "unit_price"],
+            "properties": {
+              "name":       { "type": "string" },
+              "uom":        { "type": "string" },
+              "qty":        { "$ref": "#/$defs/numOrFormula" },
+              "unit_price": { "$ref": "#/$defs/numOrFormula", "description": "A formula is allowed, so a line can hold a share of a shared-cost sheet pulled in with a cross-sheet {ref:SHEET!NAME}." }
+            }
+          }
+        }
+      }
+    }
+  }
+}

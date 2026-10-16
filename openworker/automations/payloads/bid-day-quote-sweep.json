@@ -1,0 +1,7 @@
+{
+  "title": "Bid-day quote sweep",
+  "cron": "*/20 8-10 * * 1-5",
+  "timezone": "local",
+  "instructions": "Start with the quote-space board: load the `quote-coverage` skill and run it — write the board to `quotes/coverage.md` and lead your summary with any zero-coverage gap items. Then re-level the vendor quotes: load the `compare-quotes` skill and run it for each work package with quotes, writing each spread to `quotes/spread-<package>.md`. Pass the leveled package names back into the coverage run's --leveled list. If a package's low vendor changed since the previous run, say so at the top of your summary. Read-only: do not award anything and do not write to BidSheet.ai.",
+  "permissions": []
+}

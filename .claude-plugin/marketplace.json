@@ -1,0 +1,8 @@
+{
+  "name": "estimating-platform",
+  "owner": { "name": "Brandon Lewis" },
+  "plugins": [
+    { "name": "estimating-core", "source": "./plugins/estimating-core", "description": "Estimating workflows + BidSheet.ai MCP reference + estimator agent." },
+    { "name": "calc-bim", "source": "./plugins/calc-bim", "description": "DXF → BIM (IFC) authoring + IFC → CanonicalTakeoff rollup." }
+  ]
+}

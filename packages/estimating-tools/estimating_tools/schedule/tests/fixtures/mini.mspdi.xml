@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <Name>Sample Bridge MSP</Name>
+  <StartDate>2026-07-10T08:00:00</StartDate>
+  <Tasks>
+    <Task>
+      <UID>0</UID><ID>0</ID><Name>Sample Bridge MSP</Name>
+      <OutlineNumber>0</OutlineNumber><OutlineLevel>0</OutlineLevel>
+      <Summary>1</Summary><Milestone>0</Milestone>
+      <Start>2026-07-10T08:00:00</Start><Finish>2026-08-01T17:00:00</Finish>
+    </Task>
+    <Task>
+      <UID>1</UID><ID>1</ID><Name>Substructure</Name>
+      <OutlineNumber>1</OutlineNumber><OutlineLevel>1</OutlineLevel>
+      <Summary>1</Summary><Milestone>0</Milestone>
+      <Start>2026-07-10T08:00:00</Start><Finish>2026-07-17T17:00:00</Finish>
+    </Task>
+    <Task>
+      <UID>2</UID><ID>2</ID><Name>Drill abutment piles</Name>
+      <OutlineNumber>1.1</OutlineNumber><OutlineLevel>2</OutlineLevel>
+      <Summary>0</Summary><Milestone>0</Milestone>
+      <Start>2026-07-10T08:00:00</Start><Finish>2026-07-14T17:00:00</Finish>
+    </Task>
+    <Task>
+      <UID>3</UID><ID>3</ID><Name>Pour abutment footing</Name>
+      <OutlineNumber>1.2</OutlineNumber><OutlineLevel>2</OutlineLevel>
+      <Summary>0</Summary><Milestone>0</Milestone>
+      <Start>2026-07-15T08:00:00</Start><Finish>2026-07-17T17:00:00</Finish>
+      <PredecessorLink>
+        <PredecessorUID>2</PredecessorUID><Type>1</Type>
+        <LinkLag>0</LinkLag><LagFormat>7</LagFormat>
+      </PredecessorLink>
+    </Task>
+    <Task>
+      <UID>4</UID><ID>4</ID><Name>Deck complete</Name>
+      <OutlineNumber>2</OutlineNumber><OutlineLevel>1</OutlineLevel>
+      <Summary>0</Summary><Milestone>1</Milestone>
+      <Start>2026-08-01T08:00:00</Start><Finish>2026-08-01T08:00:00</Finish>
+      <PredecessorLink>
+        <PredecessorUID>3</PredecessorUID><Type>1</Type>
+        <LinkLag>4800</LinkLag><LagFormat>7</LagFormat>
+      </PredecessorLink>
+    </Task>
+  </Tasks>
+  <Resources>
+    <Resource><UID>1</UID><Name>Pile Crew</Name></Resource>
+    <Resource><UID>2</UID><Name>Concrete Crew</Name></Resource>
+  </Resources>
+  <Assignments>
+    <Assignment><UID>1</UID><TaskUID>2</TaskUID><ResourceUID>1</ResourceUID></Assignment>
+    <Assignment><UID>2</UID><TaskUID>2</TaskUID><ResourceUID>2</ResourceUID></Assignment>
+    <Assignment><UID>3</UID><TaskUID>3</TaskUID><ResourceUID>2</ResourceUID></Assignment>
+  </Assignments>
+</Project>

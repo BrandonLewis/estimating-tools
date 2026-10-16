@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://estimating-tools.local/profile.schema.json",
+  "title": "Estimating profile",
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["org", "agency"] },
+    "name": { "type": "string" },
+    "letterhead": {
+      "type": "object",
+      "properties": {
+        "template": { "type": "string" },
+        "company_name": { "type": "string" },
+        "address": { "type": "string" },
+        "logo": { "type": "string" }
+      }
+    },
+    "folder_conventions": {
+      "type": "object",
+      "properties": { "tree": { "type": "string" } }
+    },
+    "naming": { "type": "object" },
+    "argot": {
+      "type": "object",
+      "properties": {
+        "compliance_label": { "type": "string" },
+        "spec_note": { "type": "string" }
+      }
+    },
+    "terminology": { "type": "object" },
+    "standard_details": { "type": "object" },
+    "cad_style_pack": {
+      "type": "string",
+      "description": "CAD style pack for bimforge outputs (est-bim/est-sheets): an installed Python package name or a directory path providing templates/*.dxf title-block libraries and an optional styles.yaml with layers:/kml: sections. Resolved by bimforge.cad.stylepack.resolve_style_pack."
+    },
+    "house_rules": {
+      "type": "array",
+      "description": "Org-specific estimating judgment rules (e.g. unit-price-governs). Quote skills consult these and cite the rule applied when quote math is adjusted.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "rule": { "type": "string" },
+          "exceptions": { "type": "string" }
+        },
+        "required": ["name", "rule"]
+      }
+    },
+    "estimating": {
+      "type": "object",
+      "properties": {
+        "mob_item_codes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Bid-item codes the org classes as mobilization (drives the mob_item recipe in est-estimate scaffold; fallback is a description regex)."
+        },
+        "waste_factors": {
+          "type": "object",
+          "description": "Org waste-factor convention: free-form item/material keys (e.g. footing_concrete, wall_concrete, asphalt) -> multiplier >= 1.0 (1.15 = 15% waste). Governs over the built-in defaults in takeoff.core.calculate_takeoff.",
+          "additionalProperties": { "type": "number", "minimum": 1.0 }
+        },
+        "format": {
+          "type": "string",
+          "description": "Estimate workbook format pack: a directory holding format.yaml. Relative paths resolve against this profile's directory. A named pack that is missing or invalid is an error, never a fall back."
+        }
+      }
+    }
+  }
+}

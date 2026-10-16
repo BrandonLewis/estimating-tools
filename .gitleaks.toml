@@ -1,0 +1,6 @@
+# gitleaks config for the CI secret scan (.github/workflows/ci.yml). Default
+# rules; nothing in this repository needs an allowlist.
+title = "estimating-tools"
+
+[extend]
+useDefault = true

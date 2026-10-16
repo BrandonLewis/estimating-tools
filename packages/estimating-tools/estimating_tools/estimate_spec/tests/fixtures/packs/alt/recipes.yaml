@@ -1,0 +1,104 @@
+# The alt pack's recipes. See estimate_spec/recipes.yaml for the entry grammar.
+# Authored for tests: a rigging/ductwork shop's sheet archetypes, mirroring
+# the reference pack's mechanism (rate-host item, crew stack, rollup,
+# spreads, cost-detail blocks with a header-price convention) under entirely
+# different recipe/unit/sheet names, so the engine's generic layout features
+# stay exercised without depending on the reference pack.
+globals:
+  unit_qty:          { export: id_strip.qty, scope: sheet }
+  unit_uom:          { export: id_strip.uom, scope: sheet }
+  crew_rate_lookup:  { export: rate_sheet.table, scope: workbook, qualify: sheet }
+
+recipes:
+  cover:
+    sheet_name: Recap
+    item_total_export: item_total.grand_total
+    units:                              # the engine supplies the `items` param
+      - unit: recap_cover
+        params:
+          project: "{config.project}"
+          package: { from: config.package, default: "Base Package" }
+          markup:  { from: config.markup, default: 0 }
+
+  preamble:                                # the first item: hosts the rate sheet
+    column_widths: { A: 26, B: 12, C: 6, D: 12, E: 12, F: 14, G: 13, H: 16 }
+    units:
+      - &header
+        unit: id_strip
+        params:
+          item_no: "{item.item_no}"
+          description: "{item.description}"
+          qty: { from: item.qty, default: 1 }
+          uom: "{item.uom}"
+          bid_date: { from: config.bid_date, default: "" }
+      - &notes { unit: scope_band, when: item.notes, params: { lines: "{item.notes}" } }
+      - { unit: rate_sheet, sheet: "Crew Rates", params: { rates: "{config.rate_table}" } }
+      - &banner { unit: crew_banner }
+      - &crews { unit: crew_stack, for_each: item.labor, key: "labor[{it.slot}]", params: "{it}" }
+      - &rollup
+        unit: crew_rollup
+        params: { labor_first_row: "{span:crew_stack.first}", labor_last_row: "{span:crew_stack.last}" }
+      - &spreads { unit: spread_block, when: item.spreads, params: "{item.spreads}" }
+      - &summary
+        unit: block_rollup
+        when: item.cost_details
+        params:
+          lines:
+            for_each: item.cost_details
+            as: { name: "{it.name}", factor: 1, source_ref: "={ref:cost[{it.name}].subtotal}" }
+      - &total
+        unit: item_total
+        params:
+          total_formula:
+            sum_existing: [crew_rollup.labor_total, spread_block.materials_total,
+                           block_rollup.summary_total, takeoff.sub_spread_total]
+      - &details
+        unit: cost_slate
+        for_each: item.cost_details
+        key: "cost[{it.name}]"
+        params: "{it}"
+        # CONVENTION (this pack's own): PARTS & LEASE carry their $/unit
+        # allowance in the Unit header, not as a line below it — mirrors the
+        # reference pack's LUMBER/HARDWARE convention under this pack's own
+        # cost-block names.
+        default_key: "{it.name}"
+        instance_defaults: { PARTS: { header_price: 0 }, LEASE: { header_price: 0 } }
+
+  work_item:
+    column_widths: { A: 26, B: 12, C: 6, D: 12, E: 12, F: 14, G: 13, H: 16 }
+    units:
+      - *header
+      - *notes
+      - unit: quantity                  # geometry | subcontractor
+        when: item.takeoff
+        variant_from: item.takeoff.kind
+        variants: quantity_kinds
+        key: takeoff
+        params: "{item.takeoff}"
+      - *banner
+      - *crews
+      - *rollup
+      - *spreads
+      - *summary
+      - *total
+      - *details
+
+  # Authored for the test suite only (never scaffolded, never in the pack's
+  # example): the smallest sheet that reads addresses off OTHER sheets, so
+  # the engine's `{ref:SHEET!NAME}` form is exercised by a real render.
+  crosslink_probe:
+    column_widths: { A: 34, B: 16, C: 16 }
+    units:
+      - *header
+      - unit: crosslink
+        params:
+          rate_sheet: "Crew Rates"          # pack-owned: the anchored rate sheet
+          later_sheet: "{item.x-later-sheet}"   # config-owned: a sheet laid out after this one
+      - unit: item_total
+        params:
+          total_formula: { sum_existing: [crosslink.probe_total] }
+
+# maps the abstract `quantity` slot + kind -> a concrete unit in units.yaml
+quantity_kinds:
+  geometry:      geo_takeoff
+  subcontractor: sub_takeoff

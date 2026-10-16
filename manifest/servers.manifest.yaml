@@ -1,0 +1,37 @@
+# Single source of truth for the platform's MCP servers.
+servers:
+  - id: bidmanager
+    description: "BidSheet.ai estimating data (projects, bid items, estimates, assemblies, quotes, work packages)."
+    url_env: BIDMANAGER_MCP_URL
+    url_default: "https://www.bidsheet.ai/mcp/"   # canonical OAuth host (www); the live endpoint is /mcp/ (with slash)
+    transport: http
+    auth:
+      oauth: true                 # primary (BidManager #519)
+      m2m:                        # headless/CI machine-to-machine (OAuth client_credentials, #604)
+        token_url: "https://www.bidsheet.ai/oauth/token"
+        token_url_env: BIDMANAGER_TOKEN_URL         # optional override; falls back to token_url
+        scope: mcp
+        client_id_env: BIDMANAGER_CLIENT_ID         # secret in the runner's secret store; never committed
+        client_secret_env: BIDMANAGER_CLIENT_SECRET
+  - id: conformed
+    description: "conformed.ai document-conformance (plans/specs, conformance checks)."
+    url_env: CONFORMED_MCP_URL
+    url_default: "https://conformed-production.up.railway.app/mcp/"
+    transport: http
+    auth:
+      oauth: true                 # primary (conformed.ai #186)
+      m2m:                        # headless/CI machine-to-machine (OAuth client_credentials, #204)
+        token_url: "https://conformed-production.up.railway.app/oauth/token"
+        token_url_env: CONFORMED_TOKEN_URL          # optional override; falls back to token_url
+        scope: mcp
+        client_id_env: CONFORMED_CLIENT_ID          # secret in the runner's secret store; never committed
+        client_secret_env: CONFORMED_CLIENT_SECRET
+  - id: artifact-editor
+    description: "Estimating artifact editor: MCP App grid inline on Apps hosts; browser-mode grid over loopback HTTP on non-Apps hosts (the terminal). Ships inside the estimating-core plugin."
+    transport: stdio
+    clients: [claude]   # plugin-local stdio server; remote-client renderers skip it
+    # Extensionless launcher pair: POSIX sh script + launch.cmd twin (Windows
+    # resolves via PATHEXT). Replaced the old `sh -c` form, which failed on
+    # Windows where sh is not on the PATH outside Git Bash.
+    command: ${CLAUDE_PLUGIN_ROOT}/scripts/launch
+    args: []

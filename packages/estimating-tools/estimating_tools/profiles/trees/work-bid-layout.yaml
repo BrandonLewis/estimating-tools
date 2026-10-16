@@ -1,0 +1,14 @@
+# Bid working dir folders: the Work repo's bid-tree.yaml folders (Estimate/
+# Proposal/Subquotes — the `work` CLI additionally seeds two xlsx workbooks,
+# which we deliberately do NOT replicate) plus the intake/BIM working dirs
+# this platform adds (Briefing/Sheets/BIM/Takeoff). est-intake creates the
+# B{bid_number}-{bid_date} dir name itself.
+folders:
+  - Estimate
+  - Proposal
+  - Subquotes
+  - Briefing:
+      - prompts
+  - Sheets
+  - BIM
+  - Takeoff

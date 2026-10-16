@@ -1,0 +1,22 @@
+[
+  {"id": 1, "item_number": "2217-1", "schedule_name": "Base Bid", "item_code": "MOB-LS",
+   "description": "Mobilization", "unit": "LS", "quantity": "1"},
+  {"id": 2, "item_number": "2217-35", "schedule_name": "Base Bid", "item_code": "CISS-24F",
+   "description": "Furnish 24in CISS Concrete Piling", "unit": "LF", "quantity": "326"},
+  {"id": 3, "item_number": "2217-36", "schedule_name": "Base Bid", "item_code": "CISS-24",
+   "description": "Drive 24in CISS Concrete Pile", "unit": "EA", "quantity": "10"},
+  {"id": 4, "item_number": "2217-38", "schedule_name": "Base Bid", "item_code": "FTG-CONC",
+   "description": "Structural Concrete, Bridge Footing", "unit": "CY", "quantity": "30"},
+  {"id": 5, "item_number": "2217-39", "schedule_name": "Base Bid", "item_code": "STR-CONC",
+   "description": "Structural Concrete, Bridge", "unit": "CY", "quantity": "100"},
+  {"id": 6, "item_number": "2217-40", "schedule_name": "Base Bid", "item_code": "PF-DECK",
+   "description": "Structural Concrete, Bridge (Polymer Fiber)", "unit": "CY", "quantity": "72"},
+  {"id": 7, "item_number": "2217-43", "schedule_name": "Base Bid", "item_code": "RSP-IV",
+   "description": "Rock Slope Protection (300lb, Class IV, Method B)", "unit": "CY", "quantity": "280"},
+  {"id": 8, "item_number": "2217-45", "schedule_name": "Base Bid", "item_code": "RSP-FAB",
+   "description": "Rock Slope Protection Fabric (Class 8)", "unit": "SY", "quantity": "509"},
+  {"id": 9, "item_number": "2217-61", "schedule_name": "Base Bid", "item_code": "RAIL-BIKE",
+   "description": "Tubular Bicycle Railing", "unit": "LF", "quantity": "139"},
+  {"id": 10, "item_number": "2217-66", "schedule_name": "Base Bid", "item_code": "BAR-85",
+   "description": "Concrete Barrier (Type 85)", "unit": "LF", "quantity": "146"}
+]

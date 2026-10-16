@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "estimating_tools"
+version = "0.1.87"
+description = "Deterministic construction estimating and engineering tools."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+# bimforge is FLOORED, not bare: the plugin bundles a specific wheel, and the
+# floor must stay <= that wheel's version. bimforge is also published to PyPI
+# from BrandonLewis/BIMForge (same version line), so a registry resolution
+# gets the same code the wheel carries.
+dependencies = ["pyyaml", "bimforge>=0.1.87"]
+
+[project.optional-dependencies]
+excel = ["openpyxl"]
+pdf = ["pdfplumber"]
+schedule = ["openpyxl"]
+estimate_spec = ["openpyxl", "pyyaml"]
+docgen = ["docxtpl", "python-docx", "markdown-it-py", "openpyxl"]
+profiles = ["jsonschema", "pyyaml"]
+intake = ["pyyaml"]
+importers = ["openpyxl", "jsonschema"]
+plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "mcp>=2,<3"]
+dev = ["estimating_tools[all]", "build"]
+all = ["openpyxl", "pdfplumber", "docxtpl", "python-docx", "markdown-it-py", "pytest", "jsonschema", "mcp>=2,<3", "bimforge[all]>=0.1.87"]
+
+[project.urls]
+Homepage = "https://github.com/BrandonLewis/estimating-tools"
+Source = "https://github.com/BrandonLewis/estimating-tools"
+Changelog = "https://github.com/BrandonLewis/estimating-tools/blob/main/CHANGELOG.md"
+Security = "https://github.com/BrandonLewis/estimating-tools/security/policy"
+
+[project.scripts]
+asm-import = "estimating_tools.assemblies.cli:main"
+asm-load = "estimating_tools.assemblies.load_cli:main"
+dir-import = "estimating_tools.directory.cli:main"
+dir-sync = "estimating_tools.directory.sync_cli:main"
+est-takeoff = "estimating_tools.takeoff.cli:main"
+est-letterhead = "estimating_tools.docgen.letterhead_cli:main"
+est-estimate = "estimating_tools.estimate_spec.cli:main"
+est-gantt = "estimating_tools.schedule.gantt_to_ganttwarrior:main"
+est-schedule = "estimating_tools.schedule.cli:main"
+est-hist = "estimating_tools.historicals.cli:main"
+est-scaffold = "estimating_tools.profiles.scaffold:main"
+est-intake = "estimating_tools.intake.cli:main"
+est-rebar = "estimating_tools.rebar.cli:main"
+est-quotespace = "estimating_tools.quotespace.cli:main"
+profile-init = "estimating_tools.profiles.cli:main"
+est-import = "estimating_tools.importers.cli:main"
+rate-import = "estimating_tools.rates.cli:main"
+costcode-import = "estimating_tools.costcodes.cli:main"
+m2m-token = "estimating_tools.auth.cli:main"
+est-artifact-app = "estimating_tools.artifact_app.server:main"
+
+# bimforge resolves an org's CAD style pack through registered providers and
+# never imports this package; this is the provider that reads the org profile.
+[project.entry-points."bimforge.style_packs"]
+profile = "estimating_tools.profiles.wires:cad_style_pack"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["estimating_tools*"]
+# Tests are developer material, not shipped surface: 142 test modules were
+# reaching every customer's site-packages. (Fixture .yaml/.json never shipped —
+# package discovery collects only .py modules — so this is about the modules.)
+exclude = [
+    "estimating_tools.tests",
+    "estimating_tools.tests.*",
+    "estimating_tools.*.tests",
+    "estimating_tools.*.tests.*",
+]
+
+[tool.setuptools.package-data]
+"estimating_tools.estimate_spec" = ["schema/*.json", "packs/*.md",
+                                    "packs/*/*.yaml", "packs/*/examples/*.yaml"]
+"estimating_tools.profiles" = ["schema/*.json", "trees/*.yaml"]
+"estimating_tools.importers" = ["schema/*.json"]
+"estimating_tools.artifact_app" = ["*.html"]

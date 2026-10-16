@@ -1,0 +1,96 @@
+{
+  "organization_id": 0,
+  "project_ref": "sample-bridge",
+  "rows": [
+    {
+      "description": "Structural Concrete, Bridge Footing",
+      "kind": "quantity",
+      "quantity": 29.6296,
+      "unit": "CY",
+      "item_number": "2217-38",
+      "cost_code": "FTG-CONC",
+      "schedule": "Base Bid",
+      "elements": [
+        {"name": "S-FTG-A1", "section_type": "footing", "count": 1,
+         "length_ft": 32.0, "width_ft": 5.0, "height_ft": 2.5},
+        {"name": "S-FTG-A2", "section_type": "footing", "count": 1,
+         "length_ft": 32.0, "width_ft": 5.0, "height_ft": 2.5}
+      ]
+    },
+    {
+      "description": "Structural Concrete, Bridge",
+      "kind": "quantity",
+      "quantity": 104.4437,
+      "unit": "CY",
+      "item_number": "2217-39",
+      "cost_code": "STR-CONC",
+      "schedule": "Base Bid",
+      "elements": [
+        {"name": "S-ABUT-1", "section_type": "walls", "count": 1,
+         "length_ft": 32.0, "width_ft": 2.5, "height_ft": 14.2999},
+        {"name": "S-ABUT-2", "section_type": "walls", "count": 1,
+         "length_ft": 32.0, "width_ft": 2.5, "height_ft": 14.2999},
+        {"name": "S-WING-LONG", "section_type": "wing_wall", "count": 2,
+         "length_ft": 22.75, "width_ft": 1.0, "height_ft": 8.0},
+        {"name": "S-WING-SHORT", "section_type": "wing_wall", "count": 2,
+         "length_ft": 10.5, "width_ft": 1.0, "height_ft": 8.0}
+      ]
+    },
+    {
+      "description": "Structural Concrete, Bridge (Polymer Fiber)",
+      "kind": "quantity",
+      "quantity": 75.0,
+      "unit": "CY",
+      "item_number": "2217-40",
+      "cost_code": "PF-DECK",
+      "schedule": "Base Bid",
+      "elements": [
+        {"name": "S-DECK-1", "section_type": "decks", "count": 1,
+         "length_ft": null, "width_ft": 1.5, "height_ft": null}
+      ]
+    },
+    {
+      "description": "Drive 24in CISS Concrete Pile",
+      "kind": "quantity",
+      "quantity": 10.0,
+      "unit": "EA",
+      "item_number": "2217-36",
+      "cost_code": "CISS-24",
+      "schedule": "Base Bid",
+      "elements": [
+        {"name": "PILE24", "section_type": "pile", "count": 10,
+         "length_ft": null, "width_ft": null, "height_ft": null}
+      ]
+    },
+    {
+      "description": "Tubular Bicycle Railing",
+      "kind": "quantity",
+      "quantity": 139.0,
+      "unit": "LF",
+      "item_number": "2217-61",
+      "cost_code": "RAIL-BIKE",
+      "schedule": "Base Bid",
+      "elements": [
+        {"name": "S-RAIL-LT", "section_type": "railing", "count": 1,
+         "length_ft": 69.5, "width_ft": 0.5, "height_ft": 2.0},
+        {"name": "S-RAIL-RT", "section_type": "railing", "count": 1,
+         "length_ft": 69.5, "width_ft": 0.5, "height_ft": 2.0}
+      ]
+    },
+    {
+      "description": "Concrete Barrier (Type 85)",
+      "kind": "quantity",
+      "quantity": 146.0,
+      "unit": "LF",
+      "item_number": "2217-66",
+      "cost_code": "BAR-85",
+      "schedule": "Base Bid",
+      "elements": [
+        {"name": "S-BARRIER-LT", "section_type": "railing", "count": 1,
+         "length_ft": 73.0, "width_ft": 2.0, "height_ft": 2.8301},
+        {"name": "S-BARRIER-RT", "section_type": "railing", "count": 1,
+         "length_ft": 73.0, "width_ft": 2.0, "height_ft": 2.8301}
+      ]
+    }
+  ]
+}
