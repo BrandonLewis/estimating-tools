@@ -68,6 +68,8 @@ _SCAFFOLD_RECIPE_KEYS = ("default_item_recipe", "rate_host_recipe")
 # Their hazard is a different one — an unchosen pack — and `require_chosen` is
 # what addresses it.
 _TOOLS = ("summarize", "artifact")
+#: Keys `protect:` may carry. See `FormatPack.protect`.
+_PROTECT_KEYS = frozenset({"sheets", "password"})
 
 
 class FormatPackError(ValueError):
@@ -91,6 +93,18 @@ def _local_refs_only(node, where: str = "defs") -> None:
             _local_refs_only(v, f"{where}[{i}]")
 
 
+def _markup_schema(by_type: bool) -> dict:
+    """The `markup` property: numOrFormula, plus markup_by_type when opted in."""
+    if not by_type:
+        return {"$ref": "#/$defs/numOrFormula",
+                "description": "Bond/markup dollars, or a formula such as "
+                               "'=E{row:subtotal}*0.10'."}
+    return {"oneOf": [{"$ref": "#/$defs/numOrFormula"}, {"$ref": "#/$defs/markup_by_type"}],
+            "description": "Bond/markup dollars, a formula such as "
+                           "'=E{row:subtotal}*0.10', or (markup_by_type) percentages "
+                           "by cost type plus a bond rate."}
+
+
 def compose_schema(skeleton: dict, vocabulary: dict, recipe_names: list) -> dict:
     """Fill every {"$vocab": KEY} marker in the plugin skeleton from the pack."""
     _local_refs_only(vocabulary.get("defs") or {})
@@ -112,6 +126,11 @@ def compose_schema(skeleton: dict, vocabulary: dict, recipe_names: list) -> dict
         # gets a plain object accepted (never narrower than that): its detail
         # is org-shaped, but permitting *a* schedule is generic.
         "schedule": (vocabulary.get("defs") or {}).get("schedule", {"type": "object"}),
+        # Object-form markup (percentages by cost type) is priced only by a
+        # pack that lays out its own markup sheet to read them, so a pack opts
+        # in with `markup_by_type: true`. Every other pack keeps the plain
+        # number-or-formula markup it has always had.
+        "markup": _markup_schema(vocabulary.get("markup_by_type") is True),
     }
 
     def fill(node):
@@ -148,6 +167,9 @@ class FormatPack:
     seed: dict | None = None
     supports: frozenset = frozenset()     # extra tools from _TOOLS this pack opts into
     labor: dict = dataclass_field(default_factory=dict)   # org labor policy, e.g. crew_factor_default
+    #: Sheet protection the pack asks for: {"sheets": bool, "password": str}.
+    #: Empty = no protection, which is every pack's behaviour before fieldbook.
+    protect: dict = dataclass_field(default_factory=dict)
     #: True when a caller NAMED this pack — `--format`, the org profile's
     #: `estimating.format`, or a direct `load_pack(path)`. False only for the
     #: bundled pack reached as `resolve_pack`'s last-resort default.
@@ -195,6 +217,24 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
         raise FormatPackError(
             f"{manifest}: pack '{meta.get('name')}' declares supports: summarize "
             "but no labor.crew_factor_default")
+    protect = meta.get("protect") or {}
+    if not isinstance(protect, dict) or set(protect) - _PROTECT_KEYS:
+        raise FormatPackError(
+            f"{manifest}: 'protect' must be a mapping with keys {sorted(_PROTECT_KEYS)}")
+    sheets = protect.get("sheets", False)
+    if not isinstance(sheets, bool):
+        raise FormatPackError(
+            f"{manifest}: protect.sheets must be true/false "
+            f"(got {type(sheets).__name__} {sheets!r})")
+    password = protect.get("password", "")
+    if not isinstance(password, str):
+        raise FormatPackError(
+            f"{manifest}: protect.password must be a string "
+            f"(got {type(password).__name__} {password!r})")
+    if password and not sheets:
+        raise FormatPackError(
+            f"{manifest}: protect.password is set but protect.sheets is not "
+            "true -- a password only means something once sheets are protected")
     files = meta.get("files") or {}
     unknown = sorted(set(files) - set(_REQUIRED) - set(_OPTIONAL))
     if unknown:
@@ -230,6 +270,10 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                    if missing and set(missing) <= set(_SUMMARIZE_VOCAB) else "")
         raise FormatPackError(
             f"{root}: pack '{meta.get('name')}' vocabulary is missing {why}{because}")
+    if not isinstance(vocab.get("markup_by_type", False), bool):
+        raise FormatPackError(
+            f"{root}: pack '{meta.get('name')}' vocabulary.markup_by_type must be "
+            f"true or false (got {vocab['markup_by_type']!r})")
     from estimating_tools.estimate_spec.recipe import RecipeError, validate_recipes
     try:
         validate_recipes(recipes, units["units"])
@@ -311,7 +355,7 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                       units=units["units"], tokens=docs["tokens"], recipes=recipes,
                       schema=schema, vocabulary=vocab,
                       seed=docs["seed"], supports=frozenset(supports), labor=labor,
-                      chosen=chosen)
+                      protect=protect, chosen=chosen)
 
 
 def require_support(pack: FormatPack, tool: str) -> None:

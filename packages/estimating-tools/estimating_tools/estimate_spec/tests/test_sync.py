@@ -728,3 +728,29 @@ def test_render_sync_plan_item_row_shows_metadata_columns():
             "| wbs | cost_code | crew_id | changed |") in out
     assert ("| update | 100 | Item # 1 | Mob | 1 | LS "
             "| 1.2 | 02-110 | crew_lab_2 | wbs; cost_code; crew_id |") in out
+
+
+def test_rate_op_defaults_to_a_flat_labor_rate():
+    op = RateOp(kind="create", trade="LAB", rate=95.0)
+    assert op.resource_kind == "labor"
+    assert (op.base, op.burden_pct, op.fringe, op.includes_operator) == (None, None, None, False)
+
+
+def test_plan_sync_carries_a_labor_breakdown():
+    base = _spec(rate_table=[{"trade": "FORE", "rate": 150}])
+    edited = _spec(rate_table=[
+        {"trade": "FORE", "rate": 150},
+        {"trade": "Pipelayer", "rate": 81.89, "base": 48.10, "burden_pct": 0.32, "fringe": 18.40}])
+    (op,) = plan_sync(base, edited).rate_ops
+    assert op == RateOp(kind="create", trade="Pipelayer", rate=81.89,
+                        base=48.10, burden_pct=0.32, fringe=18.40)
+
+
+def test_plan_sync_carries_an_equipment_rate():
+    base = _spec(rate_table=[{"trade": "FORE", "rate": 150}])
+    edited = _spec(rate_table=[
+        {"trade": "FORE", "rate": 150},
+        {"trade": "Excavator, 320 class", "rate": 145.0, "kind": "equipment",
+         "includes_operator": True}])
+    (op,) = plan_sync(base, edited).rate_ops
+    assert op.resource_kind == "equipment" and op.includes_operator is True

@@ -7,6 +7,7 @@ Expansion-time template tokens (resolved before layout):
     {it.PATH}                 the current for_each element ({it} = the element)
     {item.PATH}               the bid item being laid out
     {config.PATH}             the top-level estimate config
+    {book.PATH}                workbook-level scope on a book sheet; book.items = the bid items it lists
     {span:UNIT.first|last}    first/last row a unit occupied on this sheet
 Every other {...} token (ref:, row:, p., r, declared globals) is left verbatim
 for the write-time Resolver. Tokens nest, innermost first:
@@ -27,12 +28,39 @@ import re
 
 _TOKEN = re.compile(r"\{([^{}]+)\}")
 _WHOLE = re.compile(r"^\{([^{}]+)\}$")
-_SCOPED = ("it", "item", "config")
+_SCOPED = ("it", "item", "config", "book")
 
 ENTRY_KEYS = frozenset({"unit", "when", "variant_from", "variants", "for_each", "key",
                         "params", "instance_defaults", "default_key", "sheet"})
-_RESERVED_GLOBALS = frozenset({"p", "it", "item", "config", "r", "row", "ref", "span"})
+_RESERVED_GLOBALS = frozenset({"p", "it", "item", "config", "r", "row", "ref", "span", "book"})
 _GLOBAL_KEYS = frozenset({"export", "default", "scope", "qualify"})
+#: Keys a `book:` entry's sheet mapping may carry.
+BOOK_SHEET_KEYS = frozenset({"sheet_name", "position", "column_widths", "units",
+                             "hidden", "hidden_columns"})
+#: Where a book sheet lands relative to the item sheets.
+BOOK_POSITIONS = ("before_items", "after_items")
+#: Excel's own sheet-title limit and the characters it refuses in one.
+_SHEET_NAME_MAX = 31
+_SHEET_NAME_BAD_CHARS = frozenset("[]:*?/\\")
+_COLUMN_LETTER_RE = re.compile(r"^[A-Z]{1,3}$")
+#: Excel's rightmost real column, XFD. `_COLUMN_LETTER_RE` alone accepts any
+#: 1-3 letter string (up to "ZZZ" = 18278), which overshoots XFD (16384) --
+#: _column_index + this bound close that gap.
+_MAX_COLUMN_INDEX = 16384
+
+
+def _column_index(col: str) -> int:
+    """Column letter(s) -> 1-based index (A=1, Z=26, AA=27, ..., XFD=16384).
+
+    A pure reimplementation of ``openpyxl.utils.column_index_from_string``'s
+    bijective base-26 conversion -- this module stays free of an openpyxl
+    import (see module docstring); only called on a string that already
+    matched `_COLUMN_LETTER_RE`, so every character is an uppercase letter.
+    """
+    idx = 0
+    for ch in col:
+        idx = idx * 26 + (ord(ch) - ord("A") + 1)
+    return idx
 
 
 class RecipeError(ValueError):
@@ -170,6 +198,72 @@ def instances(entry: dict, scopes: dict) -> list:
     return out
 
 
+def _check_entry(entry: dict, where: str, recipes_doc: dict, units: dict) -> None:
+    """The checks a single recipe/book-sheet units[] entry must pass."""
+    if not isinstance(entry, dict):
+        raise RecipeError(f"{where}: must be a mapping, got {entry!r}")
+    unknown = set(entry) - ENTRY_KEYS
+    if unknown:
+        raise RecipeError(f"{where}: unknown keys {sorted(unknown)}")
+    if "variant_from" in entry:
+        table = recipes_doc.get(entry.get("variants"))
+        if not isinstance(table, dict):
+            raise RecipeError(f"{where}: variants table {entry.get('variants')!r} not found")
+        for kind, unit in table.items():
+            if unit not in units:
+                raise RecipeError(f"{where}: variant {kind!r} -> unknown unit {unit!r}")
+    elif entry.get("unit") not in units:
+        raise RecipeError(f"{where}: unknown unit {entry.get('unit')!r}")
+    if "instance_defaults" in entry and "default_key" not in entry:
+        raise RecipeError(f"{where}: instance_defaults needs default_key")
+    if "sheet" in entry and not (units.get(entry.get("unit")) or {}).get("anchor"):
+        raise RecipeError(f"{where}: 'sheet' is allowed only on anchored units")
+
+
+def _check_sheet_name(name, where: str) -> None:
+    """A book sheet_name must be a legal Excel worksheet title: a non-empty
+    string of at most 31 characters, free of the handful of characters
+    Excel refuses in a sheet name ([ ] : * ? / \\)."""
+    if not isinstance(name, str) or not name:
+        raise RecipeError(f"{where}: sheet_name must be a non-empty string")
+    if len(name) > _SHEET_NAME_MAX:
+        raise RecipeError(
+            f"{where}: sheet_name {name!r} is {len(name)} characters, longer "
+            f"than Excel's {_SHEET_NAME_MAX}-character limit")
+    bad = sorted(_SHEET_NAME_BAD_CHARS & set(name))
+    if bad:
+        raise RecipeError(
+            f"{where}: sheet_name {name!r} contains {bad}, which Excel does "
+            "not allow in a sheet name")
+
+
+def _check_column_widths(widths, where: str) -> None:
+    if widths is None:
+        return
+    if not isinstance(widths, dict):
+        raise RecipeError(f"{where}: column_widths must be a mapping, got {widths!r}")
+    for col, width in widths.items():
+        if not isinstance(col, str) or not _COLUMN_LETTER_RE.match(col):
+            raise RecipeError(
+                f"{where}: column_widths key {col!r} must be a column letter (A-ZZZ)")
+        if _column_index(col) > _MAX_COLUMN_INDEX:
+            raise RecipeError(
+                f"{where}: column_widths key {col!r} is past Excel's last column, XFD")
+        if isinstance(width, bool) or not isinstance(width, (int, float)):
+            raise RecipeError(
+                f"{where}: column_widths[{col!r}] must be a number, got {width!r}")
+
+
+def _check_hidden_columns(value, where: str) -> None:
+    if not isinstance(value, list) or not all(
+            isinstance(c, str) and _COLUMN_LETTER_RE.match(c) for c in value):
+        raise RecipeError(f"{where}: hidden_columns must be a list of column letters, got {value!r}")
+    for col in value:
+        if _column_index(col) > _MAX_COLUMN_INDEX:
+            raise RecipeError(
+                f"{where}: hidden_columns entry {col!r} is past Excel's last column, XFD")
+
+
 def validate_recipes(recipes_doc: dict, units: dict) -> None:
     """Refuse a recipes document the engine cannot render, naming where."""
     for gname, g in (recipes_doc.get("globals") or {}).items():
@@ -188,20 +282,43 @@ def validate_recipes(recipes_doc: dict, units: dict) -> None:
                 "always first); remove 'position' rather than set something inert"
             )
         for i, entry in enumerate(recipe.get("units") or []):
-            where = f"recipes.{rname}[{i}]"
-            unknown = set(entry) - ENTRY_KEYS
-            if unknown:
-                raise RecipeError(f"{where}: unknown keys {sorted(unknown)}")
-            if "variant_from" in entry:
-                table = recipes_doc.get(entry.get("variants"))
-                if not isinstance(table, dict):
-                    raise RecipeError(f"{where}: variants table {entry.get('variants')!r} not found")
-                for kind, unit in table.items():
-                    if unit not in units:
-                        raise RecipeError(f"{where}: variant {kind!r} -> unknown unit {unit!r}")
-            elif entry.get("unit") not in units:
-                raise RecipeError(f"{where}: unknown unit {entry.get('unit')!r}")
-            if "instance_defaults" in entry and "default_key" not in entry:
-                raise RecipeError(f"{where}: instance_defaults needs default_key")
-            if "sheet" in entry and not (units.get(entry.get("unit")) or {}).get("anchor"):
-                raise RecipeError(f"{where}: 'sheet' is allowed only on anchored units")
+            _check_entry(entry, f"recipes.{rname}[{i}]", recipes_doc, units)
+        if "hidden_columns" in recipe:
+            _check_hidden_columns(recipe["hidden_columns"], f"recipes.{rname}")
+
+    book = recipes_doc.get("book")
+    if book is None:
+        return
+    if "cover" in (recipes_doc.get("recipes") or {}):
+        raise RecipeError("book: a pack declares either recipes.cover or book, not both")
+    if not isinstance(book, list) or not book:
+        raise RecipeError("book: must be a non-empty list of sheets")
+    names = set()
+    for i, sheet in enumerate(book):
+        where = f"book[{i}]"
+        if not isinstance(sheet, dict):
+            raise RecipeError(f"{where}: must be a mapping")
+        unknown = set(sheet) - BOOK_SHEET_KEYS
+        if unknown:
+            raise RecipeError(f"{where}: unknown keys {sorted(unknown)}")
+        name = sheet.get("sheet_name")
+        _check_sheet_name(name, where)
+        # Excel (and openpyxl) treat sheet names case-insensitively -- 'Front'
+        # and 'FRONT' are the same sheet to it, so they have to be to us too.
+        if name.casefold() in names:
+            raise RecipeError(f"{where}: needs a unique sheet_name")
+        names.add(name.casefold())
+        if sheet.get("position") not in BOOK_POSITIONS:
+            raise RecipeError(f"{where}: position must be one of {list(BOOK_POSITIONS)}")
+        _check_column_widths(sheet.get("column_widths"), where)
+        if "hidden_columns" in sheet:
+            _check_hidden_columns(sheet["hidden_columns"], where)
+        if "hidden" in sheet and not isinstance(sheet["hidden"], bool):
+            raise RecipeError(f"{where}: hidden must be true or false")
+        units_list = sheet.get("units", [])
+        if not isinstance(units_list, list):
+            raise RecipeError(f"{where}.units: must be a list, got {units_list!r}")
+        for j, entry in enumerate(units_list):
+            _check_entry(entry, f"{where}.units[{j}]", recipes_doc, units)
+            if "sheet" in entry:
+                raise RecipeError(f"{where}.units[{j}]: 'sheet' is not allowed on a book sheet")

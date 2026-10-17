@@ -181,6 +181,7 @@ def test_render_exec_report_multiline_detail_stays_one_row():
 
 _CLIENT_TOOLS = (
     "list_labor_rates", "create_labor_rate",
+    "list_equipment_rates", "create_equipment_rate",
     "list_assemblies", "create_assembly", "list_components",
     "create_component", "update_component", "delete_component",
     "create_estimate_item", "update_bid_item", "update_estimate_item",
@@ -189,6 +190,7 @@ _CLIENT_TOOLS = (
 
 _CLIENT_DEFAULTS = {
     "list_labor_rates": [],
+    "list_equipment_rates": [],
     "list_assemblies": [],
     "list_components": [],
     "create_assembly": 1,
@@ -242,9 +244,66 @@ def test_run_sync_rate_create_calls_create_labor_rate():
     plan = SyncPlan(rate_ops=[RateOp(kind="create", trade="MASON", rate=105.0)])
     report = run_sync(plan, {"items": []}, client)
     assert client.tools_called() == ["list_labor_rates", "create_labor_rate"]
-    assert client.calls[1][1] == {"classification": "MASON",
-                                  "burdened_hourly_rate": 105.0}
+    assert client.calls[1][1] == {"classification": "MASON", "base_hourly_rate": 105.0,
+                                  "burden_percentage": 0.0, "fringe_hourly": 0.0,
+                                  "rate_basis": "applied_bid"}
     assert report.rate_creates == [{"trade": "MASON", "rate": 105.0, "status": "ok"}]
+
+
+def test_run_sync_labor_breakdown_is_sent_as_bidmanager_stores_it():
+    client = FakeClient()
+    plan = SyncPlan(rate_ops=[RateOp(kind="create", trade="Pipelayer", rate=81.89,
+                                     base=48.10, burden_pct=0.32, fringe=18.40)])
+    run_sync(plan, {"items": []}, client)
+    assert client.calls[1] == ("create_labor_rate", {
+        "classification": "Pipelayer", "base_hourly_rate": 48.10,
+        "burden_percentage": 32.0, "fringe_hourly": 18.40, "rate_basis": "applied_bid"})
+
+
+def test_run_sync_breakdown_without_fringe_sends_zero_fringe():
+    client = FakeClient()
+    plan = SyncPlan(rate_ops=[RateOp(kind="create", trade="Laborer", rate=80.52,
+                                     base=61.0, burden_pct=0.32)])
+    run_sync(plan, {"items": []}, client)
+    assert client.calls[1][1]["fringe_hourly"] == 0.0
+    assert client.calls[1][1]["burden_percentage"] == 32.0
+
+
+@pytest.mark.parametrize("op", [
+    # base*(1+burden)+fringe = 60.00, but the approved rate is 100.00
+    RateOp(kind="create", trade="Mason", rate=100.0, base=50.0, burden_pct=0.2),
+    # a burden or fringe without a base cannot be sent as a breakdown at all
+    RateOp(kind="create", trade="Mason", rate=100.0, burden_pct=0.2),
+    RateOp(kind="create", trade="Mason", rate=100.0, fringe=5.0),
+])
+def test_run_sync_refuses_a_breakdown_that_does_not_reproduce_the_rate(op):
+    """bm-sync loads YAML without validate_cross_references, so the executor
+    must not push a breakdown BidSheet.ai would turn into a different rate
+    than the one the user approved."""
+    client = FakeClient()
+    report = run_sync(SyncPlan(rate_ops=[op]), {"items": []}, client)
+    assert "create_labor_rate" not in client.tools_called()
+    assert report.rate_creates[0]["status"] == "error"
+    assert "100.00" in report.rate_creates[0]["detail"]
+
+
+def test_run_sync_accepts_a_breakdown_within_a_cent():
+    client = FakeClient()
+    op = RateOp(kind="create", trade="Pipelayer", rate=81.89,
+                base=48.10, burden_pct=0.32, fringe=18.40)            # 81.892
+    report = run_sync(SyncPlan(rate_ops=[op]), {"items": []}, client)
+    assert report.rate_creates[0]["status"] == "ok"
+    assert "create_labor_rate" in client.tools_called()
+
+
+def test_run_sync_burden_pct_to_percent_has_no_float_noise():
+    """0.07 * 100 is 7.000000000000001 in raw float arithmetic; the
+    round(..., 6) guard in _labor_rate_kwargs must send a clean 7.0."""
+    client = FakeClient()
+    plan = SyncPlan(rate_ops=[RateOp(kind="create", trade="Laborer", rate=65.27,
+                                     base=61.0, burden_pct=0.07)])
+    run_sync(plan, {"items": []}, client)
+    assert client.calls[1][1]["burden_percentage"] == 7.0
 
 
 def test_run_sync_rate_create_error_recorded_and_continues():
@@ -279,6 +338,46 @@ def test_run_sync_rate_unknown_kind_raises():
     assert client.calls == []
 
 
+def test_run_sync_rate_unknown_resource_kind_raises_before_any_client_call():
+    client = FakeClient()
+    plan = SyncPlan(rate_ops=[RateOp(kind="create", trade="MASON", rate=105.0,
+                                     resource_kind="material")])
+    with pytest.raises(ValueError):
+        run_sync(plan, {"items": []}, client)
+    assert client.calls == []
+
+
+def _equipment_op(**kw):
+    return RateOp(kind="create", trade="Excavator, 320 class", rate=145.0,
+                  resource_kind="equipment", **kw)
+
+
+def test_run_sync_equipment_rate_is_created_in_the_equipment_library():
+    client = FakeClient()
+    report = run_sync(SyncPlan(rate_ops=[_equipment_op(includes_operator=True)]),
+                      {"items": []}, client)
+    assert client.calls == [
+        ("list_equipment_rates", {"equipment_type": "Excavator, 320 class", "is_current": True}),
+        ("create_equipment_rate", {"equipment_type": "Excavator, 320 class",
+                                   "hourly_rate": 145.0, "includes_operator": True}),
+    ]
+    assert report.rate_creates == [
+        {"trade": "Excavator, 320 class", "rate": 145.0, "status": "ok"}]
+
+
+def test_run_sync_existing_equipment_rate_is_not_recreated():
+    client = FakeClient(responses={"list_equipment_rates": [{"equipment_type": "x"}]})
+    report = run_sync(SyncPlan(rate_ops=[_equipment_op()]), {"items": []}, client)
+    assert client.tools_called() == ["list_equipment_rates"]
+    assert report.rate_creates[0]["detail"] == "already exists"
+
+
+def test_run_sync_equipment_never_touches_the_labor_library():
+    client = FakeClient()
+    run_sync(SyncPlan(rate_ops=[_equipment_op()]), {"items": []}, client)
+    assert not {"list_labor_rates", "create_labor_rate"} & set(client.tools_called())
+
+
 def test_run_sync_crew_create_no_hit_creates_assembly_and_components():
     client = FakeClient(responses={"create_assembly": 7})
     plan = SyncPlan(crew_ops=[CrewOp(
@@ -289,8 +388,8 @@ def test_run_sync_crew_create_no_hit_creates_assembly_and_components():
         "list_assemblies", "create_assembly", "create_component", "create_component"]
     assert client.calls[1][1] == {"assembly_type": "CREW", "name": "crew_ne_5",
                                   "description": "NE 5-person crew"}
-    assert client.calls[2][1] == {"assembly_id": 7, "trade": "FORE", "count": 1}
-    assert client.calls[3][1] == {"assembly_id": 7, "trade": "LAB", "count": 3}
+    assert client.calls[2][1] == {"assembly_id": 7, "trade": "FORE", "count": 1, "kind": "labor"}
+    assert client.calls[3][1] == {"assembly_id": 7, "trade": "LAB", "count": 3, "kind": "labor"}
     assert report.crew_creates == [{"crew_id": "crew_ne_5", "status": "ok"}]
 
 
@@ -336,7 +435,7 @@ def test_run_sync_crew_create_existing_assembly_falls_through_to_update():
     assert "create_assembly" not in client.tools_called()
     assert client.tools_called() == ["list_assemblies", "list_components",
                                      "create_component"]
-    assert client.calls[2][1] == {"assembly_id": 7, "trade": "LAB", "count": 3}
+    assert client.calls[2][1] == {"assembly_id": 7, "trade": "LAB", "count": 3, "kind": "labor"}
     assert report.crew_creates == [{"crew_id": "crew_ne_5", "status": "ok",
                                     "detail": "already existed; members reconciled"}]
 
@@ -397,7 +496,7 @@ def test_run_sync_crew_update_issues_delta_calls():
     assert client.tools_called() == [
         "list_assemblies", "list_components",
         "create_component", "update_component", "delete_component"]
-    assert client.calls[2][1] == {"assembly_id": 7, "trade": "OPER", "count": 1}
+    assert client.calls[2][1] == {"assembly_id": 7, "trade": "OPER", "count": 1, "kind": "labor"}
     assert client.calls[3][1] == {"component_id": 22, "count": 2}
     assert client.calls[4][1] == {"component_id": 21}
     assert report.crew_updates == [{"crew_id": "crew_ne_5", "status": "ok"}]
@@ -412,6 +511,35 @@ def test_run_sync_crew_update_missing_assembly_is_error():
     assert report.crew_updates[0]["status"] == "error"
     assert "not found" in report.crew_updates[0]["detail"]
     assert report.crew_creates == []
+
+
+def test_run_sync_equipment_member_is_created_as_an_equipment_component():
+    client = FakeClient(responses={"create_assembly": 7})
+    plan = SyncPlan(crew_ops=[CrewOp(
+        kind="create", crew_id="pipe", description="",
+        members=[{"trade": "Pipelayer", "count": 2},
+                 {"trade": "Excavator, 320 class", "count": 1}])])
+    spec = {"items": [], "rate_table": [
+        {"trade": "Pipelayer", "rate": 81.89},
+        {"trade": "Excavator, 320 class", "rate": 145.0, "kind": "equipment"}]}
+    run_sync(plan, spec, client)
+    creates = [kw for tool, kw in client.calls if tool == "create_component"]
+    assert [c["kind"] for c in creates] == ["labor", "equipment"]
+
+
+def test_run_sync_crew_update_adds_equipment_members_with_their_kind():
+    client = FakeClient(responses={
+        "list_assemblies": [{"assembly_id": 9}],
+        "list_components": [{"component_id": 1, "trade": "Pipelayer", "count": 2}]})
+    plan = SyncPlan(crew_ops=[CrewOp(
+        kind="update", crew_id="pipe", description="",
+        members=[{"trade": "Pipelayer", "count": 2},
+                 {"trade": "Loader, 950 class", "count": 1}])])
+    spec = {"items": [], "rate_table": [
+        {"trade": "Loader, 950 class", "rate": 110.0, "kind": "equipment"}]}
+    run_sync(plan, spec, client)
+    (add,) = [kw for tool, kw in client.calls if tool == "create_component"]
+    assert add == {"assembly_id": 9, "trade": "Loader, 950 class", "count": 1, "kind": "equipment"}
 
 
 # ---------- run_sync (item ops) ----------

@@ -62,9 +62,17 @@ silently dropped.
 
    Values are read in the file's **declared units** and scaled to SI base
    on the way in (issue #109; before 0.1.34 raw values were assumed SI —
-   a millimetre-unit file inflated 1000×). Length/area/volume scale by the
-   declared `LENGTHUNIT`; mass by the declared `MASSUNIT` (commonly GRAM —
-   IFC's SI mass unit; kg when none is declared). Pay-unit conversion
+   a millimetre-unit file inflated 1000×). Each dimension scales by its
+   OWN declared unit: length by `LENGTHUNIT`, area by `AREAUNIT`, volume
+   by `VOLUMEUNIT` (0.1.88 and earlier squared and cubed the length unit,
+   so the common mm / m² / m³ assignment — ifcopenshell's default, Revit's
+   metric export — read 10 m³ as 1e-8 m³). Only an undeclared area or
+   volume unit falls back to the length unit squared or cubed. A quantity
+   that names its own `Unit` is read in that unit, whatever the project
+   declares. Mass scales by the declared `MASSUNIT` (commonly GRAM — IFC's
+   SI mass unit; kg when none is declared). Conversion-based units (feet,
+   cubic yards) are read through their own `ConversionFactor`. Pay-unit
+   conversion
    (CY/SF/LF/EA/LBS/CWT/TON) happens only on the way out. Weight (issue
    #108) is **opt-in** via a declared `measure:` — it never participates in
    the natural-preference fallback, so pre-0.1.34 maps keep their behavior.
@@ -163,3 +171,43 @@ takeoff-only convenience.
 
 Then: `est-bim takeoff --ifc model.ifc --map takeoff_map.yaml --out takeoff.json`
 and hand the JSON to the estimating-core `push-takeoff` flow.
+
+## Modelled elements and the estimate model (BidSheet.ai round trip)
+
+Two further consumers read the same conforming IFC per **element**, keyed by
+`GlobalId`, rather than per pay code:
+
+- `est-bim model-elements` (`bimforge.bim.model_elements`) plans BidSheet.ai's
+  `upsert_modelled_elements` payload. Each element sends its GlobalId, name,
+  IFC class and element type (subtype-aware: `IfcWallStandardCase` is a wall)
+  and its quantities, converted into each key's unit. By default only the
+  classes BidSheet.ai types (`IfcFooting`, `IfcWall`, `IfcSlab`, `IfcColumn`,
+  `IfcPile`, `IfcEarthworksCut`, `IfcEarthworksFill`) and classified elements
+  are sent; beams, members, plates, courses and pavements are skipped even
+  when classified, and the rest is skipped with its class (`--all-elements`
+  sends both as generic). Reinforcement, terrain and virtual elements are
+  never sent, nor an element that aggregates parts which are sent, nor one
+  whose GlobalId is malformed or repeats an earlier one (the first is kept):
+
+  | Element | Key | Qto quantity (first present) |
+  |---|---|---|
+  | `IfcEarthworksCut` | `excavation_cy` | `UndisturbedVolume`, `NetVolume`, `GrossVolume` |
+  | `IfcEarthworksFill` | `backfill_cy` | `CompactedVolume`, `NetVolume`, `GrossVolume` |
+  | any other element | `concrete_cy` | `NetVolume`, `GrossVolume` |
+  | `IfcPile` | `pile_lf` | `Length` |
+  | concrete types, opt-in | `form_contact_sf` | the quantity `--form-area` names |
+
+  A loose (swelled) volume is never used as the in-place measure. No standard
+  Qto carries a formwork area, and a wall's `NetSideArea` is one face only, so
+  the formed area is sent only when the producer names its quantity. An element
+  with none of these quantities is still sent, with `quantities: {}`, so a
+  re-import clears the values an earlier one stored; one with a NaN or infinite
+  quantity is skipped instead. Pay items are keyed off the element's
+  classification codes (see "What the consumer reads" above); a code several
+  estimate items share pays none (`--schedule` narrows them to one schedule).
+- `est-bim estimate-model` (`bimforge.bim.estimate_model5d`) writes the
+  estimate back into the IFC as tasks, cost items and crews (see the module
+  docstring). It links them to elements by GlobalId. Task finishes are
+  inclusive (BidSheet.ai's `finish_date`; its `end_date` is exclusive). It
+  replaces only the schedules it marked (`BidSheet_EstimateModel`) and refuses
+  a same-named schedule another tool wrote.

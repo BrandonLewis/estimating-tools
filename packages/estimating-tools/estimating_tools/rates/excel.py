@@ -12,8 +12,8 @@ from estimating_tools.rates.model import (
 
 _CANONICAL_FIELDS = (
     "rate_type", "name", "rate", "unit", "region", "description", "burden_percentage",
-    "trade", "is_union", "union_local", "source", "includes_operator", "category",
-    "supplier",
+    "fringe_hourly", "trade", "is_union", "union_local", "source", "includes_operator",
+    "category", "supplier",
 )
 _REQUIRED = ("rate_type", "name", "rate")
 _TRUTHY = {"yes", "y", "true", "1", "x"}
@@ -94,6 +94,7 @@ def build_rate_library(rows, mapping=None) -> CanonicalRateLibrary:
                 classification=name,
                 base_hourly_rate=rate,
                 burden_percentage=_num(r.get(m["burden_percentage"]), 35.0, "burden_percentage", name),
+                fringe_hourly=_num(r.get(m["fringe_hourly"]), 0.0, "fringe_hourly", name),
                 region=_str(r.get(m["region"])),
                 trade=_str(r.get(m["trade"])),
                 is_union=_truthy(r.get(m["is_union"])),

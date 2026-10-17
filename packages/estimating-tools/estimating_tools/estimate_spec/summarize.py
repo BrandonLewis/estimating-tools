@@ -366,6 +366,10 @@ def price_item(item: dict, rates: dict,
 def _markup(raw, subtotal: float, carries: list | None = None) -> float:
     """A dollar figure, or a cover formula on the subtotal cell
     ("=E{row:subtotal}*0.10")."""
+    if isinstance(raw, dict):
+        raise FormulaError(
+            "summarize prices a markup number or formula; markup by cost type "
+            "is priced in the workbook by a pack that lays out a markup sheet")
     if isinstance(raw, str):
         raw = re.sub(r"\$?E\$?\{row:subtotal\}", f"({subtotal!r})", raw)
     return evaluate(raw, {}, 0.0, carries=carries, where="markup")

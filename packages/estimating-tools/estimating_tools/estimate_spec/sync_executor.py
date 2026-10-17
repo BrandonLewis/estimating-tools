@@ -148,21 +148,79 @@ def render_exec_report(report: ExecReport) -> str:
     return "\n\n".join(parts)
 
 
+def _labor_rate_kwargs(op) -> dict:
+    """The logical create_labor_rate call for one RateOp, in BidSheet.ai's terms.
+
+    BidSheet.ai stores base, burden % and $ fringe and computes the burdened
+    rate itself (base * (1 + burden%/100) + fringe). A spec row with a
+    breakdown sends it (burden_pct is a fraction in the spec, a percent in
+    BidSheet.ai); a flat row sends its rate as the base with no burden or
+    fringe, so BidSheet.ai's computed rate is the spec's rate exactly.
+    """
+    if op.base is None:
+        base, burden, fringe = op.rate, 0.0, 0.0
+    else:
+        base = op.base
+        burden = round((op.burden_pct or 0.0) * 100, 6)
+        fringe = op.fringe or 0.0
+    return {"classification": op.trade, "base_hourly_rate": base,
+            "burden_percentage": burden, "fringe_hourly": fringe,
+            "rate_basis": "applied_bid"}
+
+
+#: How far BidSheet.ai's computed rate may stray from the approved one -- the
+#: same cent validate.py allows for a spec's own rate breakdown.
+BREAKDOWN_TOLERANCE = 0.01
+
+
+def _check_breakdown(op) -> None:
+    """Refuse a labor breakdown BidSheet.ai would turn into another rate.
+
+    bm-sync loads its specs without validate_cross_references, so the build's
+    check does not cover this path: a row whose base/burden/fringe disagree
+    with its rate would be approved at one price and stored at another, and
+    reported as ok. A burden or fringe with no base cannot be sent at all.
+    """
+    if op.base is None:
+        if op.burden_pct is not None or op.fringe is not None:
+            raise ValueError(
+                f"{op.trade!r}: burden_pct/fringe given without base, so the "
+                f"breakdown cannot be sent; the approved rate is {op.rate:.2f}")
+        return
+    built = op.base * (1 + (op.burden_pct or 0.0)) + (op.fringe or 0.0)
+    if abs(built - op.rate) > BREAKDOWN_TOLERANCE + 1e-9:
+        raise ValueError(
+            f"{op.trade!r}: base * (1 + burden_pct) + fringe = {built:.2f}, but "
+            f"the approved rate is {op.rate:.2f}; fix the rate_table row")
+
+
 def _exec_rates(plan: SyncPlan, client: dict, report: ExecReport) -> None:
     for op in plan.rate_ops:
         if op.kind != "create":
             # Structural bug in plan construction (RateOp is create-only).
             raise ValueError(f"unknown RateOp kind: {op.kind!r}")
+        if op.resource_kind not in ("labor", "equipment"):
+            raise ValueError(f"unknown RateOp resource_kind: {op.resource_kind!r}")
         row = {"trade": op.trade, "rate": op.rate}
         try:
-            existing = client["list_labor_rates"](classification=op.trade,
-                                                  is_current=True)
+            if op.resource_kind == "labor":
+                _check_breakdown(op)          # before any call: refuse, don't push
+            if op.resource_kind == "equipment":
+                existing = client["list_equipment_rates"](equipment_type=op.trade,
+                                                          is_current=True)
+            else:
+                existing = client["list_labor_rates"](classification=op.trade,
+                                                      is_current=True)
             if existing:
                 row["status"] = "ok"
                 row["detail"] = "already exists"
+            elif op.resource_kind == "equipment":
+                client["create_equipment_rate"](equipment_type=op.trade,
+                                                hourly_rate=op.rate,
+                                                includes_operator=op.includes_operator)
+                row["status"] = "ok"
             else:
-                client["create_labor_rate"](classification=op.trade,
-                                            burdened_hourly_rate=op.rate)
+                client["create_labor_rate"](**_labor_rate_kwargs(op))
                 row["status"] = "ok"
         except Exception as exc:
             row["status"] = "error"
@@ -170,11 +228,22 @@ def _exec_rates(plan: SyncPlan, client: dict, report: ExecReport) -> None:
         report.rate_creates.append(row)
 
 
-def _sync_crew_members(client: dict, assembly_id: int, edited_members: list[dict]) -> None:
+def _resource_kinds(edited_spec: dict) -> dict:
+    """trade -> "labor" | "equipment", from the edited spec's rate_table.
+    A member with no rate row is labor, as every member was before equipment."""
+    return {row["trade"]: row.get("kind", "labor")
+            for row in edited_spec.get("rate_table") or [] if "trade" in row}
+
+
+def _sync_crew_members(client: dict, assembly_id: int, edited_members: list[dict],
+                       kinds: dict) -> None:
     """Reconcile BM components against the edited member list via
     diff_crew_members. Raises on the first failing call - the enclosing
     _exec_crews try records it; a re-run picks up where this left off
     because the delta is recomputed from live components.
+
+    The logical create_component op takes `kind` ("labor" | "equipment"),
+    looked up per trade from `kinds` (defaulting to "labor").
     """
     existing = client["list_components"](assembly_id=assembly_id)
     base_members = [{"trade": c["trade"], "count": c["count"]} for c in existing]
@@ -189,7 +258,8 @@ def _sync_crew_members(client: dict, assembly_id: int, edited_members: list[dict
     delta = diff_crew_members(base_members, edited_members)
     for m in delta.add:
         client["create_component"](assembly_id=assembly_id,
-                                   trade=m["trade"], count=m["count"])
+                                   trade=m["trade"], count=m["count"],
+                                   kind=kinds.get(m["trade"], "labor"))
     for m in delta.update:
         client["update_component"](component_id=ids_by_trade[m["trade"]],
                                    count=m["new_count"])
@@ -197,7 +267,11 @@ def _sync_crew_members(client: dict, assembly_id: int, edited_members: list[dict
         client["delete_component"](component_id=ids_by_trade[m["trade"]])
 
 
-def _exec_crews(plan: SyncPlan, client: dict, report: ExecReport) -> None:
+def _exec_crews(plan: SyncPlan, client: dict, report: ExecReport, kinds: dict) -> None:
+    """Execute crew create/update ops. The logical `create_component` op
+    takes `kind` ("labor" | "equipment"), looked up per member trade from
+    `kinds` (defaulting to "labor") — same contract as `_sync_crew_members`.
+    """
     for op in plan.crew_ops:
         if op.kind not in ("create", "update"):
             # Structural bug in plan construction — loud beats silently
@@ -224,7 +298,8 @@ def _exec_crews(plan: SyncPlan, client: dict, report: ExecReport) -> None:
                     try:
                         client["create_component"](assembly_id=assembly_id,
                                                    trade=m["trade"],
-                                                   count=m["count"])
+                                                   count=m["count"],
+                                                   kind=kinds.get(m["trade"], "labor"))
                     except Exception as exc:
                         member_errors.append(f"{m['trade']}: {exc}")
                 if member_errors:
@@ -238,7 +313,7 @@ def _exec_crews(plan: SyncPlan, client: dict, report: ExecReport) -> None:
                 if not existing:
                     raise LookupError(f"assembly {op.crew_id!r} not found in BM")
                 assembly_id = existing[0]["assembly_id"]
-                _sync_crew_members(client, assembly_id, op.members)
+                _sync_crew_members(client, assembly_id, op.members, kinds)
                 row["status"] = "ok"
                 if op.kind == "create":
                     row["detail"] = "already existed; members reconciled"
@@ -400,6 +475,6 @@ def run_sync(plan: SyncPlan, edited_spec: dict, client: dict) -> ExecReport:
     """
     report = ExecReport()
     _exec_rates(plan, client, report)
-    _exec_crews(plan, client, report)
+    _exec_crews(plan, client, report, _resource_kinds(edited_spec))
     _exec_items(plan, client, edited_spec, report)
     return report

@@ -1,0 +1,45 @@
+rate_table_trades: [SUPR, EQOP, LABR, PIPL, TRKD]
+default_crew:
+  - { trade: LABR, count: 2, days: 0 }
+crews:
+  - id: PIPE-CREW
+    description: Standard pipe crew
+    members:
+      - { trade: SUPR, count: 1 }
+      - { trade: PIPL, count: 2 }
+      - { trade: EQOP, count: 1 }
+      - { trade: LABR, count: 2 }
+  - id: HAUL-CREW
+    description: Haul-off crew
+    members:
+      - { trade: TRKD, count: 3 }
+      - { trade: EQOP, count: 1 }
+cost_codes:
+  - { code: "01-100", description: Mobilization }
+  - { code: "02-310", description: Trench excavation }
+  - { code: "02-320", description: Pipe bedding and backfill }
+  - { code: "02-510", description: Pipe and appurtenance installation }
+  - { code: "02-900", description: Haul and disposal }
+
+# scaffold: what `est-estimate scaffold` builds a fresh item from — the
+# demo pack's own recipe/sheet/slot names, structurally distinct from the
+# reference pack's.
+scaffold:
+  default_item_recipe: line_item
+  rate_host_recipe:    setup
+  rate_host_sheet:     "Rates"
+  rate_host_prefix:    SETUP
+  default_prefix:      ITEM
+  first_slot:          "01"
+  # no placeholder_takeoff: demo's line_item carries its own takeoff shape
+
+# takeoff_mapping: what `est-estimate apply-takeoff` writes for this pack —
+# demo's own takeoff kind (linear, from vocabulary.yaml) and its own
+# section_type -> {cy, cf} field-pair routing (trench excavation / pipe
+# bedding, structurally distinct from the reference pack's footing/wall pair).
+takeoff_mapping:
+  kind: linear
+  line_fields: [trench_cy, trench_cf, bedding_cy, bedding_cf]
+  section_types:
+    trench:  {cy: trench_cy,  cf: trench_cf}
+    bedding: {cy: bedding_cy, cf: bedding_cf, label_prefix: "BEDDING"}

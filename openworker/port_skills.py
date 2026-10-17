@@ -70,6 +70,8 @@ BIDMANAGER_TOOLS = [
     # structures (the takeoff's home on the estimate — push-takeoff skill)
     "create_structure", "get_structure", "list_structures",
     "add_structure_section", "remove_structure_section", "delete_structure",
+    # elements (the IFC round trip — push-takeoff, cost-load-schedule)
+    "upsert_modelled_elements", "get_estimate_model",
     # assemblies
     "list_assemblies", "get_assembly", "create_assembly", "update_assembly", "delete_assembly",
     "bulk_create_assemblies",

@@ -1,0 +1,8378 @@
+{
+ "defined_names": {},
+ "order": [
+  "Bid Summary",
+  "SETUP",
+  "Rates",
+  "2 - 8IN MAIN",
+  "3 - VALVES"
+ ],
+ "sheets": {
+  "2 - 8IN MAIN": {
+   "cells": {
+    "A1": {
+     "align": [
+      "left",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF000000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "='Bid Summary'!A2"
+    },
+    "A11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "[01] Excavate and lay pipe"
+    },
+    "A18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "[02] Backfill and compact"
+    },
+    "A2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "A26": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFCCFFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "HAUL"
+    },
+    "A27": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Import CY"
+    },
+    "A28": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Export CY"
+    },
+    "A29": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Haul $/CY"
+    },
+    "A31": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFCCFFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "MATL"
+    },
+    "A32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "8-inch ductile iron pipe"
+    },
+    "A33": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Bedding rock"
+    },
+    "A35": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFCCFFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "RENT"
+    },
+    "A36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Trench box"
+    },
+    "A39": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "MATL"
+    },
+    "A4": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FF93CDDD",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Trench to 6 ft max; native backfill above the pipe zone."
+    },
+    "A40": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "RENT"
+    },
+    "A43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "A44": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "A6": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFC3D69B",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SEGMENT"
+    },
+    "A7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "STA 10+00 to 13+20"
+    },
+    "A8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "STA 13+20 to 16+40"
+    },
+    "A9": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TOTAL LF"
+    },
+    "B1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B12": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TRADE"
+    },
+    "B13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUPR"
+    },
+    "B14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "PIPL"
+    },
+    "B15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "EQOP"
+    },
+    "B16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABR"
+    },
+    "B19": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TRADE"
+    },
+    "B2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "8-inch water main"
+    },
+    "B20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "EQOP"
+    },
+    "B21": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABR"
+    },
+    "B26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B31": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B44": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B6": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFC3D69B",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LF"
+    },
+    "B7": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 320
+    },
+    "B8": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 320
+    },
+    "B9": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": "=SUM(B7:B8)"
+    },
+    "C1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C12": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COUNT"
+    },
+    "C13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 1
+    },
+    "C14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 2
+    },
+    "C15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 1
+    },
+    "C16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 2
+    },
+    "C19": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COUNT"
+    },
+    "C2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 1
+    },
+    "C21": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 2
+    },
+    "C26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C27": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 120
+    },
+    "C28": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 340
+    },
+    "C31": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C32": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 640
+    },
+    "C33": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 210
+    },
+    "C35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C36": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 11
+    },
+    "C43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C44": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C6": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFC3D69B",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "DEPTH FT"
+    },
+    "C7": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 5
+    },
+    "C8": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 6
+    },
+    "D1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D12": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "DAYS"
+    },
+    "D13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 8
+    },
+    "D14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 8
+    },
+    "D15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 8
+    },
+    "D16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 8
+    },
+    "D19": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "DAYS"
+    },
+    "D2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 3
+    },
+    "D21": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 3
+    },
+    "D26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D31": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LF"
+    },
+    "D33": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TON"
+    },
+    "D35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "DAY"
+    },
+    "D43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D44": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E12": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "RATE"
+    },
+    "E13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B13,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B14,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B15,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B16,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E17": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBTOTAL"
+    },
+    "E19": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "RATE"
+    },
+    "E2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 640
+    },
+    "E20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B20,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E21": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B21,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E22": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBTOTAL"
+    },
+    "E24": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABOR"
+    },
+    "E26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E29": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF00B050",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 18
+    },
+    "E31": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF00B050",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 42
+    },
+    "E33": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF00B050",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 31
+    },
+    "E34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBTOTAL"
+    },
+    "E35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF00B050",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 185
+    },
+    "E37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBTOTAL"
+    },
+    "E41": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COSTS"
+    },
+    "E43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "ITEM TOTAL"
+    },
+    "E44": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "PER UNIT"
+    },
+    "F1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "F12": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COST"
+    },
+    "F13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C13*D13*E13*8"
+    },
+    "F14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C14*D14*E14*8"
+    },
+    "F15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C15*D15*E15*8"
+    },
+    "F16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C16*D16*E16*8"
+    },
+    "F17": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=SUM(F13:F16)"
+    },
+    "F19": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COST"
+    },
+    "F2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LF"
+    },
+    "F20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C20*D20*E20*8"
+    },
+    "F21": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C21*D21*E21*8"
+    },
+    "F22": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=SUM(F20:F21)"
+    },
+    "F24": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUMIF(E11:E22,\"SUBTOTAL\",F11:F22)"
+    },
+    "F26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "F29": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=(C27+C28)*E29"
+    },
+    "F31": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "F32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C32*E32"
+    },
+    "F33": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C33*E33"
+    },
+    "F34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM(F31:F33)"
+    },
+    "F35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "F36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C36*E36"
+    },
+    "F37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM(F35:F36)"
+    },
+    "F39": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=$F$34"
+    },
+    "F40": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=$F$37"
+    },
+    "F41": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM(F39:F40)"
+    },
+    "F43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM($F$24,$F$29,$F$41)"
+    },
+    "F44": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=F43/$E$2"
+    }
+   },
+   "conditional": [],
+   "data_validations": [],
+   "freeze_panes": null,
+   "hidden_columns": [],
+   "merges": [
+    "A11:F11",
+    "A18:F18",
+    "A1:F1",
+    "A26:F26",
+    "A31:F31",
+    "A35:F35",
+    "A4:F4",
+    "B2:D2"
+   ],
+   "protected": false,
+   "protection": {
+    "deleteRows": true,
+    "formatCells": true,
+    "formatColumns": true,
+    "formatRows": true,
+    "insertRows": true,
+    "password_set": false,
+    "selectLockedCells": false,
+    "selectUnlockedCells": false,
+    "sheet": false
+   },
+   "row_heights": {},
+   "sheet_state": "visible",
+   "widths": {
+    "A": 28.0,
+    "B": 12.0,
+    "C": 10.0,
+    "D": 10.0,
+    "E": 12.0,
+    "F": 14.0
+   }
+  },
+  "3 - VALVES": {
+   "cells": {
+    "A1": {
+     "align": [
+      "left",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF000000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "='Bid Summary'!A2"
+    },
+    "A18": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFCCFFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBS"
+    },
+    "A19": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Valve boxes (subcontract)"
+    },
+    "A2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 3
+    },
+    "A22": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBS"
+    },
+    "A25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "A26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "A5": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFC3D69B",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "UNIT"
+    },
+    "A6": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Gate valve"
+    },
+    "A7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TOTAL"
+    },
+    "A9": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "[01] Set valves and boxes"
+    },
+    "B1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B10": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TRADE"
+    },
+    "B11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "PIPL"
+    },
+    "B12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABR"
+    },
+    "B18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "8-inch gate valves"
+    },
+    "B25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B5": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFC3D69B",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COUNT"
+    },
+    "B6": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 4
+    },
+    "B7": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": "=SUM(B6:B6)"
+    },
+    "C1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C10": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COUNT"
+    },
+    "C11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 2
+    },
+    "C12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 1
+    },
+    "C18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C19": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 4
+    },
+    "C2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D10": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "DAYS"
+    },
+    "D11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "D12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "D18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D19": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "EA"
+    },
+    "D2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E10": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "RATE"
+    },
+    "E11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B11,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B12,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBTOTAL"
+    },
+    "E15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABOR"
+    },
+    "E18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E19": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF00B050",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 650
+    },
+    "E2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 4
+    },
+    "E20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBTOTAL"
+    },
+    "E23": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COSTS"
+    },
+    "E25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "ITEM TOTAL"
+    },
+    "E26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "PER UNIT"
+    },
+    "F1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "F10": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COST"
+    },
+    "F11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C11*D11*E11*8"
+    },
+    "F12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C12*D12*E12*8"
+    },
+    "F13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=SUM(F11:F12)"
+    },
+    "F15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUMIF(E9:E13,\"SUBTOTAL\",F9:F13)"
+    },
+    "F18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "F19": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C19*E19"
+    },
+    "F2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "EA"
+    },
+    "F20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM(F18:F19)"
+    },
+    "F22": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=$F$20"
+    },
+    "F23": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM(F22:F22)"
+    },
+    "F25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM($F$15,$F$23)"
+    },
+    "F26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=F25/$E$2"
+    }
+   },
+   "conditional": [],
+   "data_validations": [],
+   "freeze_panes": null,
+   "hidden_columns": [],
+   "merges": [
+    "A18:F18",
+    "A1:F1",
+    "A9:F9",
+    "B2:D2"
+   ],
+   "protected": false,
+   "protection": {
+    "deleteRows": true,
+    "formatCells": true,
+    "formatColumns": true,
+    "formatRows": true,
+    "insertRows": true,
+    "password_set": false,
+    "selectLockedCells": false,
+    "selectUnlockedCells": false,
+    "sheet": false
+   },
+   "row_heights": {},
+   "sheet_state": "visible",
+   "widths": {
+    "A": 28.0,
+    "B": 12.0,
+    "C": 10.0,
+    "D": 10.0,
+    "E": 12.0,
+    "F": 14.0
+   }
+  },
+  "Bid Summary": {
+   "cells": {
+    "A2": {
+     "align": [
+      "left",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF000000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Demo Pipeline Replacement"
+    },
+    "A4": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCC1DA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "ITEM"
+    },
+    "A5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "='SETUP'!B2"
+    },
+    "A6": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "='2 - 8IN MAIN'!B2"
+    },
+    "A7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "='3 - VALVES'!B2"
+    },
+    "B2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "BID TOTAL"
+    },
+    "D2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D4": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCC1DA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "AMOUNT"
+    },
+    "D5": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "='SETUP'!$F$13"
+    },
+    "D6": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "='2 - 8IN MAIN'!$F$43"
+    },
+    "D7": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "='3 - VALVES'!$F$25"
+    },
+    "D8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM(D5:D7)"
+    }
+   },
+   "conditional": [],
+   "data_validations": [],
+   "freeze_panes": null,
+   "hidden_columns": [],
+   "merges": [
+    "A2:D2"
+   ],
+   "protected": false,
+   "protection": {
+    "deleteRows": true,
+    "formatCells": true,
+    "formatColumns": true,
+    "formatRows": true,
+    "insertRows": true,
+    "password_set": false,
+    "selectLockedCells": false,
+    "selectUnlockedCells": false,
+    "sheet": false
+   },
+   "row_heights": {},
+   "sheet_state": "visible",
+   "widths": {}
+  },
+  "Rates": {
+   "cells": {
+    "A1": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCC1DA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TRADE"
+    },
+    "A2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUPR"
+    },
+    "A3": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "EQOP"
+    },
+    "A4": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABR"
+    },
+    "A5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "PIPL"
+    },
+    "A6": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TRKD"
+    },
+    "B1": {
+     "align": [
+      "center",
+      "center",
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCC1DA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "$/HR"
+    },
+    "B2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 95
+    },
+    "B3": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 82
+    },
+    "B4": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 61
+    },
+    "B5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 74
+    },
+    "B6": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": 68
+    }
+   },
+   "conditional": [],
+   "data_validations": [],
+   "freeze_panes": null,
+   "hidden_columns": [],
+   "merges": [],
+   "protected": false,
+   "protection": {
+    "deleteRows": true,
+    "formatCells": true,
+    "formatColumns": true,
+    "formatRows": true,
+    "insertRows": true,
+    "password_set": false,
+    "selectLockedCells": false,
+    "selectUnlockedCells": false,
+    "sheet": false
+   },
+   "row_heights": {},
+   "sheet_state": "visible",
+   "widths": {}
+  },
+  "SETUP": {
+   "cells": {
+    "A1": {
+     "align": [
+      "left",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF000000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "='Bid Summary'!A2"
+    },
+    "A13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "A14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "A2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
+    "A5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "[01] Mobilize crew and equipment"
+    },
+    "B1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "B2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Mobilization and setup"
+    },
+    "B6": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "TRADE"
+    },
+    "B7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUPR"
+    },
+    "B8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABR"
+    },
+    "C1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "C6": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COUNT"
+    },
+    "C7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 1
+    },
+    "C8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": 2
+    },
+    "D1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "D6": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "DAYS"
+    },
+    "D7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "D8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "E1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "E11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LABOR"
+    },
+    "E13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "ITEM TOTAL"
+    },
+    "E14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "PER UNIT"
+    },
+    "E2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": 1
+    },
+    "E6": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "RATE"
+    },
+    "E7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B7,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFFF00",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FFFF0000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=VLOOKUP(B8,'Rates'!$A$2:$B$6,2,FALSE)"
+    },
+    "E9": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "SUBTOTAL"
+    },
+    "F1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "F11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      12.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUMIF(E5:E9,\"SUBTOTAL\",F5:F9)"
+    },
+    "F13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=SUM($F$11)"
+    },
+    "F14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFCCCCFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+     "v": "=F13/$E$2"
+    },
+    "F2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "bottom": [
+       "thick",
+       null
+      ],
+      "left": [
+       "thick",
+       null
+      ],
+      "right": [
+       "thick",
+       null
+      ],
+      "top": [
+       "thick",
+       null
+      ]
+     },
+     "fill": [
+      "solid",
+      "FF00FFFF",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      true,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "LS"
+    },
+    "F6": {
+     "align": [
+      "right",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      true,
+      false,
+      "FFC00000",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "COST"
+    },
+    "F7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C7*D7*E7*8"
+    },
+    "F8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=C8*D8*E8*8"
+    },
+    "F9": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {
+      "top": [
+       "double",
+       null
+      ]
+     },
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+     "v": "=SUM(F7:F8)"
+    }
+   },
+   "conditional": [],
+   "data_validations": [],
+   "freeze_panes": null,
+   "hidden_columns": [],
+   "merges": [
+    "A1:F1",
+    "A5:F5",
+    "B2:D2"
+   ],
+   "protected": false,
+   "protection": {
+    "deleteRows": true,
+    "formatCells": true,
+    "formatColumns": true,
+    "formatRows": true,
+    "insertRows": true,
+    "password_set": false,
+    "selectLockedCells": false,
+    "selectUnlockedCells": false,
+    "sheet": false
+   },
+   "row_heights": {},
+   "sheet_state": "visible",
+   "widths": {
+    "A": 28.0,
+    "B": 12.0,
+    "C": 10.0,
+    "D": 10.0,
+    "E": 12.0,
+    "F": 14.0
+   }
+  }
+ }
+}

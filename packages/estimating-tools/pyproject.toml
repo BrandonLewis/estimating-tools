@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "estimating_tools"
-version = "0.1.87"
+version = "0.1.89"
 description = "Deterministic construction estimating and engineering tools."
 readme = "README.md"
 license = "Apache-2.0"
@@ -55,6 +55,7 @@ est-import = "estimating_tools.importers.cli:main"
 rate-import = "estimating_tools.rates.cli:main"
 costcode-import = "estimating_tools.costcodes.cli:main"
 m2m-token = "estimating_tools.auth.cli:main"
+est-feedback = "estimating_tools.feedback.cli:main"
 est-artifact-app = "estimating_tools.artifact_app.server:main"
 
 # bimforge resolves an org's CAD style pack through registered providers and

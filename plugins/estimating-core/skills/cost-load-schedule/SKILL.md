@@ -98,6 +98,33 @@ costload the whole job:
    quantity to the BM lump cost. It needs no schedule/4D — it runs on the bare
    takeoff IFC — and the BUDGET schedule from `cost5d` is untouched (the two
    coexist).
+7. **The whole estimate as IFC (optional).** To hand job management the
+   estimate as BidSheet.ai allocates it (its activities, its cost split and its
+   crews), call `get_estimate_model(estimate_id)`, save the result as
+   `model.json`, then run
+   `~/.estimating/bin/est-bim estimate-model <in.ifc> model.json <out.ifc> [--schedule-name NAME] [--placeholders]`.
+   It needs no `costs.json` and no schedule file. It writes:
+   - one `IfcWorkSchedule`, named "BidSheet.ai estimate <id>" by default, with
+     one `IfcTask` per activity (`a<id>`). Each task's finish is the
+     activity's inclusive `finish_date`. An older model without `finish_date`
+     uses the weekday before its exclusive `end_date`, and the summary warns
+     about it. Each task is assigned to the activity's elements, matched by
+     GlobalId. A spread activity is assigned none.
+   - one ESTIMATE `IfcCostSchedule` ("<name> cost") with a parent per estimate
+     item and a child per allocation share. The children are linked to their
+     task and element, and they sum to the item's allocated total in cents.
+   - one `IfcLaborResource` per crew, carrying its headcount and assigned to
+     the crew's tasks.
+
+   The stdout summary lists `unmatched_elements`: model elements the IFC
+   lacks, such as parametric elements whose GlobalId was never modelled. Show
+   them to the user. They are not created unless you pass `--placeholders`,
+   which adds a geometry-less `IfcBuildingElementProxy` for each under its
+   GlobalId. Re-runs replace only what this command wrote. If the IFC already
+   has a same-named schedule from another tool (a stage-model 4D schedule, or
+   a `cost5d` budget), the command refuses rather than replacing it. Pass
+   `--schedule-name` to write under another name. Read the result back with
+   `~/.estimating/bin/est-bim schedule-read --ifc <out.ifc> --schedule "<name>" --out sched.json --costs-out costs.json`.
 
 ## Notes
 - The deterministic packages never touch BidSheet.ai; this skill does the MCP

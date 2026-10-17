@@ -15,7 +15,7 @@ SETUP_LINE = (
 
 _TRIGGER = re.compile(
     r"estimating_tools|\b(est-import|est-estimate|est-takeoff|est-gantt|est-scaffold|"
-    r"est-intake|est-sheets|est-rebar|est-hist|est-quotespace|est-bim|est-letterhead|dir-sync|asm-import|dir-import|rate-import|costcode-import|profile-init|m2m-token)\b"
+    r"est-intake|est-sheets|est-rebar|est-hist|est-quotespace|est-bim|est-letterhead|dir-sync|asm-import|dir-import|rate-import|costcode-import|profile-init|m2m-token|est-feedback)\b"
 )
 
 
