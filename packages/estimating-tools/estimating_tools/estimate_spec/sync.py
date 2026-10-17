@@ -22,10 +22,20 @@ class RateOp:
     """Create-only. LaborRate history model precludes safe updates from a
     local rate_table row alone; a follow-up phase can add effective-date-aware
     updates when we have UX to support it.
+
+    `kind` is the OP kind (always "create"). `resource_kind` is what the row
+    prices: "labor" (BidSheet.ai's labor library) or "equipment" (its
+    equipment library). `base` / `burden_pct` (a fraction) / `fringe` are the
+    labor breakdown when the spec gives one; None means a flat rate.
     """
     kind: Literal["create"]
     trade: str
     rate: float
+    resource_kind: Literal["labor", "equipment"] = "labor"
+    base: float | None = None
+    burden_pct: float | None = None
+    fringe: float | None = None
+    includes_operator: bool = False
 
 
 @dataclass
@@ -88,7 +98,12 @@ def _diff_rates(base_spec: dict, edited_spec: dict) -> list[RateOp]:
     ops: list[RateOp] = []
     for row in edited_spec.get("rate_table", []):
         if row["trade"] not in base_trades:
-            ops.append(RateOp(kind="create", trade=row["trade"], rate=row["rate"]))
+            ops.append(RateOp(
+                kind="create", trade=row["trade"], rate=row["rate"],
+                resource_kind=row.get("kind", "labor"),
+                base=row.get("base"), burden_pct=row.get("burden_pct"),
+                fringe=row.get("fringe"),
+                includes_operator=bool(row.get("includes_operator", False))))
     return ops
 
 

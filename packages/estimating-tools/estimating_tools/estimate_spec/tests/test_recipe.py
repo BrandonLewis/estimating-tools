@@ -147,6 +147,13 @@ def test_validate_accepts_a_good_document():
     R.validate_recipes({"recipes": {"r": {"units": [{"unit": "item_header"}]}}}, UNITS)
 
 
+def test_validate_rejects_a_non_mapping_entry():
+    """`_check_entry`'s entry-is-a-mapping check backs both recipes.NAME[i]
+    and a book sheet's units[j] -- this pins the recipes.NAME[i] side."""
+    with pytest.raises(R.RecipeError, match=r"r\[0\].*mapping"):
+        R.validate_recipes({"recipes": {"r": {"units": ["not-a-mapping"]}}}, UNITS)
+
+
 def test_validate_rejects_an_unknown_unit():
     with pytest.raises(R.RecipeError, match=r"r\[0\].*nope"):
         R.validate_recipes({"recipes": {"r": {"units": [{"unit": "nope"}]}}}, UNITS)

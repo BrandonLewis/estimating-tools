@@ -149,6 +149,65 @@ from estimating_tools.takeoff.push import render_takeoff_push_plan
 print(render_takeoff_push_plan(plan))
 ```
 
+## Modelled elements (IFC GlobalIds onto the estimate's elements)
+
+The structures push above drops each element's IFC `global_id`. When the
+estimate uses **elements** (the work-first estimate), push the IFC's elements
+themselves instead, keyed by GlobalId, so a re-import updates the same rows and
+never duplicates them:
+
+1. **Get the item ids.** Call `get_estimate_model(estimate_id)` and save it
+   as `model.json`. Use it rather than `list_estimate_items`: it carries each
+   item's effective `item_code`, `unit` and `schedule`. Each item's
+   `item_code` (else its `item_number`) is matched against each element's
+   classification code, and the item's `unit` decides which quantity it pays.
+   A code that several items share pays none and is warned about. If the bid
+   has several schedules, pass `--schedule <label>` to match within one
+   schedule. A hand-made `{"<bid item code>": <estimate item id>}` file works
+   too.
+2. **Plan the payload:**
+   `~/.estimating/bin/est-bim model-elements <model.ifc> --items model.json --estimate-id <id> [--complete] [--structure-id <id>] [--out upsert.json]`.
+   Each entry carries the `global_id`, name, IFC class, element type and
+   `quantities` already converted into the key's unit, with `unit` and the
+   `source` Qto (`Qto_FootingBaseQuantities.NetVolume`). Volumes map to
+   `concrete_cy`, `excavation_cy` (IfcEarthworksCut) or `backfill_cy`
+   (IfcEarthworksFill), and a pile's length maps to `pile_lf`.
+   `form_contact_sf` is sent only when you pass `--form-area <Qto_Set.Name>`
+   naming the quantity that holds the formed area. No standard Qto carries a
+   formwork area, so never guess one.
+
+   Which elements are sent:
+   - By default, only footings, walls, slabs, columns, piles, earthworks cuts
+     and fills, and classified elements are sent.
+   - Beams, members, plates, courses and pavements are skipped even when
+     classified, because they are usually steel or paving, not structural
+     concrete. Unclassified elements of other classes are skipped too.
+     `--all-elements` sends both groups as generic elements, whose volume is
+     stored as concrete. Use it only when the user confirms that is right.
+   - Rebar, terrain, an assembly whose parts are sent, and any element with a
+     malformed or repeated GlobalId are always skipped. The upsert is
+     all-or-nothing, so one bad GlobalId would refuse the whole call.
+   - An element with no quantity BidSheet.ai stores is still sent, with
+     `quantities: {}`. This clears values an earlier import stored from a Qto
+     the model has since lost. These elements are listed in
+     `without_quantities`.
+
+   stderr lists the `skipped` elements with their reasons, then the warnings.
+   Show both to the user.
+3. **Review, then write.** Show the user the element count, the skipped list
+   and the warnings, and get their confirmation. Then call
+   `upsert_modelled_elements(estimate_id, elements=<payload.elements>, complete=<payload.complete>)`.
+   Pass `complete=true` only when the IFC is the **full** model of the
+   estimate's modelled work. A partial file (one structure) must not use it.
+4. **Report the reply:** `created` / `updated` / `unchanged` counts, then
+   every entry in:
+   - `errors`: the call is all-or-nothing, so nothing was written. Fix the
+     cause and re-plan.
+   - `overridden`: the estimator's override still masks the new model value.
+     Tell the user; nothing changed.
+   - `missing` (with `complete`): modelled elements the file no longer has.
+     They are reported, never deleted; ask the user what to do with them.
+
 ## Notes
 - `measure-plans`, `dxf-to-bim`, `bim-to-takeoff`, and `show-structure-earth` ship in the **calc-bim plugin** (same estimating-platform marketplace as this plugin). If they are not among your available skills, tell the user this workflow needs the calc-bim plugin installed (`/plugin` -> estimating-platform -> calc-bim) and offer to continue with the bundled `est-bim` CLI directly.
 - Field limits + write-precision by field (`quantity_override` keeps 4 dp;

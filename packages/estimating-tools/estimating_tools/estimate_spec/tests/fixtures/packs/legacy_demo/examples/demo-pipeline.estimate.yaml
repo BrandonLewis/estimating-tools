@@ -1,0 +1,91 @@
+# A demo estimate in the demo pack's format:
+#   est-estimate build demo-pipeline.estimate.yaml --format <this pack>
+project: Demo Pipeline Replacement
+bid_date: "2026-10-01"
+markup: 0
+rate_table:
+  - { trade: SUPR, rate: 95 }
+  - { trade: EQOP, rate: 82 }
+  - { trade: LABR, rate: 61 }
+  - { trade: PIPL, rate: 74 }
+  - { trade: TRKD, rate: 68 }
+crews:
+  - id: PIPE-CREW
+    members:
+      - { trade: SUPR, count: 1 }
+      - { trade: PIPL, count: 2 }
+      - { trade: EQOP, count: 1 }
+      - { trade: LABR, count: 2 }
+items:
+  - recipe: setup
+    sheet: SETUP
+    item_no: "1"
+    description: Mobilization and setup
+    qty: 1
+    uom: LS
+    cost_code: "01-100"
+    labor:
+      - slot: "01"
+        description: Mobilize crew and equipment
+        crew:
+          - { trade: SUPR, count: 1, days: 2 }
+          - { trade: LABR, count: 2, days: 2 }
+
+  - recipe: line_item
+    sheet: 2 - 8IN MAIN
+    item_no: "2"
+    description: 8-inch water main
+    qty: 640
+    uom: LF
+    cost_code: "02-510"
+    crew_id: PIPE-CREW
+    notes: ["Trench to 6 ft max; native backfill above the pipe zone."]
+    takeoff:
+      kind: linear
+      segments:
+        - { label: "STA 10+00 to 13+20", length_lf: 320, depth_ft: 5 }
+        - { label: "STA 13+20 to 16+40", length_lf: 320, depth_ft: 6 }
+    labor:
+      - slot: "01"
+        description: Excavate and lay pipe
+        crew:
+          - { trade: SUPR, count: 1, days: 8 }
+          - { trade: PIPL, count: 2, days: 8 }
+          - { trade: EQOP, count: 1, days: 8 }
+          - { trade: LABR, count: 2, days: 8 }
+      - slot: "02"
+        description: Backfill and compact
+        crew:
+          - { trade: EQOP, count: 1, days: 3 }
+          - { trade: LABR, count: 2, days: 3 }
+    spreads: { import_cy: 120, export_cy: 340, haul_rate: 18 }
+    cost_details:
+      - name: MATL
+        lines:
+          - { name: 8-inch ductile iron pipe, uom: LF, qty: 640, unit_price: 42 }
+          - { name: Bedding rock, uom: TON, qty: 210, unit_price: 31 }
+      - name: RENT
+        lines:
+          - { name: Trench box, uom: DAY, qty: 11, unit_price: 185 }
+
+  - recipe: line_item
+    sheet: 3 - VALVES
+    item_no: "3"
+    description: 8-inch gate valves
+    qty: 4
+    uom: EA
+    cost_code: "02-510"
+    takeoff:
+      kind: count
+      units:
+        - { label: Gate valve, count: 4 }
+    labor:
+      - slot: "01"
+        description: Set valves and boxes
+        crew:
+          - { trade: PIPL, count: 2, days: 2 }
+          - { trade: LABR, count: 1, days: 2 }
+    cost_details:
+      - name: SUBS
+        lines:
+          - { name: Valve boxes (subcontract), uom: EA, qty: 4, unit_price: 650 }

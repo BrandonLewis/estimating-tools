@@ -34,9 +34,10 @@ is local; the push drives the rate MCP tools.
 2. **Propose and confirm the column mapping (editable artifact):** the canonical fields are
    `rate_type` (labor/equipment/material), `name` (classification / equipment_type /
    material_name), `rate` (base hourly wage / equipment hourly rate / material unit cost),
-   `unit`, `region`, `description`, `burden_percentage`, `trade`, `is_union`, `union_local`,
-   `source`, `includes_operator`, `category`, `supplier`. Required: `rate_type`, `name`,
-   `rate`. Build the artifact and render it inline for the user to edit:
+   `unit`, `region`, `description`, `burden_percentage`, `fringe_hourly`, `trade`,
+   `is_union`, `union_local`, `source`, `includes_operator`, `category`, `supplier`.
+   Required: `rate_type`, `name`, `rate`. Build the artifact and render it inline for
+   the user to edit:
 
    ```python
    from estimating_tools.rates.excel import _CANONICAL_FIELDS, _REQUIRED, read_rate_rows
@@ -73,7 +74,8 @@ is local; the push drives the rate MCP tools.
    current rate for its key:
    - **Labor:** key = classification (+ region). New or changed value →
      `mcp__bidmanager__create_labor_rate(organization_id, classification, base_hourly_rate,
-     burden_percentage=…, region=…, trade=…, is_union=…, union_local=…, source=…)`.
+     burden_percentage=…, fringe_hourly=…, region=…, trade=…, is_union=…,
+     union_local=…, source=…)`.
    - **Equipment:** key = equipment_type (+ region) →
      `mcp__bidmanager__create_equipment_rate(organization_id, equipment_type, hourly_rate, description=…,
      region=…, includes_operator=…, source=…)`.
@@ -83,11 +85,16 @@ is local; the push drives the rate MCP tools.
    - If the current rate matches the imported value, **skip it** (report "no change") so
      re-importing doesn't churn effective dates. `make_current=True` (the default) retires
      the prior current rate server-side when you do create a new/changed one.
+   - **Every `create_*` call above returns `{"error": ...}` on failure instead of
+     raising.** Check the result and raise (e.g. `raise RuntimeError(result["error"])`)
+     when it contains `"error"`, or a failed push gets reported as pushed when nothing
+     was written.
 
 ## Notes
 - `rate` is the type-appropriate number (labor base hourly wage, equipment hourly rate,
   material unit cost); BidSheet.ai auto-computes the burdened labor rate from
-  `burden_percentage` (defaults to 35 when the column is blank).
+  `burden_percentage` (defaults to 35 when the column is blank) plus `fringe_hourly`
+  (defaults to 0): `burdened = base × (1 + burden%/100) + fringe_hourly`.
 - `rate_type` must be one of labor/equipment/material (aliases `lab`/`equip`/`mat` etc.
   are accepted); an unrecognized type is reported so you can correct it. `is_union` /
   `includes_operator` are parsed from the spreadsheet (`yes`/`y`/`true`/`1`/`x` → true).

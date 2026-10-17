@@ -115,3 +115,24 @@ def test_read_rate_rows_and_from_excel_roundtrip(tmp_path):
     lib = build_rate_library_from_excel(path)
     assert len(lib.material_costs) == 1 and len(lib.labor_rates) == 1
     assert lib.material_costs[0].unit == "LF"
+
+
+def test_fringe_is_read_for_labor_rates():
+    rows = [{"rate_type": "labor", "name": "Pipelayer", "rate": 48.10,
+             "burden_percentage": 32, "fringe_hourly": 18.40}]
+    (lr,) = build_rate_library(rows).labor_rates
+    assert lr.fringe_hourly == 18.40
+
+
+def test_fringe_defaults_to_zero():
+    rows = [{"rate_type": "labor", "name": "Laborer", "rate": 61}]
+    (lr,) = build_rate_library(rows).labor_rates
+    assert lr.fringe_hourly == 0.0
+
+
+def test_fringe_maps_from_an_org_column():
+    rows = [{"Type": "labor", "Class": "Pipelayer", "Wage": 48.10, "H&W+Pension": 18.40}]
+    mapping = {"rate_type": "Type", "name": "Class", "rate": "Wage",
+               "fringe_hourly": "H&W+Pension"}
+    (lr,) = build_rate_library(rows, mapping).labor_rates
+    assert lr.fringe_hourly == 18.40

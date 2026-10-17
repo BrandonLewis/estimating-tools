@@ -17,12 +17,14 @@ def validate_cross_references(config: dict) -> None:
       1. Every `crews[].id` is unique across the array.
       2. Every `crews[].members[].trade` matches some `rate_table[].trade`.
       3. Every `items[].crew_id` (when set) matches some `crews[].id`.
+      4. A rate_table row with a wage breakdown reproduces its rate within $0.01.
 
     Silent on a healthy config."""
     crews = config.get("crews") or []
     _check_crew_id_uniqueness(crews)
     _check_crew_member_trades(crews, config.get("rate_table") or [])
     _check_item_crew_id_references(config.get("items") or [], crews)
+    _check_rate_breakdowns(config.get("rate_table") or [])
 
 
 def _check_crew_id_uniqueness(crews: list[dict]) -> None:
@@ -73,3 +75,16 @@ def _check_item_crew_id_references(items: list[dict], crews: list[dict]) -> None
             raise ValueError(
                 f"item {item_no!r}: crew_id {crew_id!r} does not match any crews[].id"
             )
+
+
+def _check_rate_breakdowns(rate_table: list[dict]) -> None:
+    """base * (1 + burden_pct) + fringe is BidManager's burdened-rate formula;
+    a row carrying the parts must agree with the rate it states."""
+    for i, row in enumerate(rate_table):
+        if "base" not in row:
+            continue
+        built = row["base"] * (1 + row.get("burden_pct", 0)) + row.get("fringe", 0)
+        if abs(built - row["rate"]) > 0.01 + 1e-9:
+            raise ValueError(
+                f"rate_table[{i}] ({row.get('trade')!r}): base * (1 + burden_pct) + "
+                f"fringe = {built:.2f}, but rate is {row['rate']:.2f}")

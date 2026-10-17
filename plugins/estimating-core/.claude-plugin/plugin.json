@@ -1,7 +1,7 @@
 {
   "name": "estimating-core",
   "displayName": "Estimating Core",
-  "version": "0.1.87",
+  "version": "0.1.89",
   "description": "Construction estimating workflows over the BidSheet.ai MCP, plus the estimator agent.",
   "keywords": ["construction", "estimating", "takeoff", "bidding", "bidmanager"],
   "repository": "https://github.com/BrandonLewis/estimating-tools",

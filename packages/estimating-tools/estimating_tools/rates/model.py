@@ -12,11 +12,15 @@ VALID_RATE_TYPES = {"labor", "equipment", "material"}
 @dataclass
 class LaborRate:
     """A labor classification rate. base_hourly_rate is the unburdened wage; the burdened
-    rate is auto-computed by BidSheet.ai from burden_percentage."""
+    rate is auto-computed by BidSheet.ai from burden_percentage.
+
+    fringe_hourly is dollar-per-hour fringes BidManager adds after the percentage burden:
+    burdened = base × (1 + burden%) + fringe."""
 
     classification: str
     base_hourly_rate: float
     burden_percentage: float = 35.0
+    fringe_hourly: float = 0.0
     region: str = ""
     trade: str = ""
     is_union: bool = False

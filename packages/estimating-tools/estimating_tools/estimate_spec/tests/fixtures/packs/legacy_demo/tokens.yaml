@@ -1,0 +1,121 @@
+# tokens.yaml — the demo pack's visual grammar (see estimate_spec/tokens.yaml
+# for the full commentary).
+# -----------------------------------------------------------------------------
+# Single source of truth for the workbook's styling, derived from a worked
+# reference estimate workbook.
+#
+# Two rules drive the whole template:
+#   * FILL color  = a cell's ROLE      (input vs. driver vs. final answer)
+#   * FONT color  = the data KIND       (money vs. price-input vs. production)
+#
+# A generator maps each primitive token to an openpyxl construct ONCE, then
+# composes them into the named `styles:` at the bottom. units.yaml and
+# recipes.yaml refer to cells only by composite-style name — never raw hex —
+# so re-skinning the whole estimate is a one-file edit here.
+# =============================================================================
+
+meta:
+  basis: 'sample reference estimate workbook'
+  # Every cell in the source overrides Excel's Calibri-11 default to this:
+  base_font: { name: Arial, size: 10 }
+
+# --- primitive palettes ------------------------------------------------------
+
+fills:                       # role  ->  RGB hex (generator prefixes 'FF' alpha)
+  input_yellow:   'FFFF00'   # live input / key computed value to watch
+  driver_qty:     'FFFF99'   # the quantity a cost is spread over ("Unit" rows)
+  item_identity:  '00FFFF'   # row-2 identity strip (Item # / desc / qty / uom)
+  section_banner: 'CCFFFF'   # repeated =B2 zone title that opens the labor stack
+  answer_block:   'CCCCFF'   # TOTAL / UNIT COSTS — the final-answer zone
+  notes:          '93CDDD'   # assumptions callout band      (theme accent5 @ 40%)
+  takeoff_header: 'C3D69B'   # geometry column heads + rollup title (accent3 @ 40%)
+  takeoff_grid:   'FCFBF9'   # near-white shaded takeoff grid        (lt2 @ 80%)
+  summary_header: 'CCC1DA'   # cover-sheet column headers            (accent4 @ 60%)
+
+font_colors:                 # data KIND
+  money:       'FF0000'      # red       — $ & key totals, takeoff item labels, qty sums
+  price_input: '00B050'      # green     — $/unit PRICE inputs in cost-detail blocks
+  production:  '0070C0'      # blue      — derived production metrics (factor sum, days)
+  days:        'C00000'      # dark red  — crew "days" driver cells / section titles
+  ink:         '000000'      # default   — labels & structure
+
+font_sizes:                  # points (bold unless a style says otherwise)
+  headline: 12               # section description, crew counts, headline subtotals
+  body:     10               # default — nearly everything
+  small:     9               # crew-count cells, summary subtotal pulls
+  micro:     8               # RATE / DAYS heads, subtotal labels, SUM helpers
+  tiny:      6               # date stamp, secondary takeoff dimension
+
+borders:                     # the universal signals
+  thick_box:  { style: thick,  sides: [left, right, top, bottom] }
+  thick_band: { style: thick,  sides: [top, bottom] }     # full-width strip
+  double_top: { style: double, sides: [top] }             # "this row is a total"
+  double_box: { style: double, sides: [top, bottom] }     # production-factor sum
+
+number_formats:
+  money_acct:   '_("$"* #,##0.00_);_("$"* \(#,##0.00\);_("$"* "-"??_);_(@_)'
+  acct_nosym:   '_(* #,##0.00_);_(* \(#,##0.00\);_(* "-"??_);_(@_)'
+  manhours_int: '#,##0'
+  qty:          '0.00'
+  percent:      '0.00%'
+  unit_cost:    '"$"#,##0.00'
+  long_date:    '[$-F800]dddd\, mmmm dd\, yyyy'
+
+alignments:
+  center: { horizontal: center, vertical: center }
+  right:  { horizontal: right }
+  left:   { horizontal: left }
+
+# --- composite cell-styles  (THIS is what units.yaml references) -------------
+# Each style = any of:
+#   font_color (-> font_colors)  size (-> font_sizes)  bold  italic
+#   fill (-> fills)  border (-> borders)  number_format (-> number_formats)
+#   align (-> alignments)
+# Unset font fields fall back to meta.base_font + bold:false + color:ink.
+styles:
+
+  # -- header / identity ------------------------------------------------------
+  identity:       { fill: item_identity, bold: true, italic: true, border: thick_box }
+  date_stamp:     { fill: input_yellow, font_color: money, size: tiny, number_format: long_date }
+  notes:          { fill: notes, bold: true, italic: true }
+  section_banner: { fill: section_banner, bold: true, italic: true, border: thick_box, align: center }
+
+  # -- quantity takeoff -------------------------------------------------------
+  takeoff_head:   { fill: takeoff_header, bold: true, align: center }
+  takeoff_grid:   { fill: takeoff_grid, bold: true, align: center }
+  takeoff_item:   { font_color: money, bold: true, italic: true }   # "30 IN Outfall 5"
+  takeoff_num:    { bold: true, align: center, number_format: qty }
+  takeoff_sum:    { font_color: money, bold: true, align: center, number_format: qty, border: double_top }
+
+  # -- labor block ------------------------------------------------------------
+  label:          { bold: true }                                    # [ A ] , LABOR : , trade names
+  section_title:  { font_color: money, size: headline, bold: true, fill: input_yellow }
+  prod_activity:  { font_color: money, size: headline, bold: true } # Fine Grade / Form / Strip
+  annotation:     { italic: true, size: micro }                     # "@ 8 hours / pours" asides
+  prod_factor:    { bold: true, align: center }                     # man-hour-per-unit factor
+  prod_sum:       { font_color: production, bold: true, fill: input_yellow, align: center, border: double_box }
+  unit_label:     { bold: true, border: thick_box }                 # the "Unit" cell
+  driver:         { fill: driver_qty, bold: true, border: thick_box, number_format: acct_nosym }
+  driver_open:    { fill: driver_qty, bold: true, number_format: acct_nosym }  # driver fill, no own box (a row `box:` wraps it)
+  crew_head:      { font_color: days, size: micro, bold: true, align: right }   # RATE / DAYS
+  crew_count:     { size: headline, number_format: manhours_int }
+  rate:           { font_color: money, bold: true, fill: input_yellow, number_format: money_acct }  # VLOOKUP
+  days:           { font_color: days, bold: true }
+  ext_money:      { number_format: acct_nosym }                     # =days*rate*8
+  manhours:       { bold: true, align: center, number_format: manhours_int }    # =days*count*8
+  block_subtotal: { bold: true, border: double_top, number_format: acct_nosym }
+
+  # -- rollups / spreads / cost-detail ---------------------------------------
+  rollup_title:   { fill: takeoff_header, size: headline, bold: true, align: center }  # block-level box drawn by box_region
+  metric:         { bold: true, italic: true, align: center, number_format: qty }
+  result_money:   { bold: true, number_format: money_acct }
+  price_input:    { font_color: price_input, bold: true, number_format: money_acct } # green $/unit
+  unit_cost:      { bold: true, number_format: unit_cost }           # =subtotal/$G$2
+  subtotal_money: { bold: true, size: headline, border: double_top, number_format: money_acct }
+  total:          { fill: answer_block, bold: true, number_format: money_acct }
+
+  # -- summary cover sheet ----------------------------------------------------
+  cover_title:    { fill: input_yellow, font_color: ink, bold: true, border: thick_band, align: left }
+  summary_head:   { fill: summary_header, font_color: money, bold: true, align: center }
+  summary_money:  { font_color: money, bold: true, fill: input_yellow, align: center, number_format: money_acct }
+  percent:        { number_format: percent }

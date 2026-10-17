@@ -45,7 +45,7 @@ SCRIPTS = ["est-bim", "est-sheets", "est-estimate", "est-takeoff", "est-import",
            "est-scaffold", "est-intake", "est-rebar", "est-quotespace",
            "est-letterhead", "est-artifact-app", "asm-import", "asm-load",
            "dir-import", "dir-sync", "rate-import", "costcode-import",
-           "profile-init", "m2m-token", "est-python", "ensure-extra"]
+           "profile-init", "m2m-token", "est-feedback", "est-python", "ensure-extra"]
 
 SCRIPT_RE = re.compile(r"(?<![\w./-])(" + "|".join(map(re.escape, SCRIPTS))
                        + r")(?![\w./-])")

@@ -13,8 +13,9 @@
     "project":  { "type": "string", "minLength": 1 },
     "package":  { "type": "string" },
     "bid_date": { "type": "string", "description": "ISO date, e.g. 2026-04-28" },
-    "markup":   { "$ref": "#/$defs/numOrFormula", "description": "Bond/markup dollars, or a formula such as '=E{row:subtotal}*0.10' for a percentage markup that reflows when items change. The cover derives the % from it." },
+    "markup":   { "$vocab": "markup" },
     "output":   { "type": "string", "description": "Optional output .xlsx path." },
+    "shift_hours": { "type": "number", "exclusiveMinimum": 0, "default": 8, "description": "Hours in a crew-day. A pack that prices crews by hours multiplies days by this." },
     "cost_code_system": {
       "type": "object",
       "additionalProperties": false,
@@ -36,9 +37,18 @@
         "additionalProperties": false,
         "required": ["trade", "rate"],
         "properties": {
-          "trade": { "type": "string" },
-          "rate":  { "type": "number" }
-        }
+          "trade": { "type": "string", "description": "Resource name: a labor classification or, with kind: equipment, a piece of equipment." },
+          "rate":  { "type": "number" },
+          "kind":  { "enum": ["labor", "equipment"], "default": "labor" },
+          "base":       { "type": "number", "minimum": 0, "description": "Labor: base hourly wage. With burden_pct (and optional fringe), base * (1 + burden_pct) + fringe must equal rate within $0.01 (validate.py)." },
+          "burden_pct": { "type": "number", "minimum": 0, "description": "Labor: payroll burden as a fraction (0.32 = 32%)." },
+          "fringe":     { "type": "number", "minimum": 0, "description": "Labor: dollar-per-hour fringes added after the burden." },
+          "includes_operator": { "type": "boolean", "description": "Equipment: the hourly rate already carries its operator." }
+        },
+        "dependentRequired": { "base": ["burden_pct"], "burden_pct": ["base"], "fringe": ["base"] },
+        "if": { "properties": { "kind": { "const": "equipment" } }, "required": ["kind"] },
+        "then": { "not": { "anyOf": [ { "required": ["base"] }, { "required": ["burden_pct"] }, { "required": ["fringe"] } ] } },
+        "else": { "not": { "required": ["includes_operator"] } }
       }
     },
     "items": {
@@ -103,6 +113,7 @@
         "labor":       { "type": "array", "items": { "$ref": "#/$defs/labor_block" }, "description": "Optional: an item priced purely from spreads/cost_details, with no labor block, is legitimate." },
         "spreads":     { "$ref": "#/$defs/spreads" },
         "cost_details":{ "type": "array", "items": { "$ref": "#/$defs/cost_detail" } },
+        "unbalance":   { "type": "number", "description": "Dollars moved onto (negative: off) this item's bid. A pack's checks should require the estimate's unbalances to net to zero." },
         "rebar_spread":{ "$vocab": "rebar_spread" },
         "wbs":       { "type": "string", "description": "Optional WBS identifier, free-form (e.g. '1.2.3' or 'A.10.4'). No format validation." },
         "cost_code": { "type": "string", "description": "Optional cost-code reference (e.g. '02-110'). Free-form string; resolution to a category is a profile / render concern." },
@@ -150,6 +161,8 @@
         "driver":      { "$ref": "#/$defs/numOrFormula" },
         "uom":         { "type": "string" },
         "cost_code":   { "type": "string", "description": "Optional cost-code reference for this labor block. Free-form; resolution to a category is a profile / render concern." },
+        "notes": { "type": "array", "items": { "type": "string" }, "description": "Task notes, one line each, shown under the task header. (`note` is the title-row aside.)" },
+        "lines": { "type": "array", "items": { "$ref": "#/$defs/task_line" }, "description": "The task's own material / subcontract / equipment / other cost lines." },
         "activities": {
           "type": "array",
           "items": {
@@ -198,11 +211,49 @@
               "name":       { "type": "string" },
               "uom":        { "type": "string" },
               "qty":        { "$ref": "#/$defs/numOrFormula" },
-              "unit_price": { "$ref": "#/$defs/numOrFormula", "description": "A formula is allowed, so a line can hold a share of a shared-cost sheet pulled in with a cross-sheet {ref:SHEET!NAME}." }
+              "unit_price": { "$ref": "#/$defs/numOrFormula", "description": "A formula is allowed, so a line can hold a share of a shared-cost sheet pulled in with a cross-sheet {ref:SHEET!NAME}." },
+              "source": { "$ref": "#/$defs/line_source" },
+              "vendor": { "type": "string" }
             }
           }
         }
       }
+    },
+
+    "line_source": { "enum": ["quote", "plug"], "default": "plug", "description": "quote = priced from a vendor's quote (name it in vendor); plug = the estimator's number, still to be chased. Absent means plug." },
+
+    "task_line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cost_type", "name", "qty", "unit_price"],
+      "properties": {
+        "cost_type":  { "enum": ["material", "subcontract", "equipment", "other"] },
+        "name":       { "type": "string" },
+        "uom":        { "type": "string" },
+        "qty":        { "$ref": "#/$defs/numOrFormula" },
+        "unit_price": { "$ref": "#/$defs/numOrFormula" },
+        "source":     { "$ref": "#/$defs/line_source" },
+        "vendor":     { "type": "string" }
+      }
+    },
+
+    "cost_type_pcts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "labor":       { "type": "number", "minimum": 0 },
+        "equipment":   { "type": "number", "minimum": 0 },
+        "material":    { "type": "number", "minimum": 0 },
+        "subcontract": { "type": "number", "minimum": 0 }
+      }
+    },
+
+    "markup_by_type": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Named markup rows (overhead, insurance, profit, ...) as fractions by cost type, plus bond_pct: bond as a fraction of the bid.",
+      "properties": { "bond_pct": { "type": "number", "minimum": 0, "exclusiveMaximum": 1 } },
+      "additionalProperties": { "$ref": "#/$defs/cost_type_pcts" }
     }
   }
 }

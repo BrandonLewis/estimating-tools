@@ -60,13 +60,34 @@ resolving the BM estimate context and confirming the plan with the user.
    The client keys are LOGICAL operations, not 1:1 MCP tool names — several
    same-named MCP tools do something different; the tool-signature footguns
    are catalogued in the `estimating-reference` skill's
-   `references/api-constraints.md`. Verified mapping (BM MCP as of 2026-07):
+   `references/api-constraints.md`. Verified mapping (BM MCP as of 2026-10-16):
+
+   **General rule — every `create_*` binding:** the MCP create tools return
+   `{"error": ...}` on failure; they do not raise. The binder must check the
+   result and raise (e.g. `raise RuntimeError(result["error"])`) when it
+   contains `"error"`, or the executor's try/except records a failed push as
+   `"ok"` and the user is told it worked when nothing happened.
 
    - `list_labor_rates(classification=, is_current=True)` → MCP
-     `list_labor_rates`; post-filter to the classification and
-     `is_current=True`; return a plain list (empty when nothing matches).
-   - `create_labor_rate(classification=, burdened_hourly_rate=)` → MCP
-     `create_labor_rate`, closing over `organization_id`.
+     `list_labor_rates(organization_id=, classification=)` — the MCP tool
+     has NO `is_current` param (current rows are the default; drop it) and
+     caps at 50 rows across ALL of the caller's organizations when
+     `organization_id` is omitted, so always pass it. Post-filter the
+     result to an EXACT, case-sensitive `classification ==` match; return a
+     plain list (empty when nothing matches).
+   - `create_labor_rate(classification=, base_hourly_rate=, burden_percentage=,
+     fringe_hourly=, rate_basis=)` → MCP `create_labor_rate` with the same
+     arguments plus `organization_id`. `burden_percentage` is already a
+     percent (32.0); BidSheet.ai computes the burdened rate itself. There is
+     no `burdened_hourly_rate` parameter — never pass one.
+   - `list_equipment_rates(equipment_type=, is_current=True)` → MCP
+     `list_equipment_rates(organization_id=, equipment_type=)` — same two
+     gotchas as `list_labor_rates`: no `is_current` param (drop it) and pass
+     `organization_id` or risk a 50-row, all-orgs result. Post-filter to an
+     EXACT, case-sensitive `equipment_type ==` match; return a plain list.
+   - `create_equipment_rate(equipment_type=, hourly_rate=, includes_operator=)`
+     → MCP `create_equipment_rate` with the same arguments plus
+     `organization_id`.
    - `list_assemblies(assembly_type="CREW", name=)` → MCP
      `list_assemblies(context=, context_id=, assembly_type="CREW")` — it has
      NO name filter, so post-filter to EXACT `name ==` matches (substring
@@ -78,10 +99,14 @@ resolving the BM estimate context and confirming the plan with the user.
      crews). Return the new assembly's integer pk.
    - `list_components(assembly_id=)` → MCP `list_components`; map each
      component to `{"component_id": ..., "trade": ..., "count": quantity}`.
-   - `create_component(assembly_id=, trade=, count=)` → MCP
-     `create_component(assembly_id=, component_type="labor", name=trade,
-     trade=trade, quantity=count)`; link `labor_rate_id` when the trade has
-     a library rate.
+   - `create_component(assembly_id=, trade=, count=, kind=)` → MCP
+     `create_component(assembly_id=, component_type=kind, name=trade,
+     trade=trade, quantity=count)`, plus `labor_rate_id` (kind `labor`) or
+     `equipment_rate_id` (kind `equipment`) — look it up via ONLY the list
+     tool matching `kind` (`list_labor_rates` for labor,
+     `list_equipment_rates` for equipment) and pass the id when a current
+     rate exists for the trade. Leave `unit_cost` unset: the MCP tool
+     sources it from the linked rate.
    - `update_component(component_id=, count=)` → MCP
      `update_component(component_id=, quantity=count)`.
    - `delete_component(component_id=)` → MCP `delete_component`.

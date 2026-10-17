@@ -30,3 +30,5 @@ packages/bimforge/build/
 # only copy sat on the same disk as the 79 MB it was insurance for.
 !/data/caltrans-2025/manifest.json
 
+# brainstorming visual companion
+.superpowers/
