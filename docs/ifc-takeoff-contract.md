@@ -205,6 +205,11 @@ Two further consumers read the same conforming IFC per **element**, keyed by
   quantity is skipped instead. Pay items are keyed off the element's
   classification codes (see "What the consumer reads" above); a code several
   estimate items share pays none (`--schedule` narrows them to one schedule).
+  `--takeoff` (or `--takeoff-id N`) plans the same entries for
+  `upsert_modelled_elements(takeoff_id=...)`, a named project takeoff
+  (BidSheet.ai #1486 slice 7): no entry carries `pay_items`, because a takeoff
+  has none. Element selection, GlobalId checks and unit conversion are
+  unchanged.
 - `est-bim estimate-model` (`bimforge.bim.estimate_model5d`) writes the
   estimate back into the IFC as tasks, cost items and crews (see the module
   docstring). It links them to elements by GlobalId. Task finishes are

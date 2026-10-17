@@ -1,0 +1,107 @@
+# Fieldbook's palette, "Survey green". Fill = a cell's role; blue type on
+# cream = an input (every cell a person should type in). Everything else is
+# a formula or a label. Live status colors (pass/fail, QUOTE/PLUG) are
+# conditional formats, so they follow the numbers.
+meta:
+  basis: fieldbook (authored)
+  base_font: { name: Arial, size: 10 }
+
+fills:
+  band:       '1E4D3A'   # sheet/item header band, totals
+  colhead:    'D7E6DD'   # column heads
+  task:       'EAF2ED'   # task header band
+  note:       'F6FAF7'   # scope and task notes
+  input:      'FFF8DC'   # every input cell
+  lane_labor: 'F3F8F5'
+  lane_equip: 'F5F6FA'
+  lane_matl:  'F7F9F0'
+  lane_sub:   'FBF5F0'
+  ok_bg:      'E3F1E8'   # conditional: pass / quoted
+  bad_bg:     'FBE4E2'   # conditional: fail / plug
+
+font_colors:
+  white:   'FFFFFF'
+  ink:     '1F2933'
+  heading: '1E4D3A'   # column-head and task-band text (mockup's colhInk/taskInk)
+  input:   '1747B5'
+  muted:   '5B6770'
+  ok:      '1D7A46'
+  bad:     'B42318'
+
+font_sizes:
+  title: 12
+  body:  10
+  small:  8
+
+borders:
+  top_rule:  { style: thin,   sides: [top] }
+  total_box: { style: double, sides: [top] }
+
+number_formats:
+  money:   '#,##0.00;(#,##0.00);""'
+  money0:  '#,##0;(#,##0);""'
+  plug:    '"plug "#,##0;(#,##0);""'
+  qty:     '#,##0.00'
+  count:   'General'
+  hours:   '#,##0'
+  rate:    '#,##0.00'
+  pct:     '0.00%'
+  date:    'mmmm d, yyyy'
+  money_zero: '#,##0.00;(#,##0.00)'   # like money, but no third ("") section -- a $0 shows "0.00"
+
+alignments:
+  center: { horizontal: center }
+  right:  { horizontal: right }
+  left:   { horizontal: left }
+
+styles:
+  # -- bands and heads ---------------------------------------------------------
+  band:        { fill: band, font_color: white, bold: true }
+  band_title:  { fill: band, font_color: white, bold: true, size: title }
+  band_qty:    { fill: band, font_color: white, bold: true, number_format: qty }
+  band_input:  { fill: input, font_color: input, bold: true, number_format: qty }
+  head:        { fill: colhead, bold: true, align: center, font_color: heading }
+  head_left:   { fill: colhead, bold: true, align: left, font_color: heading }
+  # -- text ----------------------------------------------------------------------
+  label:       { font_color: ink }
+  label_bold:  { font_color: ink, bold: true }
+  note:        { fill: note, italic: true, font_color: muted }
+  end_marker:  { italic: true, font_color: muted }   # a calm "insert above" cue; no fill
+  tag:         { font_color: muted, size: small }
+  # -- inputs (blue on cream) ----------------------------------------------------
+  input_text:  { fill: input, font_color: input }
+  input_code:  { fill: input, font_color: input, bold: true }
+  input_qty:   { fill: input, font_color: input, number_format: qty }
+  input_count: { fill: input, font_color: input, number_format: count, align: center }
+  input_money: { fill: input, font_color: input, number_format: rate }
+  input_pct:   { fill: input, font_color: input, number_format: pct }
+  input_date:  { fill: input, font_color: input, number_format: date, align: left }
+  # -- task band -----------------------------------------------------------------
+  task_text:   { fill: task, bold: true, font_color: heading }
+  # -- formulas ------------------------------------------------------------------
+  calc_qty:    { number_format: qty }
+  calc_hours:  { number_format: hours, align: center }
+  calc_rate:   { number_format: rate }
+  calc_text:   { font_color: muted, align: center }
+  calc_money:  { number_format: money }
+  calc_pct:    { number_format: pct }
+  # -- Bid Form only: qty with no forced decimals, money that shows a $0 ----------
+  bidform_qty:    { number_format: General }
+  bidform_amount: { number_format: money_zero }
+  lane_labor:  { fill: lane_labor, number_format: money }
+  lane_equip:  { fill: lane_equip, number_format: money }
+  lane_matl:   { fill: lane_matl,  number_format: money }
+  lane_sub:    { fill: lane_sub,   number_format: money }
+  sub_label:   { bold: true, border: top_rule }
+  sub_qty:     { bold: true, border: top_rule, number_format: qty }
+  sub_money:   { bold: true, border: top_rule, number_format: money }
+  sub_hours:   { bold: true, border: top_rule, number_format: hours, align: center }
+  sub_plug:    { bold: true, border: top_rule, number_format: plug, font_color: bad }
+  total_label: { fill: band, font_color: white, bold: true, border: total_box }
+  total_money: { fill: band, font_color: white, bold: true, border: total_box, number_format: money }
+  total_hours: { fill: band, font_color: white, bold: true, border: total_box, number_format: hours, align: center }
+  total_plug:  { fill: band, font_color: white, bold: true, border: total_box, number_format: plug }
+  status:      { bold: true, align: center }
+  # -- conditional formats (font colour + fill only) ------------------------------
+  status_ok:   { font_color: ok,  fill: ok_bg,  bold: true }
+  status_bad:  { font_color: bad, fill: bad_bg, bold: true }

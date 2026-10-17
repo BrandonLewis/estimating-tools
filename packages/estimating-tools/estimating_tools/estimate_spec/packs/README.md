@@ -6,8 +6,10 @@ supplies the shape, the styling and the vocabulary. Packs are **data, never
 code**: every document is read with `yaml.safe_load` / `json.loads`, and nothing
 a pack names is imported or executed.
 
-Only one pack ships with the tool — `packs/demo/`, a generic worked example.
-Read it alongside this page; it is the shortest complete pack there is.
+Two packs ship with the tool. `packs/demo/` is the default and the shortest
+complete pack there is — read it alongside this page. `packs/fieldbook/` is a
+full estimate format built on every feature below; see "The fieldbook pack" at
+the end. Name it with `--format` (it becomes the default in a later release).
 
 A pack is resolved, in order, from `--format <dir>`, then the org profile's
 `estimating.format`, then the bundled demo pack. **A pack that is named but
@@ -47,6 +49,7 @@ files:                 # all five are required
 supports: [summarize, artifact]      # optional; see "Capabilities"
 labor:
   crew_factor_default: 1             # required if `supports:` includes summarize
+strict: true                         # optional, default false; see "strict:" below
 ```
 
 Every `files:` path must stay inside the pack directory. An unknown `files:`
@@ -71,6 +74,29 @@ into them explicitly and every other pack is refused by name:
 Declaring a capability your pack cannot actually satisfy is worse than not
 declaring it: the tools will run and produce a number. Leave it off unless the
 shape matches.
+
+### `strict:` — enforce your schema on the build path
+
+`scaffold`, `apply-takeoff` and `scaffold.validate_spec` always run full
+jsonschema validation against `FormatPack.schema` (the skeleton composed with
+your `vocabulary.yaml` — item_rules, `defs.takeoff`/`defs.spreads`, a `false`
+schema for a field your pack forbids outright, and so on). `build.generate`
+(and so `est-estimate build`) historically did not: it only ever checked
+cross-references (crew ids, trades, rate breakdowns), so a spec your
+vocabulary refuses could still be built if nothing validated it first.
+
+`strict: true` closes that gap: `generate` runs the same schema check, in the
+same `schema violation: $[path]: <message>` shape, before laying out a single
+cell. It is opt-in and `false` by default — a pack that never sets it builds
+exactly as it always has; this is not one of the two `supports:` capabilities
+(every pack's build path can run its own schema, the same way every pack can
+be scaffolded against), just a switch for a check that was already true of
+your pack and is now also enforced where it writes a file.
+
+Turn it on once your vocabulary's refusals are the ones you actually want
+build-time to enforce — not every pack needs this the day it is written, but
+a pack that lays out its own per-item invariants (fieldbook's per-task cost
+code, its ban on item-level `cost_details`) should.
 
 ## Workbook-level sheets, protection and conditional formats
 
@@ -295,6 +321,31 @@ cell's own overrides) must say `locked: false`. Excel will not let anyone
 pick from a locked cell's list, so the build refuses a dropdown on a locked
 cell by name rather than ship one nobody can use.
 
+### `ref_error:` — a pack-authored message when a cell's value fails to resolve
+
+```yaml
+G: { formula: "={ref:markup_grid.{it}}",
+     ref_error: "fieldbook lays out markup rows overhead, insurance and profit only (got '{it}')" }
+```
+
+When a non-`optional:` cell's value or formula fails to resolve (an unknown
+`{ref:...}`, `{row:NAME}` or `{p.x}`), the build normally re-raises the bare
+`KeyError`/`ValueError` from whatever failed. `ref_error:` names a friendlier
+message instead — itself a template, resolved the same `{it}` / `{p.x}` / etc.
+way, which still works even though the cell's own `{ref:...}` could not — and
+raises it as a `RecipeError`. It does not apply to a cross-sheet
+`{ref:SHEET!...}` failure, which always names its own site (see "Referring to
+another sheet" below) and is never swallowed or renamed.
+
+### A leading zero marks text, not a number
+
+A resolved cell value that looks like a bare integer (`"10"`, `"-5"`) is
+written as a number — except when it is zero-padded: a digit string longer
+than one character and starting with `"0"` (`"010"`, `"007"`) is written as
+text instead. A single `"0"` still becomes `0`. This matters for item numbers
+and other codes whose leading zero carries meaning (`"010"` is a label, not
+the number ten).
+
 ## New optional spec fields
 
 A handful of fields any pack's estimate config may now carry — generic
@@ -348,6 +399,14 @@ a pack's `vocabulary.yaml`:
   by cost type is priced in the workbook by a pack that lays out a markup
   sheet".
 
+  A pack that sets `markup_by_type: required` instead goes further: the
+  schema renders ONLY the by-type object (no `oneOf` with a plain
+  number/formula), so a plain `markup` is refused outright at
+  `validate_spec` — and, independently, the builder itself refuses a non-dict
+  `markup` by name, in case something ever calls `generate()` without
+  validating first. Fieldbook sets `required`: it lays out its own Markup
+  sheet and nothing else makes sense there.
+
 - **`items[].unbalance`**: dollars moved **onto** this item's bid (negative:
   off it). There is no engine-level check that an estimate's unbalances net
   to zero — a pack's own Checks sheet is where that belongs.
@@ -384,6 +443,7 @@ a pack's `vocabulary.yaml`:
 | `item_rules`   | optional                  | extra conditional schema rules (e.g. "a line item requires a takeoff") |
 | `defs.rebar_spread` | optional             | omit it and the field is not permitted at all |
 | `defs.schedule`| optional                  | omit it and a plain object is accepted |
+| `markup_by_type` | optional (`true` \| `false` \| `"required"`, default `false`) | `true`: `markup` may be a plain number/formula OR the by-type object (see "markup" below). `"required"`: the schema renders ONLY the by-type object — a plain number/formula markup is refused, both at `validate_spec` and (independently) by the builder. `false`/omitted: plain number/formula only, as every pack had before this. |
 
 Schema you supply may only `$ref` within the composed document (a `$ref` must
 start with `#`).
@@ -405,6 +465,8 @@ than failing partway through someone's scaffold.
 | `default_prefix`      | sheet-name prefix for every other item |
 | `first_slot`          | the labor slot a skeleton block starts at (must match `slot_pattern`) |
 | `placeholder_takeoff` | *optional*: `{kind, fields}` for a zeroed takeoff block, when the default item recipe needs one. `kind` must be in `defs.takeoff`'s `kind` enum. Omit it when the recipe carries its own takeoff shape. |
+| `first_cost_code`     | *optional*: the `cost_code` scaffold gives its skeleton task. Set it when the vocabulary requires a cost code on every labor block (fieldbook does); without it a scaffolded spec fails the pack's own schema. |
+| `default_markup`      | *optional*: the `markup` value a fresh scaffold starts with, in place of the plain `0` every other pack keeps. Set it when the vocabulary requires markup by cost type (`markup_by_type: required`, fieldbook does) — a non-empty object such as `{bond_pct: 0}` is enough, since every other percentage defaults to 0. |
 
 ### `seed.takeoff_mapping`
 
@@ -452,6 +514,81 @@ ref is an *address written where it is used*: it names its target sheet on the
 spot, so it can differ cell by cell and can read a sheet whose name comes from
 the estimate config. Many units sharing one anchor → a global. One unit
 wanting one particular other sheet → a cross-sheet ref.
+
+## The fieldbook pack
+
+`packs/fieldbook/` is a complete estimate format, designed from scratch
+(spec: `docs/superpowers/specs/2026-10-16-fieldbook-format-design.md`). Every
+dollar is classified Labor / Equipment / Material / Subcontract from the crew
+row up to the bid; cost codes are the unit of work; the Bid Form matches the
+agency's arithmetic; live checks say what is wrong. Build its example with:
+
+```bash
+est-estimate build packs/fieldbook/examples/demo-pipeline.estimate.yaml \
+    -o demo.xlsx --format packs/fieldbook
+```
+
+**Sheets**, in order: Bid Form (unit price = `ROUND(bid / qty, 2)`, amount =
+qty × unit price, a status strip of passing checks — no internal cost figure,
+not even a plug total, appears here) · Cost Summary (per item: MH, the four
+cost types, direct, plugs, markup, unbalance, bid; its totals also carry the
+plug $ and plug % of direct that the Bid Form carries none of) · Markup
+(overhead / insurance / profit by cost type, the bond, per-item unbalance) ·
+Checks · Rates (one table, labor and equipment by full name) · Codes (hidden:
+the codes the estimate uses) · one sheet per bid item.
+
+**An item sheet** is a header band, scope notes, the takeoff (with a plan
+reference per row and a ✓ tie to bid qty), a recap of each task, and one task
+block per cost code: header (code and description), notes, crew rows, cost
+lines, subtotal, and an `END` marker row. Inputs are blue on cream; everything
+else is a formula. A crew row's cost lands in Labor or Equip by the resource's
+Kind on the Rates sheet; a cost line's in Equip, Matl (also `Other`) or Sub by
+its Type cell.
+
+**Round-trip tags.** Every laid-out row carries a hidden kind tag (column Q:
+`ITEM`, `NOTE`, `HEAD`, `TAKEOFF`, `RECAP`, `TOTAL`, `TASK`, `CREW`, `LINE`,
+`END`, `SUBTOTAL`). Rows inside a task block also carry the block's cost
+code, as a formula in column R — `=A{r}&""` on the TASK row, `=R{r-1}` below
+it — so a task block copied and pasted in Excel follows its own header's
+code. The `END` row (a calm, italic "insert new lines above this row" cue,
+no amounts) closes every task block, placed so that a copied CREW/LINE row
+pasted in right above it lands inside the subtotal's range — Excel grows a
+range whose end anchor sits at the insertion point, which is what makes
+"insert, don't append" actually total the pasted row. The Rates table ends
+with its own insert-above marker row the same way, so a rate pasted in
+above it lands inside both the crew-resource dropdown and the crew VLOOKUP
+range (the Markup sheet's three rows are fixed by design — see "Limits,
+today"). Columns S and T are helper flags the Checks sheet sums. The code,
+resource, Type and Source cells are strict dropdowns. No sheet is
+protected: the workbook is edited by copy and paste.
+
+**Checks** (one row per rule per item, except rule 4 which is pooled): 1
+takeoff total = bid qty · 2 every crew resource has a rate · 3 every cost
+line has a qty and a unit price · 4 unbalance nets to zero (all items at
+once) · 5 the recap ties to the detail rows (a `SUMIF` over the item's kind
+tags) · 6 per item, Bid Form amount = Cost Summary bid (within the
+unit-price rounding) · 7 no cost line without a code · 8 no crew pairs an
+operator-included machine with an Equipment Operator row.
+
+**What it asks of a spec:** every item has at least one task and every task a
+`cost_code`; a `line_item` has a takeoff (`linear`, `count`, or the
+`measured` lines apply-takeoff writes), a `lump_sum` none; cost lines live in
+tasks (`labor[].lines`) — item-level `cost_details` and `spreads` are refused;
+`markup` must be the by-type object (`markup_by_type: required`) — a plain
+number or formula is refused outright, not merely unread.
+
+**Limits, today:** the Markup sheet lays out exactly three rows — overhead,
+insurance, profit — and refuses to build a spec whose markup names another
+(fieldbook lays out markup rows overhead, insurance and profit only); unlike
+the Rates table, those three rows are fixed by design — inserting a row on
+the Markup sheet does not add a markup row, there is no insert-above marker
+there, and there is no plan to add one; the Codes sheet lists the codes the
+estimate's own items use, duplicates possible when more than one task shares
+a code (de-duplicating it, and the dropdown it backs, is a later item); no
+`supports:` — `summarize` would price a different bid.
+
+Its tests evaluate the built workbook with `pycel` (the `test` extra) and
+fail, not skip, without it under `CI=true`.
 
 ## Checking your pack
 

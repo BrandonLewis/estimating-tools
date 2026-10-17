@@ -1,0 +1,24 @@
+# Fieldbook: a bundled estimate format designed from scratch (not derived from
+# any customer's workbook). Costs by type, cost codes everywhere, a bid form
+# that matches the agency's math, live checks, inputs visibly separate from
+# formulas. Spec: docs/superpowers/specs/2026-10-16-fieldbook-format-design.md.
+#
+# No `supports:`. summarize would price a different bid (it ignores
+# shift_hours, task lines and unbalance), and the artifact editor does not
+# read fieldbook's shapes. No `protect:` either: fieldbook is edited by copy
+# and paste, and Excel refuses to paste into a locked cell.
+name: fieldbook
+version: 1
+provenance: authored
+files:
+  units: units.yaml
+  tokens: tokens.yaml
+  recipes: recipes.yaml
+  vocabulary: vocabulary.yaml
+  seed: seed.yaml
+# fieldbook's own refusals (item-level cost_details, spreads, a missing cost
+# code, ...) live in its vocabulary's item_rules/defs -- but only
+# scaffold.validate_spec ever ran that schema. strict: true makes
+# build.generate (and so `est-estimate build`) run it too, instead of a
+# build-path caller bypassing every one of those refusals.
+strict: true

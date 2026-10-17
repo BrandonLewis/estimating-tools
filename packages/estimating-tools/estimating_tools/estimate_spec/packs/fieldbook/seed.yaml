@@ -1,0 +1,41 @@
+# What a fresh fieldbook spec starts with, and how apply-takeoff routes
+# measured geometry. Read by scaffold, apply-takeoff and compact.
+rate_table_trades: [Superintendent, Equipment Operator, Laborer, Pipelayer]
+default_crew:
+  - { trade: Laborer, count: 2, days: 0 }
+crews:
+  - id: PIPE-CREW
+    description: Pipe crew
+    members:
+      - { trade: Superintendent, count: 1 }
+      - { trade: Pipelayer, count: 2 }
+      - { trade: Equipment Operator, count: 1 }
+      - { trade: Laborer, count: 2 }
+cost_codes:
+  - { code: "01-100", description: Mobilization }
+  - { code: "02-100", description: Trench excavation and pipe laying }
+  - { code: "02-200", description: Backfill and compaction }
+  - { code: "02-300", description: Pavement restoration }
+  - { code: "02-510", description: Valves and appurtenances }
+
+scaffold:
+  default_item_recipe: line_item
+  rate_host_recipe:    lump_sum
+  rate_host_sheet:     "Setup"        # never "Rates": that is a book sheet
+  rate_host_prefix:    MOB
+  default_prefix:      ITEM
+  first_slot:          "01"
+  first_cost_code:     "01-100"       # the skeleton task's code (fieldbook requires one)
+  default_markup:      { bond_pct: 0 }  # fieldbook requires markup by cost type; a valid minimal object
+  placeholder_takeoff:                # a zeroed measured line, so a scaffolded
+    kind: measured                    # line_item validates before apply-takeoff
+    fields: [footing_cy, footing_cf, wall_cy, wall_cf, deck_cy, deck_cf]
+
+takeoff_mapping:
+  kind: measured
+  line_fields: [footing_cy, footing_cf, wall_cy, wall_cf, deck_cy, deck_cf]
+  section_types:
+    footing:   { cy: footing_cy, cf: footing_cf }
+    walls:     { cy: wall_cy,    cf: wall_cf }
+    wing_wall: { cy: wall_cy,    cf: wall_cf }
+    decks:     { cy: deck_cy,    cf: deck_cf, label_prefix: "DECK" }

@@ -35,11 +35,16 @@ jobs:
           python -m pip install -U pip setuptools wheel
           pip install -e 'packages/estimating-tools[all]'
           python -c "from importlib.metadata import version; import bimforge, estimating_tools; print('bimforge', version('bimforge'), 'estimating_tools', version('estimating_tools'))"
-      - run: python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests -q
       - name: Dependency vulnerability audit (pip-audit)
+        # Audits [all] -- what users install -- before the test-only extra.
         run: |
           pip install pip-audit
           pip-audit --skip-editable
+      - name: Install test-only tools
+        # pycel (CVE-2024-53924: evaluating an untrusted workbook runs code) is
+        # never in [all]; it joins after the audit, only to evaluate test-built workbooks.
+        run: pip install -e 'packages/estimating-tools[test]'
+      - run: python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests -q
 
   checks:
     runs-on: ubuntu-latest

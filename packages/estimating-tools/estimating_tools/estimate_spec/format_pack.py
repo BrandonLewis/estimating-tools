@@ -93,16 +93,23 @@ def _local_refs_only(node, where: str = "defs") -> None:
             _local_refs_only(v, f"{where}[{i}]")
 
 
-def _markup_schema(by_type: bool) -> dict:
-    """The `markup` property: numOrFormula, plus markup_by_type when opted in."""
-    if not by_type:
-        return {"$ref": "#/$defs/numOrFormula",
-                "description": "Bond/markup dollars, or a formula such as "
-                               "'=E{row:subtotal}*0.10'."}
-    return {"oneOf": [{"$ref": "#/$defs/numOrFormula"}, {"$ref": "#/$defs/markup_by_type"}],
-            "description": "Bond/markup dollars, a formula such as "
-                           "'=E{row:subtotal}*0.10', or (markup_by_type) percentages "
-                           "by cost type plus a bond rate."}
+def _markup_schema(markup_by_type) -> dict:
+    """The `markup` property: numOrFormula, plus markup_by_type when opted in
+    (`true`), or markup_by_type ONLY when required (`"required"` -- a plain
+    number/formula markup is refused outright, not just unread)."""
+    if markup_by_type == "required":
+        return {"$ref": "#/$defs/markup_by_type",
+                "description": "Percentages by cost type plus a bond rate -- "
+                               "this pack lays out its own markup sheet and "
+                               "refuses a plain number/formula markup."}
+    if markup_by_type is True:
+        return {"oneOf": [{"$ref": "#/$defs/numOrFormula"}, {"$ref": "#/$defs/markup_by_type"}],
+                "description": "Bond/markup dollars, a formula such as "
+                               "'=E{row:subtotal}*0.10', or (markup_by_type) percentages "
+                               "by cost type plus a bond rate."}
+    return {"$ref": "#/$defs/numOrFormula",
+            "description": "Bond/markup dollars, or a formula such as "
+                           "'=E{row:subtotal}*0.10'."}
 
 
 def compose_schema(skeleton: dict, vocabulary: dict, recipe_names: list) -> dict:
@@ -128,9 +135,11 @@ def compose_schema(skeleton: dict, vocabulary: dict, recipe_names: list) -> dict
         "schedule": (vocabulary.get("defs") or {}).get("schedule", {"type": "object"}),
         # Object-form markup (percentages by cost type) is priced only by a
         # pack that lays out its own markup sheet to read them, so a pack opts
-        # in with `markup_by_type: true`. Every other pack keeps the plain
+        # in with `markup_by_type: true` (also accepting a plain number), or
+        # requires it outright with `markup_by_type: required` (refusing a
+        # plain number/formula markup). Every other pack keeps the plain
         # number-or-formula markup it has always had.
-        "markup": _markup_schema(vocabulary.get("markup_by_type") is True),
+        "markup": _markup_schema(vocabulary.get("markup_by_type")),
     }
 
     def fill(node):
@@ -174,6 +183,12 @@ class FormatPack:
     #: `estimating.format`, or a direct `load_pack(path)`. False only for the
     #: bundled pack reached as `resolve_pack`'s last-resort default.
     chosen: bool = True
+    #: `strict: true` in the manifest: `build.generate` validates the spec
+    #: against this pack's composed `schema` (the same jsonschema check
+    #: `scaffold.validate_spec` runs) before laying anything out, instead of
+    #: only ever checking cross-references. Opt-in and False by default, so
+    #: every pack that doesn't set it keeps building exactly as before.
+    strict: bool = False
 
     @property
     def key(self) -> tuple[str, str, str]:
@@ -213,6 +228,11 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
     labor = meta.get("labor") or {}
     if not isinstance(labor, dict):
         raise FormatPackError(f"{manifest}: 'labor' must be a mapping")
+    strict = meta.get("strict", False)
+    if not isinstance(strict, bool):
+        raise FormatPackError(
+            f"{manifest}: 'strict' must be true or false "
+            f"(got {type(strict).__name__} {strict!r})")
     if "summarize" in supports and "crew_factor_default" not in labor:
         raise FormatPackError(
             f"{manifest}: pack '{meta.get('name')}' declares supports: summarize "
@@ -270,10 +290,10 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                    if missing and set(missing) <= set(_SUMMARIZE_VOCAB) else "")
         raise FormatPackError(
             f"{root}: pack '{meta.get('name')}' vocabulary is missing {why}{because}")
-    if not isinstance(vocab.get("markup_by_type", False), bool):
+    if vocab.get("markup_by_type", False) not in (True, False, "required"):
         raise FormatPackError(
             f"{root}: pack '{meta.get('name')}' vocabulary.markup_by_type must be "
-            f"true or false (got {vocab['markup_by_type']!r})")
+            f"true, false or 'required' (got {vocab['markup_by_type']!r})")
     from estimating_tools.estimate_spec.recipe import RecipeError, validate_recipes
     try:
         validate_recipes(recipes, units["units"])
@@ -313,6 +333,27 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
             raise FormatPackError(
                 f"{root}: pack '{meta.get('name')}' "
                 f"seed.scaffold.placeholder_takeoff.kind {kind!r} not in {allowed}")
+
+    # A pack whose vocabulary requires markup by cost type (markup_by_type:
+    # required -- fieldbook's own situation) must give `scaffold` a markup
+    # value its OWN schema actually accepts; the plain `0` every other
+    # pack's skeleton keeps would fail that pack's own schema the moment
+    # anyone scaffolded a fresh item.
+    if vocab.get("markup_by_type") == "required":
+        default_markup = scaffold.get("default_markup")
+        if not isinstance(default_markup, dict):
+            raise FormatPackError(
+                f"{root}: pack '{meta.get('name')}' declares vocabulary "
+                "markup_by_type: required, so seed.scaffold.default_markup must be a "
+                f"mapping of percentages by cost type (got "
+                f"{type(default_markup).__name__} {default_markup!r})")
+
+    first_cost_code = scaffold.get("first_cost_code")
+    if first_cost_code is not None and (
+            not isinstance(first_cost_code, str) or not first_cost_code):
+        raise FormatPackError(
+            f"{root}: pack '{meta.get('name')}' seed.scaffold.first_cost_code must be "
+            f"a non-empty string (got {type(first_cost_code).__name__} {first_cost_code!r})")
 
     takeoff_mapping = seed.get("takeoff_mapping")
     if not isinstance(takeoff_mapping, dict):
@@ -355,7 +396,7 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                       units=units["units"], tokens=docs["tokens"], recipes=recipes,
                       schema=schema, vocabulary=vocab,
                       seed=docs["seed"], supports=frozenset(supports), labor=labor,
-                      protect=protect, chosen=chosen)
+                      protect=protect, chosen=chosen, strict=strict)
 
 
 def require_support(pack: FormatPack, tool: str) -> None:
