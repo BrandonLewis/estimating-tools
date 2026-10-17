@@ -313,6 +313,85 @@ def test_seed_takeoff_mapping_must_be_a_mapping(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# markup_by_type: required -> seed.scaffold.default_markup must be a mapping
+# ---------------------------------------------------------------------------
+
+def _edit_vocab(root: Path, fn) -> Path:
+    import yaml
+
+    path = root / "vocabulary.yaml"
+    doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    fn(doc)
+    path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    return root
+
+
+def _require_markup_by_type(root: Path) -> Path:
+    return _edit_vocab(root, lambda d: d.update(markup_by_type="required"))
+
+
+def test_markup_by_type_required_needs_a_mapping_default_markup(tmp_path):
+    """fieldbook's own situation: a pack whose vocabulary requires markup by
+    cost type must give `scaffold` something that actually validates -- the
+    plain `0` every other pack's skeleton keeps would fail the pack's own
+    schema the moment anyone scaffolded a fresh item."""
+    root = _require_markup_by_type(_make_pack(tmp_path))     # no default_markup at all
+    with pytest.raises(fp.FormatPackError,
+                       match=r"copy.*seed\.scaffold\.default_markup must be a mapping"):
+        fp.load_pack(root)
+
+
+def test_markup_by_type_required_refuses_a_non_mapping_default_markup(tmp_path):
+    root = _require_markup_by_type(
+        _edit_seed(_make_pack(tmp_path), lambda d: d["scaffold"].update(default_markup=0)))
+    with pytest.raises(fp.FormatPackError,
+                       match=r"seed\.scaffold\.default_markup must be a mapping"):
+        fp.load_pack(root)
+
+
+def test_markup_by_type_required_accepts_a_mapping_default_markup(tmp_path):
+    root = _require_markup_by_type(
+        _edit_seed(_make_pack(tmp_path),
+                  lambda d: d["scaffold"].update(default_markup={"bond_pct": 0})))
+    assert fp.load_pack(root).vocabulary["markup_by_type"] == "required"
+
+
+def test_a_pack_without_markup_by_type_required_owes_no_default_markup(tmp_path):
+    """Every other pack (markup_by_type false/true) keeps the plain `0`
+    skeleton default -- no default_markup needed at all."""
+    root = _make_pack(tmp_path)
+    assert fp.load_pack(root).seed["scaffold"].get("default_markup") is None
+
+
+# ---------------------------------------------------------------------------
+# seed.scaffold.first_cost_code, when present, must be a non-empty string
+# ---------------------------------------------------------------------------
+
+def test_first_cost_code_if_present_must_be_a_non_empty_string(tmp_path):
+    root = _edit_seed(_make_pack(tmp_path), lambda d: d["scaffold"].update(first_cost_code=""))
+    with pytest.raises(fp.FormatPackError,
+                       match=r"seed\.scaffold\.first_cost_code must be a non-empty string"):
+        fp.load_pack(root)
+
+
+def test_a_non_string_first_cost_code_is_refused(tmp_path):
+    root = _edit_seed(_make_pack(tmp_path), lambda d: d["scaffold"].update(first_cost_code=1))
+    with pytest.raises(fp.FormatPackError,
+                       match=r"seed\.scaffold\.first_cost_code must be a non-empty string"):
+        fp.load_pack(root)
+
+
+def test_a_valid_first_cost_code_is_accepted(tmp_path):
+    root = _edit_seed(_make_pack(tmp_path), lambda d: d["scaffold"].update(first_cost_code="01-100"))
+    assert fp.load_pack(root).seed["scaffold"]["first_cost_code"] == "01-100"
+
+
+def test_first_cost_code_is_optional(tmp_path):
+    root = _make_pack(tmp_path)
+    assert fp.load_pack(root).seed["scaffold"].get("first_cost_code") is None
+
+
+# ---------------------------------------------------------------------------
 # foreman_trade: a summarize concern, not every pack's tax
 # ---------------------------------------------------------------------------
 

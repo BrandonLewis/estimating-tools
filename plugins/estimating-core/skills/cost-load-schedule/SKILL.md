@@ -126,6 +126,24 @@ costload the whole job:
    `--schedule-name` to write under another name. Read the result back with
    `~/.estimating/bin/est-bim schedule-read --ifc <out.ifc> --schedule "<name>" --out sched.json --costs-out costs.json`.
 
+   **Bringing model edits back.** If the IFC is edited after the export, its
+   quantities return through `~/.estimating/bin/est-bim model-elements`, to one of two targets
+   (the push-takeoff skill has the full steps):
+   - **Straight onto the estimate** with
+     `upsert_modelled_elements(estimate_id=...)`. Fits a one-off estimate.
+   - **Into a named project takeoff** with
+     `~/.estimating/bin/est-bim model-elements <ifc> --takeoff-id <id>` and
+     `upsert_modelled_elements(takeoff_id=...)`. Fits when several estimates
+     or estimators share the measurement, or when you want to compare
+     measurements. Pick or create the takeoff with `list_takeoffs` /
+     `create_takeoff`, and ask the user which one; never guess. Then call
+     `compare_takeoff(takeoff_id, estimate_id)` and show the diff, including
+     `not_in_takeoff` (manual elements that stay and still count). Only after
+     the user confirms, call `apply_takeoff` with the diff's `revision`.
+
+   Re-run this step after an apply so the IFC carries the estimate as it now
+   allocates.
+
 ## Notes
 - The deterministic packages never touch BidSheet.ai; this skill does the MCP
   reads and writes the `costs.json` the CLIs consume.

@@ -254,11 +254,17 @@ def sheet_name(entry, structure_id, *, mob: bool, pack) -> str:
 
 def _skeleton_labor(pack) -> list:
     sc = pack.seed["scaffold"]
-    return [{
+    block = {
         "slot": sc["first_slot"],
         "description": "(fill in)",
         "crew": copy.deepcopy((pack.seed or {}).get("default_crew", [])),
-    }]
+    }
+    # A pack whose vocabulary requires a cost code on every labor block
+    # (fieldbook) names the skeleton task's code; every other pack's
+    # skeleton is unchanged.
+    if sc.get("first_cost_code"):
+        block["cost_code"] = sc["first_cost_code"]
+    return [block]
 
 
 def placeholder_takeoff(spec: dict | None) -> dict | None:
@@ -402,7 +408,11 @@ def scaffold_spec(manifest, structures: list | None = None, *,
     bid_date = _frame_get(manifest, "bid_date")
     if bid_date:
         spec["bid_date"] = str(bid_date)
-    spec["markup"] = 0
+    # A pack whose vocabulary requires markup by cost type (markup_by_type:
+    # required, e.g. fieldbook) names a valid empty-ish markup object
+    # (seed.scaffold.default_markup) instead of the plain 0 every other
+    # pack's skeleton keeps.
+    spec["markup"] = copy.deepcopy(sc.get("default_markup", 0))
     spec["rate_table"] = [{"trade": t, "rate": 0}
                           for t in (pack.seed or {}).get("rate_table_trades", [])]
     spec["items"] = spec_items

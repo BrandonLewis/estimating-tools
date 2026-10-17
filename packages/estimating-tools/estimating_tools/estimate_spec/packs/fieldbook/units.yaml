@@ -1,0 +1,783 @@
+# Fieldbook's units.
+#
+# Item sheets share one grid, A..T:
+#   A Name/code  B Qty  C Unit  D Count  E Days  F Hrs  G Rate  H Type
+#   I Source     J Vendor  K MH  L Labor  M Equip  N Matl  O Sub  P Total
+#   Q kind (hidden)  R code (hidden)  S ok-flag (hidden)  T flag (hidden)
+# Q and R are the round-trip tag pair: Q is a literal row kind (ITEM, NOTE,
+# HEAD, TAKEOFF, RECAP, TOTAL, TASK, CREW, LINE, END, SUBTOTAL), R is the row's
+# cost code as a formula -- on a TASK row `=A{r}&""` (the visible code
+# cell), on every other row of the block `=R{r-1}` (the row above), so a
+# pasted block follows its own header. S and T are per-row helper flags the
+# Checks sheet sums by kind (see each row's comment).
+units:
+
+  # ---------------------------------------------------------------- item sheets
+  item_header:
+    params:
+      item_no:       { type: string }
+      description:   { type: string }
+      qty:           { type: formula }
+      uom:           { type: string }
+      takeoff_total: { type: formula }      # "={ref:quantity.total}" or "n/a"
+    rows:
+      - cells:
+          A: { value: "{p.item_no}",        style: band_title }
+          B: { value: "{p.description}",    style: band_title }
+          G: { formula: "{p.qty}",          style: band_input }
+          H: { value: "{p.uom}",            style: band }
+          I: { value: "Takeoff",            style: band }
+          J: { formula: "{p.takeoff_total}", style: band_qty }
+          Q: { value: ITEM, style: tag }
+        merge: "B:F"
+        fill_row: band
+        mark: id
+    exports:
+      qty:        "$G${row:id}"
+      takeoff:    "$J${row:id}"
+      total_col:  "$P:$P"
+      kind_col:   "$Q:$Q"
+      code_col:   "$R:$R"
+      ok_col:     "$S:$S"
+      flag_col:   "$T:$T"
+
+  scope_notes:
+    params: { lines: { type: list, of: string } }
+    rows:
+      - repeat: p.lines
+        cells:
+          A: { value: "{it}", style: note }
+          Q: { value: NOTE, style: tag }
+        merge: "A:J"
+
+  # ---------------------------------------------------------------- Bid Form
+  bid_form_head:
+    params:
+      project:  { type: string }
+      bid_date: { type: string }
+    rows:
+      - cells: { A: { value: "{p.project}", style: band_title } }
+        merge: "A:F"
+        fill_row: band
+      - cells:
+          A: { value: "Bid date", style: label_bold }
+          B: { value: "{p.bid_date}", style: input_date }
+      - cells:
+          A: { value: "Item",        style: head_left }
+          B: { value: "Description", style: head_left }
+          C: { value: "Qty",         style: head }
+          D: { value: "Unit",        style: head }
+          E: { value: "Unit price",  style: head }
+          F: { value: "Amount",      style: head }
+        mark: heads
+    exports:
+      first: "{row:heads+2}"
+
+  # -------------------------------------------------------------------- Rates
+  rates_shift:
+    params: { shift_hours: { type: number } }
+    rows:
+      - cells: { A: { value: "Rates", style: band_title } }
+        merge: "A:H"
+        fill_row: band
+      - cells:
+          A: { value: "Hours per crew-day", style: label_bold }
+          B: { value: "{p.shift_hours}",   style: input_count }
+        mark: shift
+    exports:
+      shift: "$B${row:shift}"
+
+  # One table, labor and equipment together, keyed by full name. Kind says
+  # which; $/hr = base x (1 + burden) + fringe when the row carries the
+  # breakdown, else the flat rate. Crew rows VLOOKUP column 2 (kind),
+  # column 6 (includes operator) and column 8 ($/hr).
+  rates:
+    params:
+      rates:          { type: list }
+      kind_labor:     { type: string, default: Labor }
+      kind_equipment: { type: string, default: Equipment }
+      op_True:        { type: string, default: "Yes" }
+      op_False:       { type: string, default: "No" }
+    rows:
+      - cells:
+          A: { value: "Resource",          style: head_left }
+          B: { value: "Kind",              style: head }
+          C: { value: "Base",              style: head }
+          D: { value: "Burden %",          style: head }
+          E: { value: "Fringe",            style: head }
+          F: { value: "Includes operator", style: head }
+          G: { value: "Rate",              style: head }
+          H: { value: "$/hr",              style: head }
+      - repeat: p.rates
+        cells:
+          A: { value: "{it.trade}",               style: input_text }
+          B: { value: "{p.kind_{it.kind}}",       style: input_text,
+               validation: { list: ["Labor", "Equipment"] } }
+          C: { value: "{it.base}",                style: input_money, optional: true }
+          D: { value: "{it.burden_pct}",          style: input_pct,   optional: true }
+          E: { value: "{it.fringe}",              style: input_money, optional: true }
+          F: { value: "{p.op_{it.includes_operator}}", style: input_text, if_it: { kind: equipment },
+               validation: { list: ["Yes", "No"] } }
+          G: { value: "{it.rate}",                style: input_money, if_it: { base: "" } }
+          H: { formula: "=IF(ISNUMBER(C{r}),ROUND(C{r}*(1+D{r})+E{r},2),G{r})", style: calc_rate }
+        mark_first: first
+        mark_last:  last
+      # An insert-above marker, the same idea as a task block's own END row:
+      # a rate copied and pasted in right above it lands inside both the
+      # crew VLOOKUP table and the crew-resource dropdown below, because
+      # Excel grows a range whose end anchor sits at the insertion point --
+      # instead of a rate appended here being silently excluded from either.
+      - cells:
+          A: { value: "insert new rates above this row", style: end_marker }
+        mark: end
+    exports:
+      table: "$A${row:first}:$H${row:end}"
+      names: "$A${row:first}:$A${row:end}"
+
+  # -------------------------------------------------------------------- Codes
+  code_rows:                           # one instance per bid item: its tasks' codes
+    params: { tasks: { type: list } }
+    rows:
+      - repeat: p.tasks
+        cells:
+          A: { value: "{it.cost_code}",   style: label }
+          B: { value: "{it.description}", style: label }
+
+  code_list:                           # publishes the dropdown source; lays out no rows
+    rows: []
+    exports:
+      col: "$A:$A"
+
+  # ---------------------------------------------------------------- takeoff
+  takeoff_linear:
+    params: { segments: { type: list } }
+    rows:
+      - cells:
+          A: { value: "Takeoff",  style: head_left }
+          B: { value: "LF",       style: head }
+          C: { value: "Ref",      style: head }
+          Q: { value: HEAD, style: tag }
+      - repeat: p.segments
+        cells:
+          A: { value: "{it.label}",     style: input_text }
+          B: { value: "{it.length_lf}", style: input_qty }
+          C: { value: "{it.ref}",       style: input_text, optional: true }
+          Q: { value: TAKEOFF, style: tag }
+        mark_first: seg_first
+        mark_last:  seg_last
+      - &takeoff_total
+        cells:
+          A: { value: "Takeoff total", style: sub_label }
+          B: { formula: "=SUM(B{row:seg_first}:B{row:seg_last})", style: sub_qty }
+          E: { value: "Bid qty", style: label }
+          F: { formula: "={ref:item_header.qty}", style: calc_qty }
+          G: { formula: '=IF(ABS(B{r}-F{r})<0.005,"✓","✗")', style: status }
+          Q: { value: TOTAL, style: tag }
+        mark: total
+        conditional:
+          - { cells: G, formula: '=$G{r}="✓"', style: status_ok }
+          - { cells: G, formula: '=$G{r}="✗"', style: status_bad }
+    exports:
+      total: "$B${row:total}"
+
+  takeoff_count:
+    params: { units: { type: list } }
+    rows:
+      - cells:
+          A: { value: "Takeoff", style: head_left }
+          B: { value: "Count",   style: head }
+          C: { value: "Ref",     style: head }
+          Q: { value: HEAD, style: tag }
+      - repeat: p.units
+        cells:
+          A: { value: "{it.label}", style: input_text }
+          B: { value: "{it.count}", style: input_qty }
+          C: { value: "{it.ref}",   style: input_text, optional: true }
+          Q: { value: TAKEOFF, style: tag }
+        mark_first: seg_first
+        mark_last:  seg_last
+      - *takeoff_total
+    exports:
+      total: "$B${row:total}"
+
+  takeoff_measured:                    # what apply-takeoff writes (seed.takeoff_mapping)
+    params: { lines: { type: list } }
+    rows:
+      - cells:
+          A: { value: "Takeoff (measured)", style: head_left }
+          B: { value: "CY",          style: head }
+          D: { value: "Length ft",   style: head }
+          E: { value: "Height ft",   style: head }
+          F: { value: "Footing CY",  style: head }
+          G: { value: "Wall CY",     style: head }
+          H: { value: "Deck CY",     style: head }
+          Q: { value: HEAD, style: tag }
+      - repeat: p.lines
+        cells:
+          A: { value: "{it.label}",      style: input_text }
+          B: { formula: "=SUM(F{r}:H{r})", style: calc_qty }
+          D: { value: "{it.length}",     style: input_qty, optional: true }
+          E: { value: "{it.height}",     style: input_qty, optional: true }
+          F: { value: "{it.footing_cy}", style: input_qty, optional: true }
+          G: { value: "{it.wall_cy}",    style: input_qty, optional: true }
+          H: { value: "{it.deck_cy}",    style: input_qty, optional: true }
+          Q: { value: TAKEOFF, style: tag }
+        mark_first: seg_first
+        mark_last:  seg_last
+      - *takeoff_total
+    exports:
+      total: "$B${row:total}"
+
+  # ---------------------------------------------------------------- task blocks
+  detail_heads:
+    rows:
+      - cells:
+          A: { value: "Code / resource / item", style: head_left }
+          B: { value: "Qty",    style: head }
+          C: { value: "Unit",   style: head }
+          D: { value: "Count",  style: head }
+          E: { value: "Days",   style: head }
+          F: { value: "Hrs",    style: head }
+          G: { value: "Rate",   style: head }
+          H: { value: "Type",   style: head }
+          I: { value: "Source", style: head }
+          J: { value: "Vendor", style: head }
+          K: { value: "MH",     style: head }
+          L: { value: "Labor",  style: head }
+          M: { value: "Equip",  style: head }
+          N: { value: "Matl",   style: head }
+          O: { value: "Sub",    style: head }
+          P: { value: "Total",  style: head }
+          Q: { value: HEAD, style: tag }
+
+  # One task block per labor block (cost code). Rows: TASK header, NOTEs,
+  # CREW rows, LINE rows, SUBTOTAL. S = ok-flag (CREW: a numeric rate AND a
+  # recognized Kind off Rates -- Labor or Equipment, so a resource whose Kind
+  # was cleared, or the Rates insert-above marker itself picked as if it were
+  # a resource, does not pass just because VLOOKUP happened to return a
+  # number; LINE: a qty, a price, AND a recognized Type), T = flag (CREW:
+  # machine includes its operator; LINE: no cost code; SUBTOTAL: crew pairs
+  # such a machine with an operator row).
+  task:
+    params:
+      cost_code:      { type: string }
+      description:    { type: string }
+      notes:          { type: list, of: string }
+      crew:           { type: list }
+      lines:          { type: list }
+      operator_trade: { type: string, default: "Equipment Operator" }
+      type_material:    { type: string, default: Material }
+      type_subcontract: { type: string, default: Subcontract }
+      type_equipment:   { type: string, default: Equipment }
+      type_other:       { type: string, default: Other }
+      src_quote:        { type: string, default: QUOTE }
+      src_plug:         { type: string, default: PLUG }
+    rows:
+      - cells:
+          A: { value: "{p.cost_code}",   style: input_code, validation: { list: "={code_list}" } }
+          B: { value: "{p.description}", style: input_text }
+          Q: { value: TASK, style: tag }
+          R: { formula: '=A{r}&""', style: tag }
+        merge: "B:J"
+        fill_row: task
+        mark: head
+      - repeat: p.notes
+        cells:
+          A: { value: "{it}", style: note }
+          Q: { value: NOTE, style: tag }
+          R: { formula: "=R{r-1}", style: tag }
+        merge: "A:J"
+      - repeat: p.crew
+        cells:
+          A: { value: "{it.trade}",  style: input_text, validation: { list: "={rate_names}" } }
+          D: { value: "{it.count}",  style: input_count }
+          E: { formula: "{it.days}", style: input_count }
+          F: { formula: "=D{r}*E{r}*{shift_hours}", style: calc_hours }
+          G: { formula: '=IFERROR(VLOOKUP($A{r},{rate_table},8,FALSE),"")', style: calc_rate }
+          H: { formula: '=IFERROR(VLOOKUP($A{r},{rate_table},2,FALSE),"No rate")', style: calc_text }
+          K: { formula: '=IF(H{r}="Labor",F{r},0)', style: calc_hours }
+          L: { formula: '=IF(H{r}="Labor",F{r}*G{r},0)', style: lane_labor }
+          M: { formula: '=IF(H{r}="Equipment",F{r}*G{r},0)', style: lane_equip }
+          P: { formula: "=SUM(L{r}:O{r})", style: calc_money }
+          Q: { value: CREW, style: tag }
+          R: { formula: "=R{r-1}", style: tag }
+          S: { formula: '=IF(AND(ISNUMBER(G{r}),OR(H{r}="Labor",H{r}="Equipment")),1,0)', style: tag }
+          T: { formula: '=IFERROR(IF(VLOOKUP($A{r},{rate_table},6,FALSE)="Yes",1,0),0)', style: tag }
+        conditional:
+          - { cells: H, formula: '=$H{r}="No rate"', style: status_bad }
+      - repeat: p.lines
+        cells:
+          A: { value: "{it.name}",       style: input_text }
+          B: { formula: "{it.qty}",      style: input_qty }
+          C: { value: "{it.uom}",        style: input_text, optional: true }
+          G: { formula: "{it.unit_price}", style: input_money }
+          H: { value: "{p.type_{it.cost_type}}", style: input_text,
+               validation: { list: [Material, Subcontract, Equipment, Other] } }
+          I: { value: "{p.src_{it.source}}", style: input_text, validation: { list: [QUOTE, PLUG] } }
+          J: { value: "{it.vendor}",     style: input_text, optional: true }
+          M: { formula: '=IF(H{r}="Equipment",B{r}*G{r},0)', style: lane_equip }
+          N: { formula: '=IF(OR(H{r}="Material",H{r}="Other"),B{r}*G{r},0)', style: lane_matl }
+          O: { formula: '=IF(H{r}="Subcontract",B{r}*G{r},0)', style: lane_sub }
+          P: { formula: "=SUM(L{r}:O{r})", style: calc_money }
+          Q: { value: LINE, style: tag }
+          R: { formula: "=R{r-1}", style: tag }
+          S: { formula: '=IF(AND(ISNUMBER(B{r}),ISNUMBER(G{r}),OR(H{r}="Material",H{r}="Subcontract",H{r}="Equipment",H{r}="Other")),IF(AND(B{r}<>0,G{r}<>0),1,0),0)', style: tag }
+          T: { formula: '=IF(R{r}="",1,0)', style: tag }
+        conditional:
+          - { cells: I, formula: '=$I{r}="QUOTE"', style: status_ok }
+          - { cells: I, formula: '=$I{r}="PLUG"',  style: status_bad }
+      # An insert-above marker: a copied CREW/LINE row pasted in right above
+      # this row lands INSIDE every subtotal range below (Excel grows a
+      # range whose end anchor sits at the insertion point), instead of
+      # being dropped the way a row pasted directly above a bare SUBTOTAL
+      # silently was. No amounts here -- a blank row adds nothing to any
+      # total. Phase 4's reader treats END as the block terminator.
+      - cells:
+          A: { value: "insert new lines above this row", style: end_marker }
+          Q: { value: END, style: tag }
+          R: { formula: "=R{r-1}", style: tag }
+        mark: end
+      - cells:
+          A: { formula: '=A{row:head}&" subtotal"', style: sub_label }
+          I: { formula: '=SUMIF(I{row:head}:I{row:end},"PLUG",P{row:head}:P{row:end})', style: sub_plug }
+          K: { formula: "=SUM(K{row:head}:K{row:end})", style: sub_hours }
+          L: { formula: "=SUM(L{row:head}:L{row:end})", style: sub_money }
+          M: { formula: "=SUM(M{row:head}:M{row:end})", style: sub_money }
+          N: { formula: "=SUM(N{row:head}:N{row:end})", style: sub_money }
+          O: { formula: "=SUM(O{row:head}:O{row:end})", style: sub_money }
+          P: { formula: "=SUM(P{row:head}:P{row:end})", style: sub_money }
+          Q: { value: SUBTOTAL, style: tag }
+          R: { formula: "=R{r-1}", style: tag }
+          T: { formula: '=IF(AND(SUMIF(Q{row:head}:Q{row:end},"CREW",T{row:head}:T{row:end})>0,COUNTIF(A{row:head}:A{row:end},"{p.operator_trade}")>0),1,0)', style: tag }
+        mark: sub
+    exports:
+      code:  "$A${row:head}"
+      desc:  "$B${row:head}"
+      plug:  "$I${row:sub}"
+      mh:    "$K${row:sub}"
+      labor: "$L${row:sub}"
+      equip: "$M${row:sub}"
+      matl:  "$N${row:sub}"
+      sub:   "$O${row:sub}"
+      total: "$P${row:sub}"
+
+  # ---------------------------------------------------------------- recap
+  recap:
+    params:
+      tasks: { type: list }            # [{code}], one per labor block
+      uom:   { type: string }
+    rows:
+      - cells:
+          A: { value: "Code",   style: head_left }
+          B: { value: "Task",   style: head_left }
+          I: { value: "Plug $", style: head }
+          K: { value: "MH",     style: head }
+          L: { value: "Labor",  style: head }
+          M: { value: "Equip",  style: head }
+          N: { value: "Matl",   style: head }
+          O: { value: "Sub",    style: head }
+          P: { value: "Total",  style: head }
+          Q: { value: HEAD, style: tag }
+        merge: "B:H"
+      - repeat: p.tasks
+        cells:
+          A: { formula: "={ref:task[{it.code}].code}",  style: label_bold }
+          B: { formula: "={ref:task[{it.code}].desc}",  style: label }
+          I: { formula: "={ref:task[{it.code}].plug}",  style: calc_money }
+          K: { formula: "={ref:task[{it.code}].mh}",    style: calc_hours }
+          L: { formula: "={ref:task[{it.code}].labor}", style: lane_labor }
+          M: { formula: "={ref:task[{it.code}].equip}", style: lane_equip }
+          N: { formula: "={ref:task[{it.code}].matl}",  style: lane_matl }
+          O: { formula: "={ref:task[{it.code}].sub}",   style: lane_sub }
+          P: { formula: "={ref:task[{it.code}].total}", style: calc_money }
+          Q: { value: RECAP, style: tag }
+        merge: "B:H"
+        mark_first: first
+        mark_last:  last
+      - cells:
+          A: { value: "ITEM TOTAL", style: total_label }
+          I: { formula: "=SUM(I{row:first}:I{row:last})", style: total_money }
+          K: { formula: "=SUM(K{row:first}:K{row:last})", style: total_hours }
+          L: { formula: "=SUM(L{row:first}:L{row:last})", style: total_money }
+          M: { formula: "=SUM(M{row:first}:M{row:last})", style: total_money }
+          N: { formula: "=SUM(N{row:first}:N{row:last})", style: total_money }
+          O: { formula: "=SUM(O{row:first}:O{row:last})", style: total_money }
+          P: { formula: "=SUM(P{row:first}:P{row:last})", style: total_money }
+          Q: { value: TOTAL, style: tag }
+        fill_row: band
+        mark: total
+      - cells:
+          A: { value: "PER {p.uom}", style: label_bold }
+          K: { formula: "=IF({ref:item_header.qty}=0,0,K{row:total}/{ref:item_header.qty})", style: calc_money }
+          L: { formula: "=IF({ref:item_header.qty}=0,0,L{row:total}/{ref:item_header.qty})", style: calc_money }
+          M: { formula: "=IF({ref:item_header.qty}=0,0,M{row:total}/{ref:item_header.qty})", style: calc_money }
+          N: { formula: "=IF({ref:item_header.qty}=0,0,N{row:total}/{ref:item_header.qty})", style: calc_money }
+          O: { formula: "=IF({ref:item_header.qty}=0,0,O{row:total}/{ref:item_header.qty})", style: calc_money }
+          P: { formula: "=IF({ref:item_header.qty}=0,0,P{row:total}/{ref:item_header.qty})", style: calc_money }
+          Q: { value: TOTAL, style: tag }
+    exports:
+      plug:   "$I${row:total}"
+      mh:     "$K${row:total}"
+      labor:  "$L${row:total}"
+      equip:  "$M${row:total}"
+      matl:   "$N${row:total}"
+      sub:    "$O${row:total}"
+      direct: "$P${row:total}"
+
+  # ------------------------------------------------------------------- Markup
+  # Fieldbook lays out three markup rows -- overhead, insurance, profit -- by
+  # cost type, plus the bond. A spec row by any other name is refused at
+  # build time by markup_guard below (it runs whenever markup is an object),
+  # so no markup dollars go missing silently.
+  markup_grid:
+    params:
+      rows: { type: list }             # [{name, labor, equipment, material, subcontract}] x3
+      bond: { type: number }
+    rows:
+      - cells: { A: { value: "Markup", style: band_title } }
+        merge: "A:E"
+        fill_row: band
+      - cells:
+          A: { value: "% of direct cost", style: head_left }
+          B: { value: "Labor", style: head }
+          C: { value: "Equip", style: head }
+          D: { value: "Matl",  style: head }
+          E: { value: "Sub",   style: head }
+      - repeat: p.rows
+        cells:
+          A: { value: "{it.name}",        style: label_bold }
+          B: { value: "{it.labor}",       style: input_pct }
+          C: { value: "{it.equipment}",   style: input_pct }
+          D: { value: "{it.material}",    style: input_pct }
+          E: { value: "{it.subcontract}", style: input_pct }
+        mark_first: first
+        mark_last:  last
+      - cells:
+          A: { value: "Total", style: sub_label }
+          B: { formula: "=SUM(B{row:first}:B{row:last})", style: sub_money, number_format: pct }
+          C: { formula: "=SUM(C{row:first}:C{row:last})", style: sub_money, number_format: pct }
+          D: { formula: "=SUM(D{row:first}:D{row:last})", style: sub_money, number_format: pct }
+          E: { formula: "=SUM(E{row:first}:E{row:last})", style: sub_money, number_format: pct }
+        mark: total
+      - cells:
+          A: { value: "Bond (% of bid)", style: label_bold }
+          B: { value: "{p.bond}", style: input_pct }
+        mark: bond
+    exports:
+      labor:       "$B${row:total}"
+      equip:       "$C${row:total}"
+      matl:        "$D${row:total}"
+      sub:         "$E${row:total}"
+      bond:        "$B${row:bond}"
+      # Namespaced `row_*`, distinct from the cost-type totals above
+      # (labor/equip/matl/sub/bond): a spec markup row happens to be named
+      # after any of those four cost types, or "bond", and the guard below
+      # must not resolve against the wrong export when it does.
+      row_overhead:    "$A${row:first}"
+      row_insurance:   "$A${row:first+1}"
+      row_profit:      "$A${row:first+2}"
+      row_bond_pct:    "$B${row:bond}"
+
+  markup_guard:                        # hidden column G: one ref per spec markup key
+    params: { names: { type: list } }
+    rows:
+      - repeat: p.names
+        cells:
+          G: { formula: "={ref:markup_grid.row_{it}}", style: tag,
+               ref_error: "fieldbook lays out markup rows overhead, insurance and profit only (got '{it}') -- keys are case-sensitive" }
+
+  unbalance_head:
+    rows:
+      - cells: { A: { value: "Unbalance", style: label_bold } }
+        merge: "A:C"
+      - cells:
+          A: { value: "Item",        style: head_left }
+          B: { value: "Description", style: head_left }
+          C: { value: "Unbalance $", style: head }
+        mark: heads
+    exports:
+      first: "{row:heads+2}"
+
+  unbalance_row:                       # one instance per bid item, key unbalance_row[ITEM_NO]
+    params:
+      item_no:     { type: string }
+      description: { type: string }
+      unbalance:   { type: number }
+    rows:
+      - cells:
+          A: { value: "{p.item_no}",     style: label_bold }
+          B: { value: "{p.description}", style: label }
+          C: { value: "{p.unbalance}",   style: input_money }
+        mark: row
+    exports:
+      amount: "$C${row:row}"
+
+  unbalance_total:
+    rows:
+      - cells:
+          A: { value: "Net unbalance (must be 0)", style: sub_label }
+          C: { formula: "=SUM(C{ref:unbalance_head.first}:C{r-2})", style: sub_money }
+        mark: total
+    exports:
+      total: "$C${row:total}"
+
+  # ------------------------------------------------------------- Cost Summary
+  cost_summary_head:
+    rows:
+      - cells: { A: { value: "Cost Summary", style: band_title } }
+        merge: "A:L"
+        fill_row: band
+      - cells:
+          A: { value: "Item",        style: head_left }
+          B: { value: "Description", style: head_left }
+          C: { value: "MH",          style: head }
+          D: { value: "Labor",       style: head }
+          E: { value: "Equip",       style: head }
+          F: { value: "Matl",        style: head }
+          G: { value: "Sub",         style: head }
+          H: { value: "Direct",      style: head }
+          I: { value: "Plug $",      style: head }
+          J: { value: "Markup",      style: head }
+          K: { value: "Unbalance",   style: head }
+          L: { value: "Bid amount",  style: head }
+        mark: heads
+    exports:
+      first: "{row:heads+2}"
+
+  cost_summary_row:                    # one instance per bid item, key cs[ITEM_NO]
+    params:
+      item_no:     { type: string }
+      sheet:       { type: string }
+      description: { type: string }
+    rows:
+      - cells:
+          A: { value: "{p.item_no}",     style: label_bold }
+          B: { value: "{p.description}", style: label }
+          C: { formula: "={ref:{p.sheet}!recap.mh}",    style: calc_hours }
+          D: { formula: "={ref:{p.sheet}!recap.labor}", style: lane_labor }
+          E: { formula: "={ref:{p.sheet}!recap.equip}", style: lane_equip }
+          F: { formula: "={ref:{p.sheet}!recap.matl}",  style: lane_matl }
+          G: { formula: "={ref:{p.sheet}!recap.sub}",   style: lane_sub }
+          H: { formula: "=SUM(D{r}:G{r})",              style: calc_money }
+          I: { formula: "={ref:{p.sheet}!recap.plug}",  style: calc_money }
+          J: { formula: "=D{r}*{mk_labor}+E{r}*{mk_equip}+F{r}*{mk_matl}+G{r}*{mk_sub}", style: calc_money }
+          K: { formula: "={ref:Markup!unbalance_row[{p.item_no}].amount}", style: calc_money }
+          L: { formula: "=(H{r}+J{r}+K{r})/(1-{bond_pct})", style: calc_money }
+        mark: row
+    exports:
+      bid: "$L${row:row}"
+
+  cost_summary_total:
+    rows:
+      - cells:
+          A: { value: "TOTAL", style: total_label }
+          C: { formula: "=SUM(C{ref:cost_summary_head.first}:C{r-2})", style: total_hours }
+          D: { formula: "=SUM(D{ref:cost_summary_head.first}:D{r-2})", style: total_money }
+          E: { formula: "=SUM(E{ref:cost_summary_head.first}:E{r-2})", style: total_money }
+          F: { formula: "=SUM(F{ref:cost_summary_head.first}:F{r-2})", style: total_money }
+          G: { formula: "=SUM(G{ref:cost_summary_head.first}:G{r-2})", style: total_money }
+          H: { formula: "=SUM(H{ref:cost_summary_head.first}:H{r-2})", style: total_money }
+          I: { formula: "=SUM(I{ref:cost_summary_head.first}:I{r-2})", style: total_money }
+          J: { formula: "=SUM(J{ref:cost_summary_head.first}:J{r-2})", style: total_money }
+          K: { formula: "=SUM(K{ref:cost_summary_head.first}:K{r-2})", style: total_money }
+          L: { formula: "=SUM(L{ref:cost_summary_head.first}:L{r-2})", style: total_money }
+        fill_row: band
+        mark: total
+      - cells:
+          K: { value: "Bid $/MH", style: label_bold }
+          L: { formula: "=IF(C{row:total}=0,0,L{row:total}/C{row:total})", style: calc_money }
+      # The plug figures live here instead of on the Bid Form -- design
+      # decision: the Bid Form carries no internal cost.
+      - cells:
+          K: { value: "Plug $", style: label_bold }
+          L: { formula: "=I{row:total}", style: calc_money }
+      - cells:
+          K: { value: "Plug % of direct", style: label_bold }
+          L: { formula: "=IF(H{row:total}=0,0,I{row:total}/H{row:total})", style: calc_pct }
+    exports:
+      mh:     "$C${row:total}"
+      direct: "$H${row:total}"
+      plug:   "$I${row:total}"
+      bid:    "$L${row:total}"
+
+  # ---------------------------------------------------------- Bid Form rows
+  bid_form_row:                        # one instance per bid item, key bf[ITEM_NO]
+    params:
+      item_no:     { type: string }
+      sheet:       { type: string }
+      description: { type: string }
+      uom:         { type: string }
+    rows:
+      - cells:
+          A: { value: "{p.item_no}",     style: label_bold }
+          B: { value: "{p.description}", style: label }
+          C: { formula: "={ref:{p.sheet}!item_header.qty}", style: bidform_qty }
+          D: { value: "{p.uom}",         style: label }
+          E: { formula: "=IF(C{r}=0,0,ROUND({ref:Cost Summary!cs[{p.item_no}].bid}/C{r},2))", style: bidform_amount }
+          F: { formula: "=C{r}*E{r}",    style: bidform_amount }
+        mark: row
+    exports:
+      amount: "$F${row:row}"
+      qty:    "$C${row:row}"
+
+  bid_form_total:
+    rows:
+      - cells:
+          A: { value: "TOTAL BID", style: total_label }
+          F: { formula: "=SUM(F{ref:bid_form_head.first}:F{r-2})", style: total_money }
+        fill_row: band
+        mark: total
+    exports:
+      total:     "$F${row:total}"
+
+  # ------------------------------------------------------------------- Checks
+  checks_head:
+    rows:
+      - cells: { A: { value: "Checks", style: band_title } }
+        merge: "A:F"
+        fill_row: band
+      - cells:
+          A: { value: "Passing", style: label_bold }
+          B: { formula: '=COUNTIF($F:$F,"✓")', style: status }
+          C: { value: "of", style: calc_text }
+          D: { formula: '=COUNTIF($F:$F,"✓")+COUNTIF($F:$F,"✗")', style: status }
+        mark: count
+      - cells:
+          A: { value: "#",       style: head }
+          B: { value: "Rule",    style: head_left }
+          C: { value: "Item",    style: head }
+          D: { value: "Value",   style: head }
+          E: { value: "Against", style: head }
+          F: { value: "Status",  style: head }
+    exports:
+      pass:  "$B${row:count}"
+      count: "$D${row:count}"
+
+  # Every check is one row: A rule #, B rule, C item, D/E the numbers behind
+  # it, F the status (✓/✗, coloured by a conditional format).
+  check_takeoff:
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 1, style: calc_text }
+          B: { value: "Takeoff total = bid qty", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: "={ref:{p.sheet}!item_header.takeoff}", style: calc_qty }
+          E: { formula: "={ref:{p.sheet}!item_header.qty}", style: calc_qty }
+          F: { formula: '=IFERROR(IF(ISNUMBER(D{r}),IF(ABS(D{r}-E{r})<0.005,"✓","✗"),IF(ISTEXT(D{r}),IF(D{r}="n/a","✓","✗"),"✗")),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_rates:
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 2, style: calc_text }
+          B: { value: "Every crew resource has a rate", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: '=COUNTIF({ref:{p.sheet}!item_header.kind_col},"CREW")', style: calc_hours }
+          E: { formula: '=SUMIF({ref:{p.sheet}!item_header.kind_col},"CREW",{ref:{p.sheet}!item_header.ok_col})', style: calc_hours }
+          F: { formula: '=IFERROR(IF(D{r}=E{r},"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_lines:
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 3, style: calc_text }
+          B: { value: "Every cost line has a qty and a unit price", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: '=COUNTIF({ref:{p.sheet}!item_header.kind_col},"LINE")', style: calc_hours }
+          E: { formula: '=SUMIF({ref:{p.sheet}!item_header.kind_col},"LINE",{ref:{p.sheet}!item_header.ok_col})', style: calc_hours }
+          F: { formula: '=IFERROR(IF(D{r}=E{r},"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_unbalance:
+    rows:
+      - cells:
+          A: { value: 4, style: calc_text }
+          B: { value: "Unbalance nets to zero", style: label }
+          C: { value: "all", style: calc_text }
+          D: { formula: "={ref:Markup!unbalance_total.total}", style: calc_money }
+          E: { value: 0, style: calc_money }
+          F: { formula: '=IFERROR(IF(ABS(D{r})<0.005,"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_recap:
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 5, style: calc_text }
+          B: { value: "Recap ties to detail", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: "={ref:{p.sheet}!recap.direct}", style: calc_money }
+          E: { formula: '=SUMIF({ref:{p.sheet}!item_header.kind_col},"CREW",{ref:{p.sheet}!item_header.total_col})+SUMIF({ref:{p.sheet}!item_header.kind_col},"LINE",{ref:{p.sheet}!item_header.total_col})', style: calc_money }
+          F: { formula: '=IFERROR(IF(ABS(D{r}-E{r})<0.005,"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_bid_form:                      # per item: a pooled check could hide one item's rounding slip
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 6, style: calc_text }
+          B: { value: "Bid Form amount = Cost Summary bid", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: "={ref:Bid Form!bf[{p.item_no}].amount}", style: calc_money }
+          E: { formula: "={ref:Cost Summary!cs[{p.item_no}].bid}", style: calc_money }
+          F: { formula: '=IFERROR(IF(ABS(D{r}-E{r})<={ref:Bid Form!bf[{p.item_no}].qty}*0.005+0.005,"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_codes:
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 7, style: calc_text }
+          B: { value: "No cost line without a cost code", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: '=SUMIF({ref:{p.sheet}!item_header.kind_col},"LINE",{ref:{p.sheet}!item_header.flag_col})', style: calc_hours }
+          E: { value: 0, style: calc_hours }
+          F: { formula: '=IFERROR(IF(D{r}=0,"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_operator:
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 8, style: calc_text }
+          B: { value: "No crew pairs an operator-included machine with an operator row", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: '=SUMIF({ref:{p.sheet}!item_header.kind_col},"SUBTOTAL",{ref:{p.sheet}!item_header.flag_col})', style: calc_hours }
+          E: { value: 0, style: calc_hours }
+          F: { formula: '=IFERROR(IF(D{r}=0,"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  # ------------------------------------------------------ Bid Form status strip
+  # The agency-facing Bid Form carries no internal cost figure -- not even a
+  # plug total (design decision: the Bid Form carries no internal cost) --
+  # so this strip is the checks pass count only. The plug figures live on
+  # the Cost Summary (see cost_summary_total).
+  bid_form_status:
+    rows:
+      - cells:
+          A: { value: "Checks passing", style: label_bold }
+          B: { formula: "={ref:Checks!checks_head.pass}",  style: status }
+          C: { value: "of", style: calc_text }
+          D: { formula: "={ref:Checks!checks_head.count}", style: status }
+        conditional:
+          - { cells: B, formula: "=$B{r}=$D{r}",  style: status_ok }
+          - { cells: B, formula: "=$B{r}<>$D{r}", style: status_bad }

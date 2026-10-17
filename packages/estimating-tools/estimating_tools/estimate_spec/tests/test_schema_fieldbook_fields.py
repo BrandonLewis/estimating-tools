@@ -97,6 +97,60 @@ def test_generate_refuses_object_markup_on_a_pack_that_does_not_opt_in(legacy):
         generate(spec, pack=legacy)
 
 
+def _require_markup_by_type(doc):
+    doc["markup_by_type"] = "required"
+
+
+def _default_markup_seed(doc):
+    # markup_by_type: required needs seed.scaffold.default_markup to be a
+    # mapping (load_pack refuses a pack that requires markup by cost type
+    # but leaves scaffold with the plain `0` every other pack keeps).
+    doc["scaffold"]["default_markup"] = {"bond_pct": 0}
+
+
+@pytest.fixture(scope="module")
+def required_opted(tmp_path_factory):
+    """legacy_demo with `markup_by_type: required` -- the object form is the
+    ONLY form the schema renders; a plain number/formula markup is refused
+    outright, not merely unread."""
+    return patched_pack(tmp_path_factory.mktemp("required"),
+                        vocabulary=_require_markup_by_type, seed=_default_markup_seed)
+
+
+def test_required_markup_by_type_loads(tmp_path):
+    patched_pack(tmp_path, vocabulary=_require_markup_by_type,
+                seed=_default_markup_seed)   # must not raise
+
+
+def test_required_markup_by_type_needs_a_mapping_default_markup(tmp_path):
+    with pytest.raises(fp.FormatPackError, match=r"seed\.scaffold\.default_markup must be a mapping"):
+        patched_pack(tmp_path, vocabulary=_require_markup_by_type)
+
+
+def test_required_markup_by_type_accepts_object_markup(required_opted):
+    validate_spec(_with_object_markup(), pack=required_opted)
+
+
+def test_required_markup_by_type_refuses_a_plain_number_markup_at_validation(required_opted):
+    with pytest.raises(ValueError, match="schema violation"):
+        validate_spec(_full(), pack=required_opted)       # _full()'s markup is a plain number
+
+
+def test_required_markup_by_type_refuses_a_plain_number_markup_at_generate(required_opted):
+    from estimating_tools.estimate_spec import recipe as R
+    from estimating_tools.estimate_spec.build import generate
+
+    with pytest.raises(R.RecipeError, match="requires markup by cost type"):
+        generate(_full(), pack=required_opted)
+
+
+def test_true_markup_by_type_keeps_the_oneof_behaviour(opted):
+    """`true` is unaffected by adding `required`: a plain number still
+    validates (opt-in, not mandatory), same as before this change."""
+    validate_spec(_full(), pack=opted)
+    validate_spec(_with_object_markup(), pack=opted)
+
+
 def test_the_legacy_example_still_validates_untouched(legacy):
     validate_spec(legacy_example(), pack=legacy)
 

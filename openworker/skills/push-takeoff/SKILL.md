@@ -156,7 +156,18 @@ print(render_takeoff_push_plan(plan))
 The structures push above drops each element's IFC `global_id`. When the
 estimate uses **elements** (the work-first estimate), push the IFC's elements
 themselves instead, keyed by GlobalId, so a re-import updates the same rows and
-never duplicates them:
+never duplicates them. They can go to one of two targets:
+
+- **Straight onto an estimate** (the steps below). Fits a one-off: one
+  estimate, one estimator, and nobody needs the measurement anywhere else.
+- **Into a named project takeoff** ("Push to a named takeoff" after these
+  steps). Fits when several estimates or estimators share the measurement,
+  or when you want to compare measurements (plans rev A against addendum 2,
+  a second estimator's check). The estimate then pins a copy of it.
+
+Ask the user which target fits if they have not said.
+
+Direct to an estimate:
 
 1. **Get the item ids.** Call `mcp__bidmanager__get_estimate_model(estimate_id)` and save it
    as `model.json`. Use it rather than `mcp__bidmanager__list_estimate_items`: it carries each
@@ -209,6 +220,50 @@ never duplicates them:
      Tell the user; nothing changed.
    - `missing` (with `complete`): modelled elements the file no longer has.
      They are reported, never deleted; ask the user what to do with them.
+
+### Push to a named takeoff
+
+An organization keeps named takeoffs per project, and an estimate pins a copy
+of one. The model goes into the takeoff, and the estimate takes it only
+through a reviewed diff:
+
+1. **Pick or create the takeoff.** Call `mcp__bidmanager__list_takeoffs(project_id)` and show
+   the user each takeoff's name, `revision` and `pinned_estimates`. Ask which
+   one to push into, or whether to create a new one. Never guess. A new one is
+   `mcp__bidmanager__create_takeoff(project_id, name, notes="")`. Pass `organization_id` when
+   the user acts for several organizations. Names are unique per organization
+   and project.
+2. **Plan and push.** Plan with
+   `est-bim model-elements <model.ifc> --takeoff-id <takeoff id> [--complete] [--structure-id <id>] [--out upsert.json]`.
+   Element selection, GlobalId checks and unit conversion are the same as in
+   step 2 above. A takeoff has no pay items, so the payload carries no
+   `pay_items` and `--takeoff` refuses `--items`, `--schedule` and
+   `--estimate-id`. Show the user the element count, the skipped list and the
+   warnings, get their confirmation, then call
+   `mcp__bidmanager__upsert_modelled_elements(takeoff_id=<id>, elements=<payload.elements>, complete=<payload.complete>)`.
+   Report its reply as in step 4 above. A GlobalId that names a dimensioned
+   takeoff element is refused.
+3. **Compare.** Call `mcp__bidmanager__compare_takeoff(takeoff_id, estimate_id=<estimate>)`
+   and show the user the diff:
+   - `added`, `changed` (each with its `{field or key, old, new}` changes)
+     and `removed`. Removed elements are kept on apply, not deleted.
+   - `masked_by_override` and `measured_by_section`: matches the apply will
+     not move.
+   - `not_in_takeoff`: the estimate's own manual or modelled elements that
+     nothing in the takeoff matched. They stay, and they still count. Point
+     them out, because one that measures the same work as an `added` element
+     is a double count.
+   - the diff's `revision` and whether the estimate is already `pinned`.
+4. **Apply only after the user confirms.** Call
+   `mcp__bidmanager__apply_takeoff(takeoff_id, estimate_id, expected_revision=<the diff's revision>)`.
+   It is refused if the takeoff moved since the diff. If so, compare again and
+   show the new diff. Never retry blindly with a fresh revision. Report the
+   applied diff it returns. Overrides, pay items and activity links on the
+   estimate's copies survive later applies. Set pay items on the estimate's
+   elements, never on the takeoff.
+
+To check a re-measure before it reaches any estimate, compare two takeoffs
+with `mcp__bidmanager__compare_takeoff(takeoff_id, other_takeoff_id=<other>)`.
 
 ## Notes
 - `measure-plans`, `dxf-to-bim`, `bim-to-takeoff`, and `show-structure-earth` ship in the **calc-bim plugin** (same estimating-platform marketplace as this plugin). If they are not among your available skills, tell the user this workflow needs the calc-bim plugin installed (`/plugin` -> estimating-platform -> calc-bim) and offer to continue with the bundled `est-bim` CLI directly.

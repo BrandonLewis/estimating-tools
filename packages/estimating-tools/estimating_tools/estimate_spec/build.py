@@ -264,7 +264,7 @@ class Resolver:
 # =============================================================================
 
 _RESERVED_CELL_KEYS = {"value", "formula", "style", "optional", "if_ref", "if_param", "if_it",
-                        "validation"}
+                        "validation", "ref_error"}
 
 
 class StyleFactory:
@@ -380,6 +380,9 @@ def _coerce(text):
         from datetime import date
         return date(int(m[1]), int(m[2]), int(m[3]))
     if re.fullmatch(r"-?\d+", text):
+        digits = text.lstrip("-")
+        if len(digits) > 1 and digits[0] == "0":
+            return text   # zero-padded (e.g. an item number "010") -- stays text
         return int(text)
     try:
         return float(text)
@@ -625,11 +628,17 @@ class EstimateBuilder:
         self.recipes_doc = self.pack.recipes
         self.recipes = self.recipes_doc["recipes"]
         R.validate_recipes(self.recipes_doc, self.units)
-        if (isinstance(config.get("markup"), dict)
-                and (self.pack.vocabulary or {}).get("markup_by_type") is not True):
+        markup_by_type = (self.pack.vocabulary or {}).get("markup_by_type")
+        markup = config.get("markup")
+        if isinstance(markup, dict) and markup_by_type not in (True, "required"):
             raise R.RecipeError(
                 "markup by cost type needs a pack that opts in (vocabulary "
                 "markup_by_type: true) and lays out its own markup sheet")
+        if markup_by_type == "required" and not isinstance(markup, dict):
+            raise R.RecipeError(
+                f"pack {self.pack.name!r} requires markup by cost type "
+                "(vocabulary markup_by_type: required) -- markup must be an "
+                f"object of percentages by cost type, got {type(markup).__name__}")
         self.globals_decl = self.recipes_doc.get("globals") or {}
         self.sheet_globals = {}       # sheet -> {name: addr}   (scope: sheet)
         self.book_globals = {}        # name -> addr            (scope: workbook; promoted once)
@@ -650,6 +659,14 @@ class EstimateBuilder:
         #: (see `_target`). Lets a book-sheet collision (`_run_book`) name
         #: what it collides WITH, not just that it does.
         self.sheet_origin = {}
+        #: sheet_name -> {instance keys a unit WITH exports has already
+        #: published on it}. A second instance publishing the same key would
+        #: otherwise silently overwrite the first's exports (see
+        #: `layout_unit`) -- whatever reads that key then reads the wrong
+        #: block. A unit with no `exports:` (e.g. fieldbook's `code_rows`,
+        #: laid out once per bid item under the shared unit-name key, with
+        #: nothing to publish) has nothing to collide, so it is exempt.
+        self._seen_instance_keys = {}
 
     # ---- layout helpers ----------------------------------------------------
     def _exp(self, key, addr):
@@ -676,12 +693,23 @@ class EstimateBuilder:
                 _check_validation(cell["validation"], f"unit {unit!r} cell {col}")
                 self._check_dropdown_unlocked(cell.get("style", "label"), overrides,
                                               f"unit {unit!r} cell {col}")
+            if "ref_error" in cell:
+                ref_error = cell["ref_error"]
+                if not isinstance(ref_error, str) or not ref_error:
+                    raise R.RecipeError(
+                        f"unit {unit!r} cell {col}: ref_error must be a non-empty string, "
+                        f"got {ref_error!r}")
+                if cell.get("optional"):
+                    raise R.RecipeError(
+                        f"unit {unit!r} cell {col}: ref_error cannot be combined with "
+                        "optional -- an optional cell already renders blank instead of "
+                        "raising, so ref_error would never fire")
             self.placements.append(dict(
                 sheet=sheet, row=row, col=col, raw=raw, unit=unit,
                 style=cell.get("style", "label"), overrides=overrides,
                 optional=cell.get("optional", False), if_ref=cell.get("if_ref"),
                 if_param=cell.get("if_param"), if_it=cell.get("if_it"),
-                validation=cell.get("validation"),
+                validation=cell.get("validation"), ref_error=cell.get("ref_error"),
                 params=params, item=item, landmarks=landmarks,
                 globals=dict(self.sheet_globals.get(sheet, {})),   # snapshot, as item_qty was
             ))
@@ -844,6 +872,24 @@ class EstimateBuilder:
 
         # publish exports under the instance key (singleton = unit name)
         ekey = instance_key or unit_name
+        # Anchored units deliberately re-land on the same fixed spot every
+        # time they're used (a shared "Rates" sheet reached from more than
+        # one item, say) -- last write wins there by design, and a SECOND
+        # promotion of a workbook-scope global already has its own, more
+        # specific guard (`_promote_globals`). Only a non-anchored repeat
+        # publishing the same key twice is the silent-overwrite bug this
+        # catches.
+        if udef.get("exports") and not anchor:
+            seen = self._seen_instance_keys.setdefault(sheet, set())
+            if ekey in seen:
+                raise R.RecipeError(
+                    f"sheet {sheet!r}: instance key {ekey!r} (unit {unit_name!r}) is "
+                    "laid out twice on this sheet -- the second instance would silently "
+                    "overwrite the first's exports, pricing the wrong block. Two recipe "
+                    "entries (or two repeated elements) are publishing the same key; give "
+                    "each instance its own `key:`"
+                )
+            seen.add(ekey)
         exp_resolver = Resolver(landmarks=landmarks, pack=self.pack.name,
                                 where=f"unit {unit_name!r} on sheet {sheet!r} (exports:)")
         for name, tmpl in (udef.get("exports") or {}).items():
@@ -1072,10 +1118,24 @@ class EstimateBuilder:
                 value = res.resolve(p["raw"])
             except CrossSheetRefError:
                 raise      # never optional: an unresolvable cross-sheet ref stops the build
-            except (KeyError, ValueError):
+            except (KeyError, ValueError) as e:
                 if p["optional"]:
                     self._lock_blank_cell(p)
                     continue
+                if p["ref_error"]:
+                    # A pack-authored message (may itself use {it}/{p.x}/etc,
+                    # which still resolve fine -- only the failing {ref:...}
+                    # in the cell's own formula could not). If the message's
+                    # OWN template fails to resolve too (a typo in a {p.x} it
+                    # names, say), that must still surface as a named
+                    # RecipeError, not the bare KeyError/ValueError leaking
+                    # out of a cell that was trying to fail more gently.
+                    try:
+                        message = res.resolve(p["ref_error"])
+                    except (KeyError, ValueError) as e2:
+                        raise R.RecipeError(
+                            f"{where}: ref_error itself failed to resolve: {e2}") from e2
+                    raise R.RecipeError(message) from e
                 raise
             value = _coerce(value)
             if value == "" or value is None:
@@ -1246,8 +1306,25 @@ def generate(config, pack=None, *, stamp=True):
     `pack` defaults to the bundled pack. With `stamp`, the workbook carries the
     pack's name and version as the custom property `estimate_format`, so any
     .xlsx traces to the format that produced it.
+
+    A pack that sets `strict: true` in its manifest also gets its composed
+    schema checked here, before anything is laid out -- the same jsonschema
+    validation `scaffold.validate_spec` runs, so a spec that pack's own
+    vocabulary refuses (an item_rule, a `false`-schema'd field such as
+    fieldbook's `cost_details`/`spreads`) is refused by `build`/the CLI too,
+    not only by callers that happen to validate before building.
     """
     from openpyxl.packaging.custom import StringProperty
+
+    from estimating_tools.estimate_spec.format_pack import bundled_pack
+    effective_pack = pack or bundled_pack()
+    if effective_pack.strict:
+        import jsonschema
+        try:
+            jsonschema.validate(config, effective_pack.schema)
+        except jsonschema.ValidationError as exc:
+            path = "$" + "".join(f"[{p!r}]" for p in exc.absolute_path)
+            raise ValueError(f"schema violation: {path}: {exc.message}") from exc
 
     from estimating_tools.estimate_spec.validate import validate_cross_references
     validate_cross_references(config)

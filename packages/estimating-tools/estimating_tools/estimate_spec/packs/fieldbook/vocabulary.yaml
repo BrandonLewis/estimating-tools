@@ -1,0 +1,106 @@
+# Fieldbook's vocabulary. Crew members name a resource in full -- a labor
+# classification or a piece of equipment (the rate table's `kind` says
+# which); no codes appear anywhere.
+trades:
+  - Superintendent
+  - Foreman
+  - Equipment Operator
+  - Laborer
+  - Pipelayer
+  - Truck Driver
+  - Cement Mason
+  - Carpenter
+  - "Excavator, 320 class"
+  - "Loader, 950 class"
+  - "Backhoe, 416 class"
+  - Plate compactor
+  - "Dump truck, 10 CY"
+  - Water truck
+cost_blocks: [Material]      # unused: fieldbook keeps cost lines inside tasks (see item_rules)
+slot_pattern: "^[0-9]{2}$"
+markup_by_type: required     # fieldbook lays out its own Markup sheet; a plain number/formula markup is refused
+item_rules:
+  - comment: "every item has at least one task, and every task a non-blank cost code"
+    required: [labor]
+    properties:
+      labor:
+        minItems: 1
+        items:
+          required: [cost_code]
+          properties:
+            cost_code: { minLength: 1 }
+  - comment: "every crew member carries count and days -- fieldbook has no crew_factor pricing, so a missing days silently prices at $0"
+    properties:
+      labor:
+        items:
+          properties:
+            crew:
+              items:
+                required: [trade, count, days]
+  - comment: "a line item carries a takeoff; a lump sum does not"
+    if:   { properties: { recipe: { const: line_item } } }
+    then: { required: [takeoff] }
+  - comment: "a lump sum carries no takeoff -- it validates and is silently dropped otherwise"
+    if:   { properties: { recipe: { const: lump_sum } } }
+    then: { not: { required: [takeoff] } }
+  - comment: "cost lines live in their task (labor[].lines); item-level cost blocks would not be laid out"
+    properties:
+      cost_details: false
+defs:
+  takeoff:
+    type: object
+    required: [kind]
+    properties: { kind: { enum: [linear, count, measured] } }
+    oneOf:
+      - properties:
+          kind: { const: linear }
+          segments:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              additionalProperties: false
+              required: [label, length_lf]
+              properties:
+                label:     { type: string }
+                length_lf: { type: number }
+                ref:       { type: string, description: "Plan sheet or spec reference, e.g. C-3." }
+        required: [segments]
+        additionalProperties: false
+      - properties:
+          kind: { const: count }
+          units:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              additionalProperties: false
+              required: [label, count]
+              properties:
+                label: { type: string }
+                count: { type: number, minimum: 0 }
+                ref:   { type: string, description: "Plan sheet or spec reference, e.g. C-5." }
+        required: [units]
+        additionalProperties: false
+      - properties:
+          kind: { const: measured }
+          lines:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              additionalProperties: false
+              required: [label]
+              properties:
+                label:      { type: string }
+                length:     { type: number }
+                height:     { type: number }
+                footing_cy: { type: number }
+                footing_cf: { type: number }
+                wall_cy:    { type: number }
+                wall_cf:    { type: number }
+                deck_cy:    { type: number }
+                deck_cf:    { type: number }
+        required: [lines]
+        additionalProperties: false
+  spreads: false             # no spreads: haul and the like are task lines

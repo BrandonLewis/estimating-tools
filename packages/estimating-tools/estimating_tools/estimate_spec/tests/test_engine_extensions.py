@@ -187,6 +187,54 @@ def test_a_password_without_sheets_is_refused(tmp_path):
         patched_pack(tmp_path, format=manifest)
 
 
+# ---- manifest `strict:` -- schema enforcement on the build path -----------
+#
+# generate()/build() check cross-references (validate_cross_references) but
+# never ran the pack's own composed schema -- a spec's refusals under
+# scaffold.validate_spec (item_rules, defs.takeoff/spreads, etc.) were only
+# ever checked there, so `est-estimate build` built right past them. `strict:
+# true` in format.yaml opts a pack into the same jsonschema check, reusing
+# validate_spec's try/except shape (a `schema violation: $[...]: <message>`
+# ValueError), BEFORE anything is laid out. Absent (every pack before this),
+# nothing changes -- proven by building the identical invalid spec against
+# the unpatched pack and getting past schema entirely (whatever error it
+# hits next, if any, is not this one).
+
+def _strict(tmp_path):
+    def manifest(doc):
+        doc["strict"] = True
+
+    return patched_pack(tmp_path, format=manifest)
+
+
+def test_a_strict_pack_refuses_a_schema_invalid_spec_in_generate(tmp_path):
+    config = legacy_example()
+    config["project"] = ""                        # schema: project minLength 1
+    with pytest.raises(ValueError, match=r"schema violation.*project"):
+        B.generate(config, _strict(tmp_path))
+
+
+def test_strict_absent_keeps_todays_behaviour(tmp_path):
+    """The same schema-invalid spec, against the SAME pack minus `strict:`,
+    is never schema-checked -- goldens built from unpatched packs are
+    unaffected by this feature existing."""
+    config = legacy_example()
+    config["project"] = ""
+    pack = patched_pack(tmp_path)                 # no strict: true
+    assert pack.strict is False
+    wb = B.generate(config, pack)                 # does not raise "schema violation"
+    assert wb.sheetnames
+
+
+@pytest.mark.parametrize("bad", ["yes", 1, None])
+def test_a_malformed_manifest_strict_is_refused_at_load(tmp_path, bad):
+    def manifest(doc):
+        doc["strict"] = bad
+
+    with pytest.raises(fp.FormatPackError, match="strict"):
+        patched_pack(tmp_path, format=manifest)
+
+
 # ---- conditional formats --------------------------------------------------
 
 def _rules(ws):
@@ -1015,3 +1063,89 @@ def test_a_workbook_with_every_sheet_hidden_is_refused(tmp_path):
     spec["items"] = []
     with pytest.raises(R.RecipeError, match="at least one sheet must be visible"):
         B.generate(spec, patched_pack(tmp_path, units=_book_units, recipes=recipes))
+
+
+# ---- duplicate instance keys -----------------------------------------------
+
+def test_a_duplicate_instance_key_on_one_sheet_is_refused(tmp_path):
+    """Two `cost_block` instances publishing the same `cost[MATL]` key on
+    "2 - 8IN MAIN" (two cost_details blocks both named "MATL") would
+    otherwise overwrite each other's exports silently -- the second one
+    wins, and whatever reads `cost[MATL]`'s exports (here, `cost_summary`)
+    reads the wrong block's subtotal."""
+    spec = legacy_example()
+    spec["items"][1]["cost_details"].append(
+        dict(spec["items"][1]["cost_details"][0]))  # another "MATL" block
+    with pytest.raises(R.RecipeError, match=r"cost\[MATL\]"):
+        B.generate(spec, patched_pack(tmp_path))
+
+
+def test_an_exportless_unit_may_repeat_an_instance_key_on_one_sheet(tmp_path):
+    """fieldbook's `code_rows` is laid out once per bid item on the Codes
+    sheet, every call sharing the same (unit-name) key, with no `exports:` --
+    nothing collides, so the duplicate-key guard must not fire for a unit
+    that publishes no exports at all."""
+    def units(doc):
+        doc["units"]["no_export_probe"] = {
+            "params": {"text": {"type": "string"}},
+            "rows": [{"cells": {"A": {"value": "{p.text}"}}}],
+        }
+
+    def recipes(doc):
+        doc["recipes"]["setup"]["units"].append(
+            {"unit": "no_export_probe", "for_each": "item.labor",
+             "params": {"text": "{it.slot}"}})
+
+    spec = legacy_example()
+    B.generate(spec, patched_pack(tmp_path, units=units, recipes=recipes))   # must not raise
+
+
+# ---- ref_error: -------------------------------------------------------------
+
+def _ref_error_probe(tmp_path, cell):
+    def units(doc):
+        doc["units"]["probe"] = {"rows": [{"cells": {"A": cell}}]}
+
+    def recipes(doc):
+        doc["recipes"]["setup"]["units"].insert(0, {"unit": "probe"})
+
+    return B.generate(legacy_example(), patched_pack(tmp_path, units=units, recipes=recipes))
+
+
+def test_ref_error_must_be_a_non_empty_string(tmp_path):
+    with pytest.raises(R.RecipeError, match="ref_error must be a non-empty string"):
+        _ref_error_probe(tmp_path, {"formula": "={ref:nope}", "ref_error": ""})
+
+
+def test_a_non_string_ref_error_is_refused(tmp_path):
+    with pytest.raises(R.RecipeError, match="ref_error must be a non-empty string"):
+        _ref_error_probe(tmp_path, {"formula": "={ref:nope}", "ref_error": 5})
+
+
+def test_ref_error_may_not_be_combined_with_optional(tmp_path):
+    with pytest.raises(R.RecipeError, match="ref_error cannot be combined with optional"):
+        _ref_error_probe(tmp_path, {"formula": "={ref:nope}", "ref_error": "friendlier",
+                                     "optional": True})
+
+
+def test_ref_error_renames_an_unresolved_ref_as_a_recipe_error(tmp_path):
+    with pytest.raises(R.RecipeError, match="a much friendlier message"):
+        _ref_error_probe(tmp_path, {"formula": "={ref:nope}", "ref_error": "a much friendlier message"})
+
+
+def test_a_ref_error_template_that_itself_fails_to_resolve_raises_a_recipe_error(tmp_path):
+    """ref_error is itself a template ({it}/{p.x}/etc resolve inside it) --
+    if THAT fails to resolve, the build must still fail with a named
+    RecipeError, not the bare KeyError/ValueError the engine used to leak."""
+    with pytest.raises(R.RecipeError, match="ref_error itself failed to resolve"):
+        _ref_error_probe(tmp_path, {"formula": "={ref:nope}", "ref_error": "bad {p.missing}"})
+
+
+# ---- _coerce: a leading zero marks text, not a number ----------------------
+
+@pytest.mark.parametrize("text,expected", [
+    ("0", 0), ("10", 10), ("-5", -5), ("2A", "2A"),           # unchanged
+    ("010", "010"), ("00", "00"), ("-010", "-010"), ("007", "007"),  # new: stays text
+])
+def test_coerce_keeps_a_leading_zero_padded_number_as_text(text, expected):
+    assert B._coerce(text) == expected
