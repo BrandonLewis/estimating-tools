@@ -38,12 +38,16 @@ release to upgrade. An unchanged install reports "up to date".
    never leaves a half-written skill.
 3. **MCP.** `bidmanager` and `conformed` come from `it/opencode.json`, which is generated from
    the server manifest. A local `artifact-editor` server runs the runtime's `est-artifact-app`
-   shim (under `cmd.exe /d /c` on Windows). All three are merged into `opencode.json`, and every
-   other setting is left alone. The installer records a hash of each entry it writes in
+   shim (under `cmd.exe /d /c` on Windows). All three are merged into the highest-priority
+   existing config (`opencode.jsonc` before `opencode.json`), and every other setting is left
+   alone. Existing server entries are read using OpenCode's merge order: global `config.json`,
+   then `opencode.json`, then `opencode.jsonc`. Entries from lower-priority files are preserved
+   there, rather than copied into the writable file and shadowing future edits. The installer
+   records a hash of each entry it writes in
    `.estimating-opencode-mcp.json` beside the config. On a re-run, an entry that still matches
    its hash is upgraded to this release's (a changed URL reaches you). An entry you wrote or
    edited is kept, and the installer prints a diff against this release's entry so you can
-   take it by hand. If the file is JSONC
+   take it by hand. If any contributing file is JSONC
    with comments or trailing commas, the installer stops before writing anything and prints
    the entries to paste by hand. Re-run with `--no-mcp` after pasting them.
 

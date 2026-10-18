@@ -62,6 +62,7 @@ def test_renderers_honour_url_env(monkeypatch):
     assert "https://alt.example/mcp/" in gen.render_cursor()
     assert "https://alt.example/mcp/" in gen.render_codex()
     assert "https://alt.example/mcp/" in gen.render_opencode()
+    assert "https://alt.example/mcp/" in gen.render_managed()
 
 
 def test_claude_mcp_json_is_oauth_primary_for_both_servers():
@@ -105,7 +106,8 @@ def test_remote_client_renders_skip_plugin_local_stdio_servers():
                          ("gemini", "it/gemini-settings.snippet.json"),
                          ("cursor", "it/cursor-mcp.json"),
                          ("codex", "it/codex-config.toml.snippet"),
-                         ("opencode", "it/opencode.json")):
+                         ("opencode", "it/opencode.json"),
+                         ("managed", "it/managed-mcp.json.tmpl")):
         generate("--client", client)
         assert "artifact-editor" not in (ROOT / path).read_text(), client
 
@@ -119,7 +121,7 @@ def test_cowork_doc_mentions_oauth_and_both_urls():
 
 
 def test_check_passes_when_committed_matches_then_fails_on_drift():
-    for client in ("claude", "cowork", "gemini", "cursor", "codex", "opencode"):
+    for client in ("claude", "cowork", "gemini", "cursor", "codex", "opencode", "managed"):
         generate("--client", client)
     assert run("--check").returncode == 0
     mcp = ROOT / "plugins/estimating-core/.mcp.json"
@@ -129,6 +131,21 @@ def test_check_passes_when_committed_matches_then_fails_on_drift():
         assert run("--check").returncode != 0
     finally:
         mcp.write_bytes(original)  # restore even if the assertion above fails
+
+
+def test_managed_template_is_generated_and_drift_checked():
+    generate("--client", "managed")
+    path = ROOT / "it/managed-mcp.json.tmpl"
+    servers = json.loads(path.read_text())["mcpServers"]
+    remote = {name: value for name, value in json.loads(_import_generate().render_claude()).items()
+              if value["type"] != "stdio"}
+    assert servers == remote
+    original = path.read_bytes()
+    try:
+        path.write_bytes(original.replace(b"conformed.ai", b"drifted.example"))
+        assert run("--check").returncode != 0
+    finally:
+        path.write_bytes(original)
 
 
 def test_gemini_settings_snippet_oauth_dynamic_discovery():

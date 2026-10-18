@@ -4,6 +4,7 @@ Usage:
   python manifest/generate.py --client claude   # writes plugins/estimating-core/.mcp.json
   python manifest/generate.py --client cowork    # writes it/cowork-connector.md
   python manifest/generate.py --client gemini|cursor|codex|opencode  # writes it/<client> snippet
+  python manifest/generate.py --client managed  # writes it/managed-mcp.json.tmpl
   python manifest/generate.py --check            # regen to memory, diff vs committed (CI guard)
 
 Servers may declare a `clients` list to limit which renderers include them
@@ -30,6 +31,7 @@ GEMINI_OUT = ROOT / "it" / "gemini-settings.snippet.json"
 CURSOR_OUT = ROOT / "it" / "cursor-mcp.json"
 CODEX_OUT = ROOT / "it" / "codex-config.toml.snippet"
 OPENCODE_OUT = ROOT / "it" / "opencode.json"
+MANAGED_OUT = ROOT / "it" / "managed-mcp.json.tmpl"
 
 
 def _servers():
@@ -95,6 +97,14 @@ def render_cowork() -> str:
     return "\n".join(lines)
 
 
+def render_managed() -> str:
+    # The enforced Claude Code config uses the same remote entries as the
+    # plugin. Its machine-wide path cannot resolve plugin-local launchers.
+    servers = {name: entry for name, entry in json.loads(render_claude()).items()
+               if entry["type"] != "stdio"}
+    return json.dumps({"mcpServers": servers}, indent=2) + "\n"
+
+
 def render_gemini() -> str:
     servers = {
         s["id"]: {"httpUrl": _url(s),
@@ -145,7 +155,8 @@ def write(path: Path, text: str):
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="generate")
     ap.add_argument("--client",
-                    choices=["claude", "cowork", "gemini", "cursor", "codex", "opencode"])
+                    choices=["claude", "cowork", "gemini", "cursor", "codex", "opencode",
+                             "managed"])
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args(argv)
 
@@ -156,6 +167,7 @@ def main(argv=None) -> int:
         CURSOR_OUT: render_cursor(),
         CODEX_OUT: render_codex(),
         OPENCODE_OUT: render_opencode(),
+        MANAGED_OUT: render_managed(),
     }
     if args.check:
         drift = [p.name for p, text in targets.items() if not p.exists() or p.read_text() != text]
@@ -164,7 +176,8 @@ def main(argv=None) -> int:
             return 1
         return 0
     paths = {"claude": CLAUDE_OUT, "cowork": COWORK_OUT, "gemini": GEMINI_OUT,
-             "cursor": CURSOR_OUT, "codex": CODEX_OUT, "opencode": OPENCODE_OUT}
+             "cursor": CURSOR_OUT, "codex": CODEX_OUT, "opencode": OPENCODE_OUT,
+             "managed": MANAGED_OUT}
     if args.client:
         write(paths[args.client], targets[paths[args.client]])
     else:

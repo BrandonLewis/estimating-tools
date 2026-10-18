@@ -106,9 +106,9 @@ def skills_dest(project: str | None) -> Path:
 
 
 def config_path(project: str | None) -> Path:
-    """opencode.json, or an existing opencode.jsonc when there is no .json."""
+    """Write the highest-priority existing file; JSONC overrides JSON."""
     base = _project(project) if project else config_dir()
-    for name in ("opencode.json", "opencode.jsonc"):
+    for name in ("opencode.jsonc", "opencode.json"):
         if (base / name).is_file():
             return base / name
     return base / "opencode.json"
@@ -337,6 +337,40 @@ def load_config(path: Path) -> dict | None:
     return cfg
 
 
+def _merge_config(lower: dict, upper: dict) -> dict:
+    """OpenCode merges objects recursively, with the later value winning."""
+    result = dict(lower)
+    for key, value in upper.items():
+        if isinstance(result.get(key), dict) and isinstance(value, dict):
+            result[key] = _merge_config(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def _load_mcp_layers(path: Path) -> tuple[dict | None, dict]:
+    """Return the writable file and the effective MCP entries across layers.
+
+    Global config.json loads first, then opencode.json, then opencode.jsonc.
+    Project configs omit config.json. Validate every contributing file before
+    any runtime or skill writes; comments in a lower layer need the same safe
+    refusal as comments in the writable one.
+    """
+    names = ["opencode.json", "opencode.jsonc"]
+    if path.parent == config_dir():
+        names.insert(0, "config.json")
+    sources = ([path.with_name(name) for name in names[:names.index(path.name) + 1]]
+               if path.name in names else [path])
+    writable, servers = None, {}
+    for source in sources:
+        cfg = load_config(source)
+        if source == path:
+            writable = cfg
+        if cfg is not None:
+            servers = _merge_config(servers, cfg.get("mcp", {}))
+    return writable, servers
+
+
 def _diff(key: str, current, ours) -> str:
     a = json.dumps(current, indent=2, sort_keys=True, ensure_ascii=False).splitlines()
     b = json.dumps(ours, indent=2, sort_keys=True, ensure_ascii=False).splitlines()
@@ -352,7 +386,7 @@ def install_mcp(path: Path, *, dry_run: bool) -> dict:
     it still matches the hash recorded when this installer wrote it; one the
     user wrote or edited is kept, never replaced.
     """
-    cfg = load_config(path)
+    cfg, effective_servers = _load_mcp_layers(path)
     indent = _indent_of(path.read_text(encoding="utf-8")) if cfg is not None else 2
     if cfg is None:
         cfg = {"$schema": SCHEMA}
@@ -361,17 +395,20 @@ def install_mcp(path: Path, *, dry_run: bool) -> dict:
     servers = dict(cfg.get("mcp") or {})
     r: dict = {"added": [], "upgraded": [], "unchanged": [], "kept": [], "diffs": {}}
     for key, entry in our_servers().items():
-        if key not in servers:
+        if key not in effective_servers:
             servers[key] = entry
             r["added"].append(key)
-        elif servers[key] == entry:
+        elif effective_servers[key] == entry:
             r["unchanged"].append(key)
-        elif record.get(key) == entry_hash(servers[key]):
+            # An identical user entry is still theirs; only keep ownership
+            # records for entries this installer actually wrote.
+            continue
+        elif record.get(key) == entry_hash(effective_servers[key]):
             servers[key] = entry
             r["upgraded"].append(key)
         else:
             r["kept"].append(key)
-            r["diffs"][key] = _diff(key, servers[key], entry)
+            r["diffs"][key] = _diff(key, effective_servers[key], entry)
             continue
         new_record[key] = entry_hash(entry)
     if dry_run:
@@ -435,7 +472,7 @@ def main(argv: list[str] | None = None) -> int:
     # leaves a half-done install behind.
     if not args.no_mcp:
         try:
-            load_config(cp)
+            _load_mcp_layers(cp)
         except ConfigError as exc:
             raise SystemExit(f"opencode/install.py: {exc}")
 

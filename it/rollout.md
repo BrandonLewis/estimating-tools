@@ -14,6 +14,9 @@ Choose one:
   `managed-mcp.json`) to the OS system path via Jamf/Intune/GPO to force a fixed
   server set, and merge `managed-settings.snippet.json` into `managed-settings.json`.
 
+The managed MCP template is generated from the server manifest. Regenerate it with
+`python manifest/generate.py --client managed`; `--check` guards its endpoint URLs in CI.
+
 Do **not** put API keys or M2M secrets in these files. Auth is per-user OAuth (each
 server returns its OAuth metadata; users complete the `/mcp` sign-in). Headless runs use
 OAuth `client_credentials` with secrets kept in the runner's secret store — see below.

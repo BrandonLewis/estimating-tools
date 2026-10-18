@@ -88,7 +88,82 @@ def test_an_existing_jsonc_config_is_the_one_used(tmp_path):
     (tmp_path / "opencode.jsonc").write_text("{}", encoding="utf-8")
     assert inst.config_path(str(tmp_path)).name == "opencode.jsonc"
     (tmp_path / "opencode.json").write_text("{}", encoding="utf-8")
-    assert inst.config_path(str(tmp_path)).name == "opencode.json"
+    assert inst.config_path(str(tmp_path)).name == "opencode.jsonc"
+
+
+@pytest.mark.parametrize("commented", ["opencode.json", "opencode.jsonc"])
+def test_both_config_files_are_checked_before_writing(sandbox, commented):
+    cfg = inst.config_dir()
+    cfg.mkdir(parents=True)
+    for name in ("opencode.json", "opencode.jsonc"):
+        (cfg / name).write_text('{"model": "local/model"}', encoding="utf-8")
+    (cfg / commented).write_text('{ /* keep my comment */ "mcp": {} }', encoding="utf-8")
+    before = {p: p.read_bytes() for p in cfg.iterdir()}
+    with pytest.raises(SystemExit, match="not plain JSON"):
+        inst.main([])
+    assert {p: p.read_bytes() for p in cfg.iterdir()} == before
+    assert sandbox["ensure_calls"] == []
+
+
+def test_jsonc_merge_preserves_lower_priority_user_servers(sandbox, capsys):
+    cfg = inst.config_dir()
+    cfg.mkdir(parents=True)
+    lower = cfg / "opencode.json"
+    lower.write_text(json.dumps({"model": "local/model", "mcp": {
+        "conformed": {"type": "remote", "url": "https://custom.example/mcp/",
+                      "headers": {"X-Review": "custom"}}}}), encoding="utf-8")
+    upper = cfg / "opencode.jsonc"
+    upper.write_text(json.dumps({"mcp": {"conformed": {"enabled": False}}}), encoding="utf-8")
+    before = lower.read_bytes()
+    code, out = _run(capsys, "--no-runtime")
+    assert code == 0
+    assert "kept existing conformed" in out and "https://custom.example/mcp/" in out
+    assert lower.read_bytes() == before
+    servers = json.loads(upper.read_text())["mcp"]
+    assert servers["conformed"] == {"enabled": False}
+    assert "bidmanager" in servers and "artifact-editor" in servers
+    assert "conformed" not in inst._read_record(upper)
+
+
+def test_managed_server_upgrade_reaches_the_effective_jsonc_layer(sandbox, monkeypatch):
+    lower = inst.config_dir() / "opencode.json"
+    inst.install_mcp(lower, dry_run=False)
+    before = lower.read_bytes()
+    upper = lower.with_suffix(".jsonc")
+    upper.write_text('{"model": "local/model"}', encoding="utf-8")
+    servers = inst.our_servers()
+    servers["conformed"] = {**servers["conformed"], "url": "https://new.example/mcp/"}
+    monkeypatch.setattr(inst, "our_servers", lambda: servers)
+    selected = inst.config_path(None)
+    result = inst.install_mcp(selected, dry_run=False)
+    assert result["upgraded"] == ["conformed"]
+    assert lower.read_bytes() == before
+    cfg = json.loads(upper.read_text())
+    assert cfg["model"] == "local/model"
+    assert cfg["mcp"] == {"conformed": servers["conformed"]}
+
+
+def test_global_legacy_config_servers_are_kept_without_copying_them(sandbox):
+    legacy = inst.config_dir() / "config.json"
+    legacy.parent.mkdir(parents=True)
+    entry = {"type": "remote", "url": "https://custom.example/mcp/"}
+    legacy.write_text(json.dumps({"mcp": {"conformed": entry}}), encoding="utf-8")
+    path = inst.config_path(None)
+    result = inst.install_mcp(path, dry_run=False)
+    assert result["kept"] == ["conformed"]
+    assert json.loads(legacy.read_text())["mcp"]["conformed"] == entry
+    assert "conformed" not in json.loads(path.read_text())["mcp"]
+
+
+def test_identical_preexisting_entry_is_not_claimed_by_the_installer(tmp_path, monkeypatch):
+    path = tmp_path / "opencode.json"
+    path.write_text(json.dumps({"mcp": inst.our_servers()}), encoding="utf-8")
+    inst.install_mcp(path, dry_run=False)
+    assert not inst._record_path(path).exists()
+    servers = inst.our_servers()
+    servers["conformed"] = {**servers["conformed"], "url": "https://new.example/mcp/"}
+    monkeypatch.setattr(inst, "our_servers", lambda: servers)
+    assert inst.install_mcp(path, dry_run=False)["kept"] == ["conformed"]
 
 
 # -- runtime -------------------------------------------------------------------

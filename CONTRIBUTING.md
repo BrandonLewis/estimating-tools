@@ -22,7 +22,7 @@ the source and regenerate, never the copy:
 |---|---|---|---|
 | `packages/estimating-tools/` | `plugins/estimating-core/dist/estimating_tools-*.whl`, `openworker/skills/_dist/` | `python scripts/build_plugin_wheel.py plugins/estimating-core` then `python openworker/port_skills.py` | wheel drift, OpenWorker port drift |
 | `scripts/plugin_runtime.py` | each plugin's `scripts/plugin_runtime.py` | `python scripts/vendor_runtime.py` | vendored runtime drift |
-| `manifest/servers.manifest.yaml` | `plugins/*/.mcp.json`, `it/*.snippet*`, `openworker/mcp/mcpServers.json` | `python manifest/generate.py` | manifest drift |
+| `manifest/servers.manifest.yaml` | `plugins/*/.mcp.json`, client snippets, `it/managed-mcp.json.tmpl` | `python manifest/generate.py --client <client>` (including `managed`) | manifest drift |
 | `plugins/*/skills/*/SKILL.md` | `openworker/skills/*/SKILL.md` | `python openworker/port_skills.py` | OpenWorker port drift |
 
 The bundled `bimforge` wheel is the PyPI release of
