@@ -293,3 +293,22 @@ def test_mix_none_reason_flags():
                              _cond("CVR", 200, [], flag=False)])
     assert s.obtainable_best_mix is None
     assert s.obtainable_best_mix_reason == "flags"
+
+
+def test_alternate_cell_does_not_count_as_coverage():
+    # CVR's line on item 35 is a priced ALTERNATE, not a base bid; CVR still covers
+    # item 35 here via the CAGES_FOLD tag (folded into its item-41 bid), so this
+    # checks the alternate line ITSELF contributes nothing to that coverage or to
+    # the group/obtainable math -- the base-only numbers are identical to the
+    # un-alternated fixture, only `has_alternates` and the gap differ.
+    base = apply_conditions(build_spread(ITEMS, BID_ITEMS, QUOTES, LINES), _conditions())
+    lines = {qid: [dict(ln) for ln in lns] for qid, lns in LINES.items()}
+    lines[11].append({"id": 99, "work_package_item_id": 2, "unit_price": "1000",
+                      "quantity": "1", "amount": None, "is_included": False,
+                      "is_alternate": True})
+    s = apply_conditions(build_spread(ITEMS, BID_ITEMS, QUOTES, lines), _conditions())
+    assert s.has_alternates is True and base.has_alternates is False
+    assert s.scope_groups[0].subtotals == base.scope_groups[0].subtotals
+    assert s.obtainable_single_vendor == base.obtainable_single_vendor
+    assert s.obtainable_best_mix == base.obtainable_best_mix
+    assert {"vendor_id": 200, "work_package_item_id": 2, "reason": "alternate"} in s.gaps

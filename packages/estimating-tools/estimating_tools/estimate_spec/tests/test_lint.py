@@ -72,7 +72,8 @@ def test_cli_no_lint_flag_disables_checks(monkeypatch, tmp_path):
     from estimating_tools.estimate_spec import cli
     seen = {}
     monkeypatch.setattr(build_mod, "build",
-                        lambda config, output, pack=None, stamp=True, lint=True: seen.update(lint=lint) or str(output))
+                        lambda config, output, pack=None, stamp=True, lint=True, brand=None:
+                        seen.update(lint=lint) or str(output))
     out = tmp_path / "o.xlsx"
     assert cli.main(["build", str(EXAMPLE), "-o", str(out), "--format", str(LEGACY_DIR), "--no-lint"]) == 0
     assert seen["lint"] is False

@@ -12,6 +12,7 @@ sheet that had not yet been laid out when the referring cell was placed.
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime
 import hashlib
 import json
@@ -29,6 +30,7 @@ from openpyxl.utils import column_index_from_string, get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.properties import PageSetupProperties
 
+from estimating_tools.estimate_spec import layout_map as LM
 from estimating_tools.estimate_spec import recipe as R
 
 # Entry-point group a consumer package registers a pre-render config check under
@@ -649,11 +651,15 @@ def _check_conditional_anchoring(cells, formula, where):
 # =============================================================================
 
 class EstimateBuilder:
-    def __init__(self, config, pack=None):
+    def __init__(self, config, pack=None, *, navigator=True):
         from estimating_tools.estimate_spec.format_pack import bundled_pack
 
         self.config = config
         self.pack = pack or bundled_pack()
+        #: Lay out Estimate Navigator's `_templates` sheet (when the pack's
+        #: layout_map declares templates). `generate` ties it to `stamp`: an
+        #: unstamped workbook carries no navigator anchors at all.
+        self.navigator = navigator
         self.tokens = self.pack.tokens
         self.units = self.pack.units
         self.recipes_doc = self.pack.recipes
@@ -698,6 +704,9 @@ class EstimateBuilder:
         #: laid out once per bid item under the shared unit-name key, with
         #: nothing to publish) has nothing to collide, so it is exempt.
         self._seen_instance_keys = {}
+        #: {kind: [columns]} blanked on `_templates` at the end of `write()`
+        #: (see `build_templates`); empty when the pack declares no templates.
+        self.template_clear = {}
 
     # ---- layout helpers ----------------------------------------------------
     def _exp(self, key, addr):
@@ -1051,6 +1060,30 @@ class EstimateBuilder:
             (before if sdef["position"] == "before_items" else after).append(sheet)
         return before, after
 
+    def build_templates(self):
+        """The hidden `_templates` item sheet Estimate Navigator copies rows from.
+
+        Laid out by the pack's own recipe from `layout_map.templates.item`, so
+        its formulas are exactly an item sheet's. Excel's copy then adjusts
+        them as it would for an estimator's copy-paste. The inputs listed under
+        `templates.clear` are blanked afterwards: a prototype row carries no
+        trade, quantity or price. Returns the sheet name, or None when the pack
+        declares no templates or the builder is not laying out navigator anchors.
+
+        The template recipe must lay out only on its own sheet: no anchored
+        unit writing to a shared sheet and no global promotion, or the
+        prototype item would leak into the estimate (fieldbook's `lump_sum`
+        satisfies this).
+        """
+        tpl = (self.pack.layout_map or {}).get("templates") or {}
+        if not tpl or not self.navigator:
+            return None
+        item = {**copy.deepcopy(tpl["item"]), "sheet": LM.TEMPLATES_SHEET}
+        self.build_item_sheet(item)
+        self.wb[LM.TEMPLATES_SHEET].sheet_state = "hidden"
+        self.template_clear = tpl["clear"]
+        return LM.TEMPLATES_SHEET
+
     # ---- resolve + write ---------------------------------------------------
     def _ref_published(self, key, sheet):
         """Did `key` get published? Backs `if_ref:`, which takes both forms.
@@ -1253,19 +1286,32 @@ class EstimateBuilder:
             except Exception:
                 pass
 
+        # The prototype rows on `_templates` keep their formulas but lose
+        # their inputs: an inserted crew/line/task starts blank.
+        if LM.TEMPLATES_SHEET in self.wb.sheetnames and self.template_clear:
+            ws = self.wb[LM.TEMPLATES_SHEET]
+            kind_col = self.pack.layout_map["tags"]["kind"]
+            for r in range(1, ws.max_row + 1):
+                for col in self.template_clear.get(ws[f"{kind_col}{r}"].value, ()):
+                    ws[f"{col}{r}"].value = None
+
+        for ws in self.wb.worksheets:
+            self.protect_sheet(ws)
+
+    def protect_sheet(self, ws):
+        """Protect `ws` as the pack asks (a no-op when it protects nothing)."""
         protect = self.pack.protect
         if protect.get("sheets"):
-            for ws in self.wb.worksheets:
-                ws.protection.sheet = True
-                if protect.get("password"):
-                    ws.protection.password = protect["password"]
-                # A protected sheet still has to let the estimator resize
-                # columns/rows to fit what they typed -- only these two
-                # are explicitly allowed. Everything else openpyxl protects
-                # by default (insert/delete rows, sort, autoFilter,
-                # formatCells) stays blocked.
-                ws.protection.formatColumns = False
-                ws.protection.formatRows = False
+            ws.protection.sheet = True
+            if protect.get("password"):
+                ws.protection.password = protect["password"]
+            # A protected sheet still has to let the estimator resize
+            # columns/rows to fit what they typed -- only these two
+            # are explicitly allowed. Everything else openpyxl protects
+            # by default (insert/delete rows, sort, autoFilter,
+            # formatCells) stays blocked.
+            ws.protection.formatColumns = False
+            ws.protection.formatRows = False
 
     def run(self):
         if "book" in self.recipes_doc:
@@ -1289,6 +1335,16 @@ class EstimateBuilder:
         # `_target` exactly like every other book sheet -- no placeholder
         # rename, and no exemption for book[0] in the collision check below.
         self.wb.remove(self.wb.active)
+        # Estimate Navigator's hidden sheet is reserved whenever this build
+        # writes navigator anchors (`_write_layout` creates it even for a
+        # layout_map without templates). Checked before anything is laid out.
+        if self.navigator and self.pack.layout_map:
+            for item in self.config["items"]:
+                if item["sheet"].casefold() == LM.TEMPLATES_SHEET.casefold():
+                    raise R.RecipeError(
+                        f"item {item['item_no']} ({item['sheet']}): its sheet name "
+                        "collides with Estimate Navigator's hidden sheet "
+                        f"{LM.TEMPLATES_SHEET!r} -- rename the item's sheet")
         for item in self.config["items"]:
             if item["sheet"].casefold() in book_names:
                 raise R.RecipeError(
@@ -1313,9 +1369,10 @@ class EstimateBuilder:
                     "rename one of them"
                 )
         before, after = self.build_book()
-        middle = [s for s in self.wb.sheetnames if s not in before and s not in after]
+        tpl = self.build_templates()
+        middle = [s for s in self.wb.sheetnames if s not in before and s not in after and s != tpl]
         # openpyxl offers move_sheet(offset) only; set the whole order at once.
-        self.wb._sheets = [self.wb[name] for name in before + middle + after]
+        self.wb._sheets = [self.wb[name] for name in before + middle + after + ([tpl] if tpl else [])]
         # book[0] -- the natural "index 0" -- may itself be `hidden:`; Excel
         # refuses to open a workbook whose active sheet is hidden, so the
         # active sheet is the first VISIBLE one in the final order, not
@@ -1361,7 +1418,88 @@ def spec_fingerprint(config) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def generate(config, pack=None, *, stamp=True):
+def _template_names(wb, lm) -> dict:
+    """est.tpl.task|crew|line -> whole-row refs on `_templates` (none without templates)."""
+    if LM.TEMPLATES_SHEET not in wb.sheetnames:
+        return {}
+    ws, kind_col = wb[LM.TEMPLATES_SHEET], lm["tags"]["kind"]
+    kinds = [(r, ws[f"{kind_col}{r}"].value) for r in range(1, ws.max_row + 1)]
+
+    def first(kind):
+        rows = [r for r, k in kinds if k == kind]
+        if not rows:
+            raise R.RecipeError(f"{LM.TEMPLATES_SHEET}: the template item laid out no {kind} row")
+        return rows[0]
+
+    head, sub = first(lm["blocks"]["head"]), first(lm["blocks"]["sub"])
+    crew, line = first(lm["templates"]["rows"]["crew"]), first(lm["templates"]["rows"]["line"])
+    return {"est.tpl.task": (LM.TEMPLATES_SHEET, f"${head}:${sub}"),
+            "est.tpl.crew": (LM.TEMPLATES_SHEET, f"${crew}:${crew}"),
+            "est.tpl.line": (LM.TEMPLATES_SHEET, f"${line}:${line}")}
+
+
+def _is_value(v) -> bool:
+    return v is not None and v != ""
+
+
+def _last_value_row(ws) -> int:
+    """The last row holding a value in any column (0 for an empty sheet).
+    Not `ws.max_row`: a styled but empty trailing cell would stretch an
+    `after:` table down to it."""
+    last = 0
+    for row in ws.iter_rows():
+        if any(_is_value(c.value) for c in row):
+            last = row[0].row
+    return last
+
+
+def _last_value_col(ws) -> int:
+    """The last column holding a value in any row (0 for an empty sheet)."""
+    return max((c.column for row in ws.iter_rows() for c in row if _is_value(c.value)), default=0)
+
+
+def _write_layout(wb, builder, *, spec_name=None, brand=None) -> None:
+    """Estimate Navigator's anchors: workbook-scoped defined names, the layout
+    JSON that says how to read them, and the `estimate_layout` marker.
+
+    Office.js truncates a custom document property past 255 characters on
+    desktop Excel, so the property carries only the layout version. The JSON
+    lives in one cell on the hidden `_templates` sheet -- row 1, two columns
+    past the sheet's last used column -- that the name `est.layout` points at.
+    A layout_map with no templates still gets an (otherwise empty) hidden
+    `_templates` sheet, placed last, to hold it.
+    """
+    from openpyxl.packaging.custom import StringProperty
+    from openpyxl.workbook.defined_name import DefinedName
+
+    lm = builder.pack.layout_map
+    max_rows = {ws.title: _last_value_row(ws) for ws in wb.worksheets}
+    names, tables = LM.resolve(lm, builder.exports, max_rows)
+    tpl_names = _template_names(wb, lm)
+    names.update(tpl_names)
+    if LM.TEMPLATES_SHEET in wb.sheetnames:
+        ws = wb[LM.TEMPLATES_SHEET]
+    else:
+        ws = wb.create_sheet(LM.TEMPLATES_SHEET)     # created last
+        ws.sheet_state = "hidden"
+        builder.protect_sheet(ws)
+    layout = {"pack": builder.pack.name, "pack_version": builder.pack.version,
+              "layout_version": LM.LAYOUT_VERSION, "tables": tables,
+              "tags": dict(lm["tags"]), "blocks": dict(lm["blocks"]),
+              "templates": bool(tpl_names)}
+    if spec_name:
+        layout["spec"] = spec_name
+    if brand:
+        layout["brand"] = brand
+    col = get_column_letter(_last_value_col(ws) + 2)
+    ws[f"{col}1"] = json.dumps(layout, sort_keys=True, separators=(",", ":"))
+    names["est.layout"] = (LM.TEMPLATES_SHEET, f"${col}$1")
+    for name, (sheet, ref) in sorted(names.items()):
+        wb.defined_names[name] = DefinedName(name, attr_text=sheet_qualified(sheet, ref))
+    wb.custom_doc_props.append(StringProperty(name="estimate_layout", value=str(LM.LAYOUT_VERSION)))
+
+
+def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None):
     """Render an estimate workbook (openpyxl Workbook) from a config in a format pack.
 
     `pack` defaults to the bundled pack. With `stamp`, the workbook carries the
@@ -1393,21 +1531,23 @@ def generate(config, pack=None, *, stamp=True):
 
     from estimating_tools.estimate_spec.validate import validate_cross_references
     validate_cross_references(config)
-    builder = EstimateBuilder(config, pack)
+    builder = EstimateBuilder(config, pack, navigator=stamp)
     wb = builder.run()
     if stamp:
         wb.custom_doc_props.append(StringProperty(
             name="estimate_format", value=f"{builder.pack.name} {builder.pack.version}"))
         wb.custom_doc_props.append(StringProperty(name="estimate_spec_sha", value=fingerprint))
+        if builder.pack.layout_map:
+            _write_layout(wb, builder, spec_name=spec_name, brand=brand)
     return wb
 
 
-def build(config_path, out_path=None, pack=None, *, stamp=True, lint=True):
+def build(config_path, out_path=None, pack=None, *, stamp=True, lint=True, brand=None):
     config = yaml.safe_load(Path(config_path).read_text(encoding="utf-8"))
     if lint:
         for finding in run_config_checks(config):
             print(f"lint: {finding}", file=sys.stderr)
-    wb = generate(config, pack, stamp=stamp)
+    wb = generate(config, pack, stamp=stamp, spec_name=Path(config_path).name, brand=brand)
     out = out_path or config.get("output") or (Path(config_path).with_suffix(".xlsx"))
     wb.save(out)
     return out

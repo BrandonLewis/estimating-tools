@@ -33,7 +33,8 @@ TAKEOFF_FIELDS = {
     "linear":   (("label", "A", False), ("length_lf", "B", True), ("ref", "C", False)),
     "count":    (("label", "A", False), ("count", "B", True), ("ref", "C", False)),
     "measured": (("label", "A", False), ("length", "D", True), ("height", "E", True),
-                 ("footing_cy", "F", True), ("wall_cy", "G", True), ("deck_cy", "H", True)),
+                 ("footing_cy", "F", True), ("wall_cy", "G", True), ("deck_cy", "H", True),
+                 ("other_cy", "I", True)),
 }
 #: The spec list each takeoff kind keeps its rows in.
 TAKEOFF_LIST = {"linear": "segments", "count": "units", "measured": "lines"}
@@ -91,6 +92,9 @@ def formula_columns(kind: str, *, label=None, in_task: bool = False,
 
 
 # Book sheets, located by their own labels.
+#: The hidden prototype-row sheet Estimate Navigator copies from. It looks like
+#: an item sheet (its row 1 is tagged ITEM) but is never one of the spec's.
+TEMPLATES_SHEET = "_templates"
 RATES_SHEET = "Rates"
 RATES_HEAD = "Resource"                              # A of the table's head row
 RATES_MARKER = "insert new rates above this row"     # A of the insert-above marker

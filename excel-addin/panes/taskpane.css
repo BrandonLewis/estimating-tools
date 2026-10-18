@@ -1,0 +1,54 @@
+:root {
+  --accent: #24507A; --on-accent: #FFFFFF; --surface: #FFFFFF;
+  --text: #1F2328; --muted: #5B616B; --line: #D5D9DF;
+  --ok: #1E6B3E; --bad: #A3261E; --warn: #B05A00;
+  --mono: Consolas, "Cascadia Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  /* Dark defaults for when no brand.json loads; a brand's own palette overrides these inline. */
+  :root:not([data-theme="light"]) { --accent: #8AB4E0; --on-accent: #10151B; --surface: #1E1F22; --text: #E6E8EB;
+                                    --muted: #A3A9B2; --line: #3A3E45;
+                                    --ok: #6FCF97; --bad: #FF8A80; --warn: #FFB74D; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { display: flex; flex-direction: column; background: var(--surface); color: var(--text);
+       font: 13px/1.4 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+header { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
+#brand-name { font-size: 15px; font-weight: 600; }
+.muted { color: var(--muted); font-size: 11.5px; }
+#tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 6px; flex: 0 0 auto; }
+#tabs button { flex: 1 1 auto; min-height: 40px; padding: 0 6px; background: none; border: 0;
+               border-bottom: 2px solid transparent; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; }
+#tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+#tabs button:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+main { flex: 1 1 auto; overflow-y: auto; padding: 10px 12px 14px; }
+footer { padding: 6px 14px; border-top: 1px solid var(--line); }
+#flash:empty { display: none; }
+#flash { margin: 8px 12px 0; padding: 8px 10px; border-radius: 6px; font-size: 12px;
+         background: color-mix(in srgb, var(--warn) 14%, var(--surface)); }
+.card { background: color-mix(in srgb, var(--text) 5%, var(--surface)); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 10px 2px 6px; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th { text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+     color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+td { padding: 6px; border-bottom: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+td.num, th.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+tr.go { cursor: pointer; }
+tr.go:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+tr.sel { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); box-shadow: inset 3px 0 0 var(--accent); }
+tr.dead { color: var(--muted); }
+tr.total td { font-weight: 700; border-top: 2px solid var(--text); border-bottom: 0; }
+.chip { font-family: var(--mono); font-size: 11px; padding: 1px 6px; border-radius: 4px; background: color-mix(in srgb, var(--text) 8%, var(--surface)); }
+.ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+.btn { min-height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--accent);
+       background: var(--surface); color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn:disabled { border-color: var(--line); background: var(--line); color: var(--muted); cursor: not-allowed; }
+.row-btn { display: flex; gap: 10px; width: 100%; text-align: left; padding: 10px; margin-bottom: 6px; border: 1px solid var(--line);
+           border-radius: 8px; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+.cmd { font-family: var(--mono); font-size: 11.5px; background: var(--text); color: var(--surface);
+       border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; word-break: break-all; }
+input[type="search"] { width: 100%; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px;
+                       background: var(--surface); color: var(--text); font: inherit; }
+.compact .c-descr { display: none; }

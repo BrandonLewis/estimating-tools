@@ -177,6 +177,27 @@ def copy_rows(ws, first: int, last: int, to: int) -> None:
                 dst._style = copy.copy(src._style)
 
 
+def paste_template_rows(wb, first: int, last: int, sheet: str, at: int) -> None:
+    """Simulate Estimate Navigator's Insert. Insert `last-first+1` rows at `at` on
+    `sheet` (Excel's insert, which shifts every same-sheet reference), then copy
+    `_templates` rows first..last into them with Excel's copy: values and styles
+    travel, and relative references shift with the paste."""
+    ws, src = wb[sheet], wb["_templates"]
+    count = last - first + 1
+    for i in range(count):
+        simulate_insert_copied_row(ws, at + i, at + i - 1)
+    width = max(ws.max_column, src.max_column)
+    for offset in range(count):
+        for col in range(1, width + 1):
+            s, d = src.cell(first + offset, col), ws.cell(at + offset, col)
+            value = s.value
+            if isinstance(value, str) and value.startswith("="):
+                value = Translator(value, origin=s.coordinate).translate_formula(d.coordinate)
+            d.value = value
+            if s.has_style:
+                d._style = copy.copy(s._style)
+
+
 def simulate_delete_row(ws, row: int) -> None:
     """Simulate Excel's "delete row": every same-sheet reference below `row`
     moves up one, and a reference TO the deleted row becomes `#REF!` -- so the

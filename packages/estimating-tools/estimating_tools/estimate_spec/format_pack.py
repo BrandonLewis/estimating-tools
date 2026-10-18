@@ -35,6 +35,8 @@ from pathlib import Path
 
 import yaml
 
+from estimating_tools.estimate_spec import layout_map as LM
+
 ENGINE_DIR = Path(__file__).resolve().parent
 #: The pack `resolve_pack` falls back to when nothing names one. Fieldbook
 #: since phase 3b; the demo pack it replaced survives only as the frozen
@@ -197,6 +199,11 @@ class FormatPack:
     #: only ever checking cross-references. Opt-in and False by default, so
     #: every pack that doesn't set it keeps building exactly as before.
     strict: bool = False
+    #: The `layout_map:` section, validated (see `layout_map.validate`), or
+    #: None for a pack that declares none -- `est-estimate build` writes no
+    #: defined names/document property/`_templates` sheet for that pack, and
+    #: Estimate Navigator falls back to its heuristic reader.
+    layout_map: dict | None = None
 
     @property
     def key(self) -> tuple[str, str, str]:
@@ -263,6 +270,12 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
         raise FormatPackError(
             f"{manifest}: protect.password is set but protect.sheets is not "
             "true -- a password only means something once sheets are protected")
+    layout_map = None
+    if "layout_map" in meta:
+        try:
+            layout_map = LM.validate(meta["layout_map"], str(manifest))
+        except LM.LayoutMapError as exc:
+            raise FormatPackError(str(exc)) from None
     files = meta.get("files") or {}
     unknown = sorted(set(files) - set(_REQUIRED) - set(_OPTIONAL))
     if unknown:
@@ -308,6 +321,12 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
     except RecipeError as exc:
         raise FormatPackError(f"{root}: files.recipes: {exc}") from exc
     recipe_names = [k for k in recipes["recipes"] if k != "cover"]
+
+    tpl_recipe = ((layout_map or {}).get("templates") or {}).get("item", {}).get("recipe")
+    if tpl_recipe is not None and tpl_recipe not in (recipes.get("recipes") or {}):
+        raise FormatPackError(
+            f"{manifest}: layout_map.templates.item.recipe {tpl_recipe!r} is not a recipe "
+            f"of this pack (recipes: {sorted(recipes.get('recipes') or {})})")
 
     # seed.scaffold and seed.takeoff_mapping are REQUIRED, not merely checked
     # when present. scaffold.py, apply.py, compact.py and scaffold_save.py all
@@ -412,7 +431,8 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                       units=units["units"], tokens=docs["tokens"], recipes=recipes,
                       schema=schema, vocabulary=vocab,
                       seed=docs["seed"], supports=frozenset(supports), labor=labor,
-                      protect=protect, chosen=chosen, strict=strict)
+                      protect=protect, chosen=chosen, strict=strict,
+                      layout_map=layout_map)
 
 
 def _check_seed_rate_trades(seed: dict, who: str) -> None:

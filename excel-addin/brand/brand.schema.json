@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Estimate Navigator brand",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "short_name", "provider", "description", "support_url", "logo", "icons", "colors"],
+  "properties": {
+    "name": {"type": "string", "minLength": 1, "maxLength": 125},
+    "short_name": {"type": "string", "minLength": 1, "maxLength": 16},
+    "provider": {"type": "string", "minLength": 1},
+    "description": {"type": "string", "minLength": 1, "maxLength": 250},
+    "support_url": {"type": "string", "pattern": "^https://"},
+    "logo": {"type": "string"},
+    "icons": {
+      "type": "object", "additionalProperties": false,
+      "required": ["16", "32", "64", "80", "128"],
+      "properties": {"16": {"type": "string"}, "32": {"type": "string"}, "64": {"type": "string"},
+                     "80": {"type": "string"}, "128": {"type": "string"}}
+    },
+    "colors": {
+      "type": "object", "additionalProperties": false, "required": ["light", "dark"],
+      "properties": {"light": {"$ref": "#/$defs/palette"}, "dark": {"$ref": "#/$defs/palette"}}
+    },
+    "heuristic": {"type": "object"}
+  },
+  "$defs": {
+    "palette": {
+      "type": "object", "additionalProperties": false,
+      "required": ["accent", "on_accent", "surface", "text", "muted", "line"],
+      "properties": {
+        "accent": {"$ref": "#/$defs/hex"}, "on_accent": {"$ref": "#/$defs/hex"},
+        "surface": {"$ref": "#/$defs/hex"}, "text": {"$ref": "#/$defs/hex"},
+        "muted": {"$ref": "#/$defs/hex"}, "line": {"$ref": "#/$defs/hex"}
+      }
+    },
+    "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}
+  }
+}

@@ -12,6 +12,7 @@ class QuoteLine:
     amount: float | None = None
     quantity: float | None = None
     is_included: bool = True
+    is_alternate: bool = False
     exclusion_notes: str | None = None
 
 

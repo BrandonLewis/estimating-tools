@@ -222,16 +222,18 @@ units:
           F: { value: "Footing CY",  style: head }
           G: { value: "Wall CY",     style: head }
           H: { value: "Deck CY",     style: head }
+          I: { value: "Earth/Other CY", style: head }
           Q: { value: HEAD, style: tag }
       - repeat: p.lines
         cells:
           A: { value: "{it.label}",      style: input_text }
-          B: { formula: "=SUM(F{r}:H{r})", style: calc_qty }
+          B: { formula: "=SUM(F{r}:I{r})", style: calc_qty }
           D: { value: "{it.length}",     style: input_qty, optional: true }
           E: { value: "{it.height}",     style: input_qty, optional: true }
           F: { value: "{it.footing_cy}", style: input_qty, optional: true }
           G: { value: "{it.wall_cy}",    style: input_qty, optional: true }
           H: { value: "{it.deck_cy}",    style: input_qty, optional: true }
+          I: { value: "{it.other_cy}",   style: input_qty, optional: true }
           Q: { value: TAKEOFF, style: tag }
         mark_first: seg_first
         mark_last:  seg_last

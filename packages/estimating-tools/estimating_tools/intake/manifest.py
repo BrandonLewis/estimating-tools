@@ -48,7 +48,7 @@ class BidFrameItem:
 class ProjectManifest:
     name: str
     organization_id: int | None = None
-    bm_project_id: int | None = None
+    bm_project_id: int | str | None = None   # BidManager ids may be strings (#361)
     project_ref: str | None = None
     bid_number: str | None = None
     bid_date: str | None = None      # ISO date

@@ -108,6 +108,9 @@ silently dropped.
 area: `M2`/`SM`, `SF`, `SY` · volume: `M3`/`CM`, `CY`, `CF` · length:
 `M`/`LM`, `LF`/`FT`, `YD` · count: `EA`/`EACH`, `LS`. A unit that doesn't
 match the measure's dimension raises a config error naming the choices.
+A `Count` row paid `LS` reports quantity 1 whatever its element count (the
+elements still list); `count_as: <number>` on a map entry (or a `measures:`
+entry) states the quantity of any `Count` row outright.
 
 ## The takeoff map
 
@@ -191,7 +194,7 @@ Two further consumers read the same conforming IFC per **element**, keyed by
 
   | Element | Key | Qto quantity (first present) |
   |---|---|---|
-  | `IfcEarthworksCut` | `excavation_cy` | `UndisturbedVolume`, `NetVolume`, `GrossVolume` |
+  | `IfcEarthworksCut`, or `IfcEarthworksElement` with ObjectType `EXCAVATION` | `excavation_cy` | `UndisturbedVolume`, `NetVolume`, `GrossVolume` |
   | `IfcEarthworksFill` | `backfill_cy` | `CompactedVolume`, `NetVolume`, `GrossVolume` |
   | any other element | `concrete_cy` | `NetVolume`, `GrossVolume` |
   | `IfcPile` | `pile_lf` | `Length` |

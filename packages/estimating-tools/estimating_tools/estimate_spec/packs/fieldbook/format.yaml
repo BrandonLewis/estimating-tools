@@ -22,3 +22,48 @@ files:
 # build.generate (and so `est-estimate build`) run it too, instead of a
 # build-path caller bypassing every one of those refusals.
 strict: true
+
+# Where Estimate Navigator (the Excel add-in) finds things. `est-estimate
+# build` resolves this into workbook-scoped defined names (est.index,
+# est.index.cost, ...) plus the `estimate_layout` document property, and
+# lays out the `templates` item on a hidden `_templates` sheet. The add-in's
+# Insert tab copies rows from that sheet.
+layout_map:
+  version: 1
+  tables:
+    index:                             # one row per bid item, Direct cost in H
+      sheet: Cost Summary
+      rows: { each: "cs[*].bid" }
+      columns: { item_no: A, descr: B, cost: H, link: C }   # C = the item sheet's ITEM TOTAL MH
+    checks:
+      sheet: Checks
+      rows: { after: checks_head.count, skip: 1 }           # past the column-head row
+      columns: { rule_no: A, rule: B, item: C, status: F }
+    codes:
+      sheet: Codes
+      rows: { span: code_rows.codes }
+      columns: { code: A, descr: B, listed: C }
+  cells:
+    direct_total: "Cost Summary!cost_summary_total.direct"
+  tags: { kind: Q, code_chain: R }
+  blocks: { item: ITEM, head: TASK, body: [NOTE, CREW, LINE], end: END, sub: SUBTOTAL, code_col: A }
+  templates:
+    item:
+      recipe: lump_sum
+      item_no: TEMPLATE
+      description: Rows Estimate Navigator copies
+      qty: 1
+      uom: LS
+      labor:
+        - slot: "01"
+          cost_code: "00-000"
+          description: New task
+          crew:
+            - { trade: Laborer, count: 1, days: 1 }
+          lines:
+            - { cost_type: material, name: New line, qty: 1, uom: EA, unit_price: 0 }
+    rows: { crew: CREW, line: LINE }
+    clear:                             # the input cells, blanked after layout
+      TASK: [A, B]
+      CREW: [A, D, E]
+      LINE: [A, B, C, G, H, I, J]

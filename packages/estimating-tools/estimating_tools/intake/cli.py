@@ -25,6 +25,12 @@ _BID_NUMBER_RE = re.compile(r"[A-Za-z0-9._-]+")
 _BID_DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
+def _project_id(text: str):
+    """--bm-project-id: BidManager ids are strings like ``01-0H6414`` (#361);
+    an all-digit id stays an int so existing manifests keep their shape."""
+    return int(text) if text.isdigit() else text
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -124,8 +130,11 @@ def cmd_bid_frame(args) -> int:
     except json.JSONDecodeError as exc:
         print(f"invalid JSON in {args.items}: {exc}")
         return 1
+    if isinstance(raw, dict) and isinstance(raw.get("items"), list):
+        raw = raw["items"]   # the paged list_bid_items envelope (#362)
     if not isinstance(raw, list):
-        print(f"items JSON must be a list of bid items, got {type(raw).__name__}")
+        print("items JSON must be a list of bid items or the paged "
+              f'{{"items": [...]}} envelope, got {type(raw).__name__}')
         return 1
     try:
         items = normalize_bid_items(raw)
@@ -206,7 +215,9 @@ def main(argv=None) -> int:
     p.add_argument("--bid-number", default=None, help="e.g. 1042 -> creates B1042-<date>/")
     p.add_argument("--bid-date", default=None, help="ISO date, e.g. 2026-07-16")
     p.add_argument("--organization-id", type=int, default=None)
-    p.add_argument("--bm-project-id", type=int, default=None)
+    p.add_argument("--bm-project-id", type=_project_id, default=None,
+                   help="BidSheet.ai project id — an integer or a string id "
+                        "such as 01-0H6414; stored in the manifest as given.")
     p.add_argument("--project-ref", default=None)
     p.set_defaults(func=cmd_init)
 
@@ -221,7 +232,9 @@ def main(argv=None) -> int:
 
     p = sub.add_parser("bid-frame", help="Snapshot bid items (JSON) into the manifest; seed takeoff_map.skel.yaml.")
     p.add_argument("project")
-    p.add_argument("--items", required=True, help="JSON file: raw list_bid_items output.")
+    p.add_argument("--items", required=True,
+                   help="JSON file: raw list_bid_items output — either the paged "
+                        '{"items": [...], ...} envelope or a bare list of items.')
     p.set_defaults(func=cmd_bid_frame)
 
     p = sub.add_parser("briefing", help="Build the briefing-pack skeleton from a structures.yaml.")

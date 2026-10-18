@@ -1,5 +1,15 @@
 """Render a Spread as a deterministic markdown table — the prototype "live artifact"
-renderer (pure result -> str; stable column order; fixed number formatting)."""
+renderer (pure result -> str; stable column order; fixed number formatting).
+
+An alternate cell renders `alt <price>` when it has a `unit_price`; `alt (<extended>)`
+when it has no `unit_price` but does have an `extended_amount` (an amount-only
+alternate); and bare `alt` only when neither is present -- never bolded as best,
+never the plain price format a bid cell gets. When
+`spread.has_alternates`, a `**With alternates**` row follows the `**Total**`
+row (`total_with_alternates (items_bid_with_alternates/items_total)` per
+vendor); a spread with no alternates renders byte-identical to before this
+row existed. The Gaps list reports an alternate-only cell as
+`alternate only (<extended amount>)` (no parens when unpriced)."""
 from __future__ import annotations
 
 from estimating_tools.artifacts import format_money, format_qty, md_table
@@ -33,6 +43,13 @@ def render_spread(spread: Spread) -> str:
                 cols.append("no bid")
             elif c.status == "excluded":
                 cols.append("excl")
+            elif c.status == "alternate":
+                if c.unit_price is not None:
+                    cols.append(f"alt {format_money(c.unit_price)}")
+                elif c.extended_amount is not None:
+                    cols.append(f"alt ({format_money(c.extended_amount)})")
+                else:
+                    cols.append("alt")
             else:
                 price = format_money(c.unit_price)
                 if (row.work_package_item_id, v["vendor_id"]) in best_set:
@@ -50,6 +67,15 @@ def render_spread(spread: Spread) -> str:
         vt = totals_by_v.get(v["vendor_id"])
         total_cols.append(f"{format_money(vt.total)} ({vt.items_bid}/{vt.items_total})" if vt else "")
     rows.append(total_cols)
+
+    if spread.has_alternates:
+        with_alt_cols = ["**With alternates**", "", "", ""]
+        for v in vendors:
+            vt = totals_by_v.get(v["vendor_id"])
+            with_alt_cols.append(
+                f"{format_money(vt.total_with_alternates)} "
+                f"({vt.items_bid_with_alternates}/{vt.items_total})" if vt else "")
+        rows.append(with_alt_cols)
 
     out = md_table(headers, rows) + "\n"
 
@@ -139,11 +165,21 @@ def render_spread(spread: Spread) -> str:
             r = rmap.get(g["work_package_item_id"])
             label = _row_label(r) if r is not None else str(g["work_package_item_id"])
             note = ""
-            if g.get("reason") == "excluded" and r is not None:
-                c = r.cells.get(g["vendor_id"])
-                if c is not None and c.exclusion_notes:
-                    note = f" ({c.exclusion_notes})"
-            reason = "excluded" if g.get("reason") == "excluded" else "no bid"
+            reason_key = g.get("reason")
+            if reason_key == "excluded":
+                reason = "excluded"
+                if r is not None:
+                    c = r.cells.get(g["vendor_id"])
+                    if c is not None and c.exclusion_notes:
+                        note = f" ({c.exclusion_notes})"
+            elif reason_key == "alternate":
+                reason = "alternate only"
+                if r is not None:
+                    c = r.cells.get(g["vendor_id"])
+                    if c is not None and c.extended_amount is not None:
+                        note = f" ({format_money(c.extended_amount)})"
+            else:
+                reason = "no bid"
             out += f"- {v.get('display_name', g['vendor_id'])}: item {label} — {reason}{note}\n"
     if spread.outliers:
         out += "\nOutliers:\n"

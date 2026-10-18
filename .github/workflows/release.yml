@@ -48,6 +48,11 @@ jobs:
         run: |
           pip install -e 'packages/estimating-tools[all,test]'
           python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests opencode/tests -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Estimate Navigator core tests
+        run: node --test excel-addin/tests/*.test.js
       - name: Build estimating_tools sdist + wheel
         run: |
           pip install build

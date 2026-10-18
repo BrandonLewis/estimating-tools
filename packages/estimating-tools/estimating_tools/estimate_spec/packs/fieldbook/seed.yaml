@@ -38,13 +38,22 @@ scaffold:
   default_markup:      { bond_pct: 0 }  # fieldbook requires markup by cost type; a valid minimal object
   placeholder_takeoff:                # a zeroed measured line, so a scaffolded
     kind: measured                    # line_item validates before apply-takeoff
-    fields: [footing_cy, footing_cf, wall_cy, wall_cf, deck_cy, deck_cf]
+    fields: [footing_cy, footing_cf, wall_cy, wall_cf, deck_cy, deck_cf, other_cy, other_cf]
 
 takeoff_mapping:
   kind: measured
-  line_fields: [footing_cy, footing_cf, wall_cy, wall_cf, deck_cy, deck_cf]
+  line_fields: [footing_cy, footing_cf, wall_cy, wall_cf, deck_cy, deck_cf, other_cy, other_cf]
   section_types:
     footing:   { cy: footing_cy, cf: footing_cf }
     walls:     { cy: wall_cy,    cf: wall_cf }
     wing_wall: { cy: wall_cy,    cf: wall_cf }
     decks:     { cy: deck_cy,    cf: deck_cf, label_prefix: "DECK" }
+    # volumes that are not structure concrete: earthwork, rock and other
+    # CY-paid bodies land in the Earth/Other column (a roadway-excavation
+    # sheet used to show 0 CY against its measured runs)
+    earthworkselement: { cy: other_cy, cf: other_cf }
+    earthworkscut:     { cy: other_cy, cf: other_cf }
+    earthworksfill:    { cy: other_cy, cf: other_cf }
+    covering:          { cy: other_cy, cf: other_cf }
+    course:            { cy: other_cy, cf: other_cf }
+    buildingelementproxy: { cy: other_cy, cf: other_cf }

@@ -65,6 +65,13 @@ spatial_parts:                        # optional; spec top level AND/OR paycodes
   `spatial_part={"name": "Deck", "predefined_type": "DECK"}`. To apply a
   rule list in Python, use `bimforge.author.spatial.apply_spatial_parts(model,
   parse_rules([...]))`.
+- **Earthwork.** Pay-item excavation is `IfcEarthworksElement` with
+  ObjectType `EXCAVATION`; backfill is `IfcEarthworksFill`. `IfcEarthworksCut`
+  is a feature subtraction (like an opening) that must void a host through
+  `IfcRelVoidsElement`, so an unhosted cut is invalid IFC — `emit_ifc`
+  rewrites one to `IfcEarthworksElement` and says so on stderr, and
+  `est-bim validate` names any that remain. `model-elements` reads either
+  class as `excavation_cy`.
 - **Assemblies.** An `IfcElementAssembly` is contained in its members' part.
   An assembly whose members span parts is refused, because one assembly has
   one container.

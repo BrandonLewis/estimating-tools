@@ -7,3 +7,7 @@ packages/estimating-tools/** text=auto eol=lf
 # is CRLF-safe either way but Windows batch prefers CRLF.
 plugins/estimating-core/scripts/launch text eol=lf
 plugins/estimating-core/scripts/launch.cmd text eol=crlf
+
+excel-addin/** text=auto eol=lf
+excel-addin/**/*.png binary
+excel-addin/**/*.xlsx binary

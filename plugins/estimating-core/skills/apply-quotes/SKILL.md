@@ -42,9 +42,16 @@ allocation resolves the quote line to its estimate item; if that fails, run
    - `vendor` — one `vendor_id` gets all the items it bid; or
    - `manual` — a list of `{work_package_item_id, vendor_id}` (multiple subs per item
      allowed, e.g. a sub does the structures and the GC self-performs the rest).
+   - Separately, ask whether the user wants to **accept any vendor alternate**
+     (`Cell(status="alternate")` on the spread) — an alternate is scope the vendor
+     is offering as an option, never part of either strategy above. Accepting one
+     is step 8a, a deliberate action outside the batch plan.
 4. **Plan it:** `estimating_tools.spreads.plan_award(spread, strategy, vendor_id=…,
    selection=…)` → an `AwardPlan` (entries with `quote_line_item_id` +
    `allocation_type`/`value`; per-item coverage with the self-perform remainder).
+   `plan_award` never includes an alternate cell (status `"alternate"`) in either
+   strategy — same as an excluded cell, it is skipped even when manually selected —
+   so accepting one is always the separate step 8a below, never silently planned.
 5. **Forbidden-mix guard (BEFORE any allocation write):** read the quote-conditions
    journal — `<bid working dir>/Subquotes/quote-conditions.jsonl` (written by
    `capture-quote`); load the current records and filter to this package:
@@ -70,21 +77,52 @@ allocation resolves the quote line to its estimate item; if that fails, run
    acceptance is not in play.
 6. **Detect superseded allocations:** `list_subcontractor_allocations(quote_id=…)` for
    the package's quotes → any existing allocation whose `quote_line_item_id` is NOT in
-   the new plan is **superseded** (e.g. a revision changed the winner).
-   A superseded allocation now usually means the vendor **revised** their quote — the
-   line the allocation pointed at belongs to a superseded revision, and a new current
-   revision has replaced it. Surface it as "vendor <X> revised to v<N> — re-point the
+   the new plan is a *candidate* for **superseded** (e.g. a revision changed the
+   winner). Before flagging one, check whether it is an **accepted alternate**
+   (step 8a — its line has `is_alternate=true`): `plan_award` never includes an
+   alternate line (step 4), so every accepted alternate looks like a candidate here
+   even when nothing changed. Split on whether its line is still on the quote's
+   **current revision** (check `list_work_package_quote_line_items(quote_id)`):
+   - **Current revision** → it is NOT superseded. Leave it out of the superseded
+     list; list it separately as **"accepted alternates (kept)"** so the user can see
+     it's still in effect, and make no write for it.
+   - **Superseded revision** (a newer current revision replaced the line it points
+     at) → flag it "vendor <X> revised to v<N> — re-accept the alternate on v<N>"; this
+     needs a fresh, confirmed step 8a accept on the new revision's line, not a plain
+     update/removal.
+   Every other allocation not in the new plan (i.e. not an accepted alternate) is a
+   genuine superseded allocation — usually the vendor **revised** their quote and the
+   line the allocation pointed at belongs to a superseded revision that a new current
+   revision has replaced. Surface it as "vendor <X> revised to v<N> — re-point the
    award to the current revision's line" (use `list_quote_revisions(quote_id)` to show
    the history if helpful), and handle it with the same confirm-driven update/removal.
-7. **Confirm BEFORE writing:** show `estimating_tools.spreads.render_award_plan(plan)`
-   plus the superseded allocations that would be removed. Make NO writes until the
-   user explicitly confirms.
+7. **Confirm BEFORE writing:** show `estimating_tools.spreads.render_award_plan(plan)`,
+   the superseded allocations that would be removed, and the accepted alternates kept
+   unchanged (step 6). If the user's `manual` selection (step 3) named a
+   `{work_package_item_id, vendor_id}` pair whose cell on the spread is
+   `Cell(status="alternate")`, say plainly that it was dropped from this plan (step 4 —
+   `plan_award` never includes an alternate) and point them to step 8a if they want to
+   award it. Make NO writes until the user explicitly confirms.
 8. **Upsert allocations** (on confirmation): for each entry, if no allocation exists
    for its `quote_line_item_id`, `allocate_subcontractor(quote_line_item_id,
    allocation_type, value)` (the result has a `created` flag); if one exists and its
    `allocation_type`/`value` differ, `update_subcontractor_allocation(allocation_id,
    …)`; skip unchanged. Remove each **confirmed** superseded allocation with
    `remove_subcontractor_allocation(allocation_id)`.
+8a. **Accepting a vendor alternate (only if the user asked, step 3):** allocating an
+    alternate line's `quote_line_item_id` (from the spread's `Cell(status="alternate")`,
+    or `list_work_package_quote_line_items`) **without** `accept_alternate=true` is
+    **refused with an error** ("Accept the alternate (`accept_alternate`) to allocate
+    it.") — so call `allocate_subcontractor(quote_line_item_id, allocation_type, value,
+    accept_alternate=True)` (same on `update_subcontractor_allocation`). Confirm the
+    specific line, its price, and that it is an add to the award **before** making
+    this call — it is not covered by the step 7 confirm, which only shows the
+    strategy's planned entries. Likewise, don't allocate an **excluded** line's
+    `quote_line_item_id` — the vendor isn't bidding it. Unlike an alternate, the server
+    does NOT refuse this call: it silently creates an allocation that posts **$0**
+    (`accept_alternate` has no effect here either way). There is no override that makes
+    excluded scope a legitimate award, so skip excluded lines entirely rather than
+    calling `allocate_subcontractor` on them.
 9. **Roll up the estimate package:** find it for this work package —
    `list_estimates(project_id)` → the project's estimate →
    `list_estimate_packages(estimate_id)` → the package whose `work_package_id`
@@ -106,3 +144,6 @@ allocation resolves the quote line to its estimate item; if that fails, run
   current revision, and prior revisions remain for audit (`list_quote_revisions`).
 - BidSheet.ai write constraints (`allocation_percentage` precision, silent rounding,
   tool-signature footguns): see `../estimating-reference/references/api-constraints.md`.
+- A vendor alternate is accepted one line at a time, confirmed each time (step 8a) —
+  never batched into `plan_award`/`render_award_plan` like a normal award. It is a
+  conscious add to scope, not a pricing choice among competing bids.

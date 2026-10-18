@@ -66,6 +66,7 @@ costcode-import = "estimating_tools.costcodes.cli:main"
 m2m-token = "estimating_tools.auth.cli:main"
 est-feedback = "estimating_tools.feedback.cli:main"
 est-artifact-app = "estimating_tools.artifact_app.server:main"
+est-addin = "estimating_tools.addin.cli:main"
 
 # bimforge resolves an org's CAD style pack through registered providers and
 # never imports this package; this is the provider that reads the org profile.
@@ -91,3 +92,4 @@ exclude = [
 "estimating_tools.profiles" = ["schema/*.json", "trees/*.yaml"]
 "estimating_tools.importers" = ["schema/*.json"]
 "estimating_tools.artifact_app" = ["*.html"]
+"estimating_tools.addin" = ["*.tmpl"]

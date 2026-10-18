@@ -112,6 +112,20 @@ def test_unrouted_section_type_is_visible_not_silent(alt_pack):
     assert "no CY column" in note
 
 
+def test_bundled_pack_routes_earthwork_to_other_cy():
+    """The shipped fieldbook pack routed only footing / wall / deck, so an
+    earthwork element (the whole of a roadway-excavation item) wrote a line
+    with length and height and 0 CY, and the sheet summed to 0 against the
+    bid quantity. Earthwork, rock and other CY bodies land in other_cy."""
+    for stype in ("earthworkselement", "earthworksfill", "covering", "course"):
+        line, note = element_to_line({"name": f"X {stype}", "section_type": stype,
+                                      "count": 1, "length_ft": 36.44, "width_ft": 5.3718,
+                                      "height_ft": 0.5486})
+        assert note is None, (stype, note)
+        assert line["other_cy"] == pytest.approx(36.44 * 5.3718 * 0.5486 / 27, abs=1e-3)
+        assert line["footing_cy"] == 0 and line["wall_cy"] == 0 and line["deck_cy"] == 0
+
+
 def test_build_geometry_collects_notes(alt_pack):
     block, notes = build_geometry([
         {"name": "F1", "section_type": "footing", "count": 1,

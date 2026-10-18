@@ -21,6 +21,11 @@ jobs:
         python-version: ["3.10", "3.12"]
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Estimate Navigator core tests
+        run: node --test excel-addin/tests/*.test.js
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
@@ -155,5 +160,6 @@ jobs:
         run: |
           est-import --help >/dev/null
           est-estimate --help >/dev/null
+          est-addin --help >/dev/null
           est-artifact-app --version >/dev/null
           echo "CLIs ok"

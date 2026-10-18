@@ -105,3 +105,33 @@ def test_changed_amount_still_detected_when_planned_provides_it():
     ]
     d = diff_quote_lines(planned, existing)
     assert d.unchanged is False and len(d.changed) == 1 and d.changed[0]["amount"] == 1200.0
+
+
+# ---- is_alternate (BidManager #1486 A2) ----
+
+def test_changed_is_alternate_is_a_change():
+    existing = [
+        {"id": 1001, "work_package_item_id": 11, "unit_price": "10", "quantity": "100",
+         "amount": "1000", "is_included": False, "is_alternate": True, "exclusion_notes": ""},
+    ]
+    planned = [
+        # vendor's alternate line re-captured as a plain included bid -> is_alternate flips
+        {"work_package_item_id": 11, "unit_price": 10.0, "quantity": 100.0,
+         "amount": 1000.0, "is_included": True},
+    ]
+    d = diff_quote_lines(planned, existing)
+    assert d.unchanged is False and len(d.changed) == 1
+    assert d.changed[0]["work_package_item_id"] == 11
+
+
+def test_identical_alternate_line_is_unchanged_noop():
+    existing = [
+        {"id": 1001, "work_package_item_id": 11, "unit_price": "10", "quantity": "100",
+         "amount": "1000", "is_included": False, "is_alternate": True, "exclusion_notes": ""},
+    ]
+    planned = [
+        {"work_package_item_id": 11, "unit_price": 10.0, "quantity": 100.0,
+         "amount": 1000.0, "is_included": False, "is_alternate": True},
+    ]
+    d = diff_quote_lines(planned, existing)
+    assert d.unchanged is True and d.changed == [] and d.added == []

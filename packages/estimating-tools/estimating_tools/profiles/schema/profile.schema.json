@@ -64,6 +64,46 @@
           "description": "Estimate workbook format pack: a directory holding format.yaml. Relative paths resolve against this profile's directory. A named pack that is missing or invalid is an error, never a fall back."
         }
       }
+    },
+    "brand": {
+      "type": "object",
+      "description": "Estimate Navigator branding: est-addin brand reads it, and est-estimate build stamps name and colors into workbooks.",
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "short_name": {"type": "string", "maxLength": 16},
+        "provider": {"type": "string"},
+        "description": {"type": "string"},
+        "support_url": {"type": "string", "pattern": "^https://"},
+        "logo": {"type": "string"},
+        "icon_16": {"type": "string"}, "icon_32": {"type": "string"}, "icon_64": {"type": "string"},
+        "icon_80": {"type": "string"}, "icon_128": {"type": "string"},
+        "colors": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "light": {"type": "object", "additionalProperties": false, "properties": {
+              "accent": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "on_accent": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "surface": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "text": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "muted": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "line": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}}},
+            "dark": {"type": "object", "additionalProperties": false, "properties": {
+              "accent": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "on_accent": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "surface": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "text": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "muted": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+              "line": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}}}
+          }
+        },
+        "heuristic": {"type": "object", "additionalProperties": false, "properties": {
+          "index_sheet": {"type": "string", "minLength": 1}, "item_header": {"type": "string", "minLength": 1},
+          "descr_header_prefix": {"type": "string", "minLength": 1}, "item_col": {"type": "string", "pattern": "^[A-Z]{1,3}$"},
+          "descr_col": {"type": "string", "pattern": "^[A-Z]{1,3}$"},
+          "cost_col": {"type": "string", "pattern": "^[A-Z]{1,3}$"}, "total_label": {"type": "string", "minLength": 1},
+          "max_scan": {"type": "integer", "minimum": 1}, "max_header_scan": {"type": "integer", "minimum": 1}}}
+      }
     }
   }
 }

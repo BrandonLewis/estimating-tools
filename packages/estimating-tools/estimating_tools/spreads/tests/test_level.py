@@ -173,3 +173,146 @@ def test_cell_carries_quote_line_item_id():
     row12, row13 = s.rows[1], s.rows[2]
     assert row12.cells[92].quote_line_item_id == 2002      # Bravo excluded line on item 12
     assert row13.cells[91].quote_line_item_id is None      # Acme no_bid on item 13
+
+
+# ---- alternates (BidManager #1486 A2) ----------------------------------
+
+def _items_one_row():
+    return [{"id": 11, "project_bid_item_id": 101, "item_code": "201",
+             "item_number": "1", "schedule_name": "Base Bid"}]
+
+
+def _bid_items_one_row(qty="100"):
+    return [{"id": 101, "item_number": "1", "item_code": "201", "description": "Excavation",
+             "unit": "CY", "quantity": qty, "schedule_name": "Base Bid"}]
+
+
+def _quotes_two_vendors():
+    return [
+        {"id": 1, "vendor_display_name": "Acme", "vendor_name": "Acme", "vendor_id": 91, "is_dbe": False, "status": "received", "amount": "0"},
+        {"id": 2, "vendor_display_name": "Bravo", "vendor_name": "Bravo", "vendor_id": 92, "is_dbe": True, "status": "received", "amount": "0"},
+    ]
+
+
+def test_alternate_cell_priced_and_excluded_from_base_total():
+    # Acme bids the item normally; Bravo's line is a priced alternate (cheaper than
+    # Acme's base rate) -- it must NOT be in Bravo's base total/items_bid.
+    lines_by_quote = {
+        1: [{"id": 1001, "quote_id": 1, "work_package_item_id": 11, "unit_price": "10",
+             "quantity": "100", "amount": None, "is_included": True, "exclusion_notes": ""}],
+        2: [{"id": 2001, "quote_id": 2, "work_package_item_id": 11, "unit_price": "5",
+             "quantity": "100", "amount": None, "is_included": False, "is_alternate": True,
+             "exclusion_notes": ""}],
+    }
+    s = build_spread(_items_one_row(), _bid_items_one_row(), _quotes_two_vendors(), lines_by_quote)
+    row = s.rows[0]
+    alt = row.cells[92]
+    assert alt.status == "alternate" and alt.is_alternate is True and alt.is_included is False
+    assert alt.unit_price == 5.0 and alt.quantity == 100.0 and alt.extended_amount == 500.0
+    totals = {vt.vendor_id: vt for vt in s.vendor_totals}
+    # Bravo has NO base bid on this item -> base total/items_bid stay at 0
+    assert totals[92].total == 0.0 and totals[92].items_bid == 0
+
+
+def test_alternate_not_eligible_for_best_or_outlier():
+    # Bravo's alternate (unit_price 1) is far cheaper than Acme's base bid (10), but
+    # must never win best-per-item nor be flagged (or trigger) an outlier.
+    lines_by_quote = {
+        1: [{"id": 1001, "quote_id": 1, "work_package_item_id": 11, "unit_price": "10",
+             "quantity": "100", "amount": None, "is_included": True, "exclusion_notes": ""}],
+        2: [{"id": 2001, "quote_id": 2, "work_package_item_id": 11, "unit_price": "1",
+             "quantity": "100", "amount": None, "is_included": False, "is_alternate": True,
+             "exclusion_notes": ""}],
+    }
+    s = build_spread(_items_one_row(), _bid_items_one_row(), _quotes_two_vendors(), lines_by_quote)
+    row = s.rows[0]
+    assert row.best_vendor_id == 91 and row.best_unit_price == 10.0
+    assert s.outliers == []
+
+
+def test_with_alternates_totals_add_priced_alternates_to_base():
+    # Acme bids item 11 AND carries a priced alternate on item 12 (an add/option
+    # item) -- a vendor's alternate is a separate work-package item/row, not a
+    # second price on the same item as its base bid.
+    items = [
+        {"id": 11, "project_bid_item_id": 101, "item_code": "201", "item_number": "1", "schedule_name": "Base Bid"},
+        {"id": 12, "project_bid_item_id": 102, "item_code": "202", "item_number": "2", "schedule_name": "Base Bid"},
+    ]
+    bid_items = [
+        {"id": 101, "item_number": "1", "item_code": "201", "description": "Excavation", "unit": "CY", "quantity": "100", "schedule_name": "Base Bid"},
+        {"id": 102, "item_number": "2", "item_code": "202", "description": "Add-alt grading", "unit": "CY", "quantity": "50", "schedule_name": "Base Bid"},
+    ]
+    lines_by_quote = {
+        1: [
+            {"id": 1001, "quote_id": 1, "work_package_item_id": 11, "unit_price": "10",
+             "quantity": "100", "amount": None, "is_included": True, "exclusion_notes": ""},
+            {"id": 1002, "quote_id": 1, "work_package_item_id": 12, "unit_price": "2",
+             "quantity": "50", "amount": None, "is_included": False, "is_alternate": True,
+             "exclusion_notes": ""},
+        ],
+    }
+    s = build_spread(items, bid_items, [_quotes_two_vendors()[0]], lines_by_quote)
+    totals = {vt.vendor_id: vt for vt in s.vendor_totals}
+    acme = totals[91]
+    assert acme.total == 1000.0 and acme.items_bid == 1
+    assert acme.total_with_alternates == 1000.0 + 100.0   # 1000 base + 2*50 alternate
+    assert acme.items_bid_with_alternates == 2
+
+
+def test_alternate_gap_reason_and_has_alternates_flag():
+    lines_by_quote = {
+        1: [{"id": 1001, "quote_id": 1, "work_package_item_id": 11, "unit_price": "10",
+             "quantity": "100", "amount": None, "is_included": True, "exclusion_notes": ""}],
+        2: [{"id": 2001, "quote_id": 2, "work_package_item_id": 11, "unit_price": "5",
+             "quantity": "100", "amount": None, "is_included": False, "is_alternate": True,
+             "exclusion_notes": ""}],
+    }
+    s = build_spread(_items_one_row(), _bid_items_one_row(), _quotes_two_vendors(), lines_by_quote)
+    assert {"vendor_id": 92, "work_package_item_id": 11, "reason": "alternate"} in s.gaps
+    assert s.has_alternates is True
+
+
+def test_unpriced_alternate_cell_has_no_extended_amount_but_sets_has_alternates():
+    lines_by_quote = {
+        1: [{"id": 1001, "quote_id": 1, "work_package_item_id": 11, "unit_price": "10",
+             "quantity": "100", "amount": None, "is_included": True, "exclusion_notes": ""}],
+        2: [{"id": 2001, "quote_id": 2, "work_package_item_id": 11, "unit_price": None,
+             "quantity": None, "amount": None, "is_included": False, "is_alternate": True,
+             "exclusion_notes": ""}],
+    }
+    s = build_spread(_items_one_row(), _bid_items_one_row(), _quotes_two_vendors(), lines_by_quote)
+    row = s.rows[0]
+    assert row.cells[92].status == "alternate" and row.cells[92].extended_amount is None
+    totals = {vt.vendor_id: vt for vt in s.vendor_totals}
+    assert totals[92].total_with_alternates == 0.0 and totals[92].items_bid_with_alternates == 0
+    assert s.has_alternates is True
+
+
+def test_spread_with_no_alternates_has_alternates_false():
+    s = build_spread(_items(), _bid_items(), _quotes(), _lines_by_quote())
+    assert s.has_alternates is False
+    for vt in s.vendor_totals:
+        assert vt.total_with_alternates == vt.total
+        assert vt.items_bid_with_alternates == vt.items_bid
+
+
+def test_malformed_line_with_both_flags_true_is_still_never_in_base():
+    # Defense in depth: a line that somehow has both is_included AND is_alternate
+    # true (a bad write upstream, since plan_quote always forces is_included=False
+    # on an alternate) must still be treated as an alternate -- is_alternate is
+    # checked before is_included, so it never slips into the base total/items_bid
+    # or becomes eligible for best-per-item.
+    lines_by_quote = {
+        1: [{"id": 1001, "quote_id": 1, "work_package_item_id": 11, "unit_price": "10",
+             "quantity": "100", "amount": None, "is_included": True, "exclusion_notes": ""}],
+        2: [{"id": 2001, "quote_id": 2, "work_package_item_id": 11, "unit_price": "1",
+             "quantity": "100", "amount": None, "is_included": True, "is_alternate": True,
+             "exclusion_notes": ""}],
+    }
+    s = build_spread(_items_one_row(), _bid_items_one_row(), _quotes_two_vendors(), lines_by_quote)
+    row = s.rows[0]
+    cell = row.cells[92]
+    assert cell.status == "alternate" and cell.is_alternate is True and cell.is_included is False
+    totals = {vt.vendor_id: vt for vt in s.vendor_totals}
+    assert totals[92].total == 0.0 and totals[92].items_bid == 0
+    assert row.best_vendor_id == 91 and row.best_unit_price == 10.0
