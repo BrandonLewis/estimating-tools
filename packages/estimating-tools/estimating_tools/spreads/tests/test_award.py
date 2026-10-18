@@ -143,6 +143,27 @@ def test_manual_strategy_rejects_malformed_selection():
         plan_award(_spread(), "manual", selection=[{"vendor_id": 91}])   # no work_package_item_id
 
 
+def test_alternate_cell_is_never_awarded():
+    # A priced alternate cell is not in the base; awarding must skip it under
+    # either strategy, even though it has a quote_line_item_id and a price
+    # (accepting it requires accept_alternate=true on the MCP allocation call,
+    # outside plan_award's scope -- see the apply-quotes skill).
+    rows = [
+        Row(11, 101, "201", "1", "Base Bid", "Excavation", "CY", 100.0, cells={
+            91: Cell(91, "bid", quote_line_item_id=1001, unit_price=10.0, quantity=100.0, extended_amount=1000.0),
+            92: Cell(92, "alternate", quote_line_item_id=2001, unit_price=5.0, quantity=100.0,
+                     extended_amount=500.0, is_included=False, is_alternate=True),
+        }),
+    ]
+    vendors = [
+        {"vendor_id": 91, "quote_id": 1, "display_name": "Acme", "is_dbe": False, "status": "received"},
+        {"vendor_id": 92, "quote_id": 2, "display_name": "Bravo", "is_dbe": True, "status": "received"},
+    ]
+    spread = Spread(vendors=vendors, rows=rows)
+    assert plan_award(spread, "vendor", vendor_id=92).entries == []
+    assert plan_award(spread, "manual", selection=[{"work_package_item_id": 11, "vendor_id": 92}]).entries == []
+
+
 def test_awarding_bid_cell_without_line_id_raises():
     rows = [Row(11, 101, "201", "1", "Base Bid", "Excavation", "CY", 100.0, cells={
         91: Cell(91, "bid", quote_line_item_id=None, unit_price=10.0, quantity=100.0, extended_amount=1000.0),

@@ -47,7 +47,23 @@ see the **Setup** block above.
      (here `3.2`/`3.3` are task WBS codes and `conc-1` is a task id.)
      `name_re` matches each element's Name; `ifc_class` matches its IFC
      class (e.g. `IfcPile`, `IfcFooting`, `IfcWall`); any of the three
-     (codes / name_re / ifc_class) assigns.
+     (codes / name_re / ifc_class) assigns — they OR together.
+     **AND mode (narrow a code's elements):** when one bid item code spans
+     several stages (the deck's concrete code also covers the approach
+     slabs, say), give the dict `filter_re` and/or `filter_ifc_class`
+     alongside `codes`. They FILTER the code-joined set instead of adding to
+     it: an element must carry one of the codes AND match every filter.
+     ```json
+     {
+       "4.1": {"codes": ["510120"], "filter_re": "(?i)approach slab"},
+       "4.2": {"codes": ["510120"], "filter_ifc_class": "IfcSlab",
+               "filter_re": "(?i)^deck"}
+     }
+     ```
+     A filter needs `codes` to narrow (the resolver refuses one without),
+     and a filter that keeps none of the code's elements is reported. The
+     filters ride the task into the 4D IFC (`Bimforge_Task`) and read back
+     with `~/.estimating/bin/est-bim schedule-read`.
    - codes the task **name** carries — pass `--name-code-re '<regex>'` and its
      first capture group is extracted per task (e.g. an activity-ID prefix
      like `AB.1020` that maps to a bid item);

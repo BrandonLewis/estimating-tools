@@ -45,7 +45,10 @@ BidSheet.ai's truth only.
    dirs/files. If it refuses (manifest exists), this project is already
    intaken — switch to updating it (steps 3–5 are all idempotent).
 3. **Snapshot the bid frame:** `mcp__bidmanager__list_bid_schedules(project_id)` and
-   `mcp__bidmanager__list_bid_items(project_id)`; save the raw items list to a temp JSON file;
+   `mcp__bidmanager__list_bid_items(project_id)`; save the raw `mcp__bidmanager__list_bid_items` output to a
+   temp JSON file — either shape works: the paged `{"items": [...], ...}`
+   envelope as returned, or just the bare items list (merge the pages into
+   one list or one envelope when the project has more items than one page);
    `est-intake bid-frame <project-dir> --items <file>`. Review the seeded
    `Takeoff/takeoff_map.skel.yaml` with the user — flag bid items that landed
    in the "no cost code" comment block (they can't receive BIM quantities

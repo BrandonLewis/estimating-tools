@@ -130,6 +130,17 @@ def test_wheel_still_ships_the_format_data_files(freshly_built_wheel):
         f"{freshly_built_wheel.name} ships no {REQUIRED_FORMAT_GLOB}"
 
 
+def test_the_fresh_wheel_ships_the_manifest_template(freshly_built_wheel):
+    """estimating_tools.addin.manifest reads manifest.xml.tmpl via
+    importlib.resources at runtime; the [tool.setuptools.package-data] entry
+    for "estimating_tools.addin" must keep shipping it."""
+    names = set(zipfile.ZipFile(freshly_built_wheel).namelist())
+    assert "estimating_tools/addin/manifest.xml.tmpl" in names, (
+        f"{freshly_built_wheel.name} does not ship the manifest template — fix the "
+        "[tool.setuptools.package-data] globs in "
+        "packages/estimating-tools/pyproject.toml")
+
+
 def test_the_deleted_format_layout_is_not_resurrected(freshly_built_wheel):
     """units/tokens/recipes at the estimate_spec root, and estimate.schema.json,
     were the pre-pack layout. Their absence is the point of the extraction; a

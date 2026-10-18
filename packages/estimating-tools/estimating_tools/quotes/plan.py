@@ -4,6 +4,14 @@ host-agnostic: no BidSheet.ai/Django/MCP/network.
 (schedule_name, item_number) on each line/ref are LOOKUP keys — the capture-quote
 skill resolves them per-schedule to project_bid_item_id and then to
 work_package_item_id before the MCP call.
+
+An alternate line (`QuoteLine.is_alternate=True`) is never in the base. `is_alternate`
+wins: `plan_quote` always emits `is_included=False` for such a line regardless of what
+the extracted `QuoteLine.is_included` was set to, rather than raising on a
+contradictory (`True`, `True`) pair -- a mis-extracted line is silently corrected at
+plan time instead of failing the whole capture. `is_alternate` is sent in the line
+payload only when true, so payloads for ordinary lines are byte-identical to before
+this field existed.
 """
 from __future__ import annotations
 
@@ -42,15 +50,21 @@ def plan_quote(canonical: CanonicalQuote) -> QuotePlan:
         if pair not in seen:
             seen.add(pair)
             refs.append({"schedule_name": line.schedule_name, "item_number": line.item_number})
+        # is_alternate wins: an alternate line's payload is always is_included=False,
+        # regardless of what the extracted line's is_included was set to -- an
+        # alternate is never in the base.
+        is_included = False if line.is_alternate else line.is_included
         payload = {
             "schedule_name": line.schedule_name,
             "item_number": line.item_number,
-            "is_included": line.is_included,
+            "is_included": is_included,
         }
         for key in ("unit_price", "amount", "quantity", "exclusion_notes"):
             value = getattr(line, key)
             if value is not None:
                 payload[key] = value
+        if line.is_alternate:
+            payload["is_alternate"] = True
         lines.append(payload)
 
     return QuotePlan(work_package_name=canonical.work_package_name,
@@ -95,13 +109,14 @@ def render_quote_plan(plan: QuotePlan) -> str:
                  for r in plan.bid_item_refs]
     refs_table = md_table(refs_headers, refs_rows)
 
-    lines_headers = ["schedule_name", "item_number", "is_included", "unit_price",
-                     "amount", "quantity", "exclusion_notes"]
+    lines_headers = ["schedule_name", "item_number", "is_included", "is_alternate",
+                     "unit_price", "amount", "quantity", "exclusion_notes"]
     lines_rows = [
         [
             _dash(ln.get("schedule_name")),
             _dash(ln.get("item_number")),
             _dash(ln.get("is_included")),
+            _dash(ln.get("is_alternate", False)),
             format_money(ln.get("unit_price")) if ln.get("unit_price") is not None else "-",
             format_money(ln.get("amount")) if ln.get("amount") is not None else "-",
             format_qty(ln.get("quantity")) if ln.get("quantity") is not None else "-",

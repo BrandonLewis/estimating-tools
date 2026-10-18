@@ -1,0 +1,7 @@
+{
+  "name": "estimate-navigator",
+  "private": true,
+  "type": "module",
+  "description": "Estimate Navigator Excel add-in. Static ES modules, no build step, no dependencies.",
+  "scripts": { "test": "node --test" }
+}

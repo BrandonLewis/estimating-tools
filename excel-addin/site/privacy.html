@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estimate Navigator Privacy</title>
+<style>
+:root {
+  --accent: #24507A; --surface: #FFFFFF; --text: #1F2328; --muted: #5B616B; --line: #D5D9DF;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --accent: #7FB0E0; --surface: #1F1F1F; --text: #E8E8E8; --muted: #B3B0AD; --line: #3B3A39; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface); color: var(--text);
+       font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
+main { max-width: 42rem; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 4px; }
+h2 { font-size: 1.15rem; margin: 28px 0 8px; }
+p, li { overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.muted { color: var(--muted); font-size: .9rem; }
+nav { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-bottom: 12px; margin-bottom: 20px;
+      border-bottom: 1px solid var(--line); font-size: .95rem; }
+footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<main>
+<nav aria-label="Estimate Navigator pages">
+  <a href="support.html">Support</a>
+  <a href="privacy.html">Privacy</a>
+  <a href="terms.html">Terms</a>
+</nav>
+<h1>Privacy</h1>
+<p class="muted">Estimate Navigator, an Excel add-in</p>
+
+<h2>Where it runs</h2>
+<p>Estimate Navigator runs entirely inside Excel.</p>
+
+<h2>What it reads and writes</h2>
+<p>It reads the open workbook to show its index, checks and codes. It writes to the workbook only
+when you click <strong>Use</strong> or an <strong>Insert</strong> button.</p>
+
+<h2>What it collects</h2>
+<ul>
+  <li>It collects no personal data.</li>
+  <li>It sends no data anywhere.</li>
+  <li>It uses no cookies and no analytics.</li>
+  <li>It makes no network requests, except to load its own files and brand from anvilrockroad.com,
+    and Microsoft's Office.js library from Microsoft's servers, which every Office add-in loads.</li>
+  <li>It stores nothing outside the workbook.</li>
+</ul>
+
+<h2>Contact</h2>
+<p>Questions about privacy go to the address on the <a href="support.html">support page</a>:
+<a href="mailto:security@anvilrockroad.com">security@anvilrockroad.com</a>.</p>
+<footer class="muted">Estimate Navigator is provided by Anvil Rock Road.</footer>
+</main>
+</body>
+</html>

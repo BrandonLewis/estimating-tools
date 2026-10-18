@@ -101,6 +101,8 @@ defs:
                 wall_cf:    { type: number }
                 deck_cy:    { type: number }
                 deck_cf:    { type: number }
+                other_cy:   { type: number }
+                other_cf:   { type: number }
         required: [lines]
         additionalProperties: false
   spreads: false             # no spreads: haul and the like are task lines

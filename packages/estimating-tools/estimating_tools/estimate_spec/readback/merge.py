@@ -414,7 +414,8 @@ def _merge_notes(entry: dict, key: str, rows: list, where: str, f: Findings) -> 
 #: hidden field the workbook never shows (so it is never read), but it must
 #: not go stale when the matching CY field it is derived from changes.
 _CF_PER_CY = 27
-_CY_CF_PAIRS = (("footing_cy", "footing_cf"), ("wall_cy", "wall_cf"), ("deck_cy", "deck_cf"))
+_CY_CF_PAIRS = (("footing_cy", "footing_cf"), ("wall_cy", "wall_cf"), ("deck_cy", "deck_cf"),
+                ("other_cy", "other_cf"))
 
 
 def _merge_takeoff(takeoff: dict, sheet, where: str, f: Findings, *, baseline=None) -> None:

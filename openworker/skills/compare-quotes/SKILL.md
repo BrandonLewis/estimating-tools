@@ -70,8 +70,15 @@ allocations / awarding) is a separate, later skill. Requires the BidSheet.ai MCP
 4. **Build the spread:** `estimating_tools.spreads.build_spread(items, bid_items,
    quotes, lines_by_quote)` → a `Spread` (rows = items, columns = vendors;
    best-per-item on unit_price; per-vendor totals + coverage; best-of-breed total;
-   partial flags; no-bid/excluded gaps; outliers). Then apply the conditions
-   post-pass BEFORE rendering:
+   partial flags; no-bid/excluded/alternate gaps; outliers). **The spread levels
+   both ways:** a line captured as a vendor's alternate (`is_alternate=true`)
+   becomes `Cell(status="alternate")` — priced like a bid cell but never in the
+   base (never best-per-item, never an outlier, never in `total`/`items_bid`/
+   best-of-breed); it stays a coverage gap (reason `"alternate"`) and instead
+   rolls into `VendorTotal.total_with_alternates` /
+   `items_bid_with_alternates` (base + that vendor's priced alternates), and
+   `spread.has_alternates` is set when any vendor carries one. Then apply the
+   conditions post-pass BEFORE rendering:
    `estimating_tools.spreads.conditions.apply_conditions(spread, records)` —
    scope-group subtotals over each group's comparable basis (per-item best is
    suppressed inside a group), the obtainable single-vendor total, the obtainable
@@ -79,12 +86,19 @@ allocations / awarding) is a separate, later skill. Requires the BidSheet.ai MCP
    the spread is unchanged.
 5. **Present it:** by default `estimating_tools.spreads.render_spread(spread)` → show
    the markdown table (with any scope-group sections and the decision-ordered summary
-   block). If the user only wants the data (e.g. to feed a later step), hand back the
-   structured `Spread` without rendering.
-6. **Narrate the takeaways:** lead with the **obtainable single-vendor total** —
-   that is THE number to carry, not the best-of-breed; scope-group subtotals (who
-   wins each group all-in); coverage gaps (who didn't bid what — a low total may
-   just be missing scope); partial bids; and outliers. Then:
+   block). An alternate cell renders `alt <price>` when it has a `unit_price`; when it
+   doesn't but still has an extended amount (an amount-only alternate), it renders
+   `alt (<extended>)`; bare `alt` only when neither is present. When
+   `has_alternates`, a `**With alternates**` row follows the Total row. If the user
+   only wants the data (e.g. to feed a later step), hand back the structured `Spread`
+   without rendering.
+6. **Narrate the takeaways:** lead with the **base totals first** (the obtainable
+   single-vendor total — THE number to carry, not the best-of-breed; scope-group
+   subtotals (who wins each group all-in); coverage gaps (who didn't bid what — a
+   low total may just be missing scope); partial bids; and outliers), THEN the
+   **with-alternates totals** when `has_alternates` — call out a vendor whose
+   alternate, if accepted, would cover an item another vendor only bid in their
+   base (a cheaper mix the base-only numbers don't show). Then:
    - **Read out every warning** — each `spread.condition_warnings` entry
      (`possible_scope_fold`: a no-bid next to others' bids with no tag explaining
      it; `unknown_acceptance`: a winning vendor whose flag is unverified;
@@ -115,7 +129,13 @@ allocations / awarding) is a separate, later skill. Requires the BidSheet.ai MCP
   post-pass warns on likely untagged folds but never auto-normalizes — go back to
   the quote document and record the condition (`est-quotespace condition`) rather
   than guessing.
-- No-bid and excluded items are coverage gaps, never counted as $0.
+- No-bid, excluded, and alternate-only items are coverage gaps, never counted as $0.
+- A vendor's alternate never competes for best-per-item or feeds the base total/
+  best-of-breed — it is scope the vendor is offering as an option, not something
+  they're bidding in the base. It is still worth reading: a cheap alternate that
+  duplicates scope another vendor only covers in their base can change which mix
+  is actually cheapest, which is why the with-alternates totals are narrated
+  separately rather than blended into the base numbers.
 - Read-only: no quote/estimate/allocation is modified. Awarding/applying is a
   separate skill.
 - To award the chosen quotes — post them to the estimate as subcontractor

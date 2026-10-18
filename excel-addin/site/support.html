@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estimate Navigator Support</title>
+<style>
+:root {
+  --accent: #24507A; --surface: #FFFFFF; --text: #1F2328; --muted: #5B616B; --line: #D5D9DF;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --accent: #7FB0E0; --surface: #1F1F1F; --text: #E8E8E8; --muted: #B3B0AD; --line: #3B3A39; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--surface); color: var(--text);
+       font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
+main { max-width: 42rem; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 4px; }
+h2 { font-size: 1.15rem; margin: 28px 0 8px; }
+p, li { overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.muted { color: var(--muted); font-size: .9rem; }
+nav { display: flex; flex-wrap: wrap; gap: 4px 16px; padding-bottom: 12px; margin-bottom: 20px;
+      border-bottom: 1px solid var(--line); font-size: .95rem; }
+footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<main>
+<nav aria-label="Estimate Navigator pages">
+  <a href="support.html">Support</a>
+  <a href="privacy.html">Privacy</a>
+  <a href="terms.html">Terms</a>
+</nav>
+<h1>Support</h1>
+<p class="muted">Estimate Navigator, an Excel add-in</p>
+
+<h2>What it does</h2>
+<p>Estimate Navigator is a task pane for estimate workbooks. It has five tabs:</p>
+<ul>
+  <li><strong>Items</strong> lists the bid items and opens each item's sheet.</li>
+  <li><strong>Checks</strong> shows which workbook checks pass and fail, failing ones first.</li>
+  <li><strong>Codes</strong> searches the cost codes and sets a task's code.</li>
+  <li><strong>Insert</strong> adds crew rows and tasks from the workbook's templates.</li>
+  <li><strong>Read back</strong> checks the workbook is ready and gives the exact command to read it back.</li>
+</ul>
+
+<h2>Requirements</h2>
+<p>Excel for Windows, Excel for Mac or Excel on the web, with support for ExcelApi 1.9.</p>
+<p>Excel must be able to reach anvilrockroad.com, for the add-in's own files, and Microsoft's
+servers, for the Office.js library every Office add-in loads.</p>
+
+<h2>Sample workbook</h2>
+<p><a href="navigator/sample.xlsx">Download a sample workbook</a>, open it in Excel, then open
+Estimate Navigator from the Home tab.</p>
+
+<h2>Troubleshooting</h2>
+<ul>
+  <li><strong>The pane is empty.</strong> The workbook was not built by est-estimate and has no
+    hand-built Summary index. Try the sample workbook to confirm the add-in works.</li>
+  <li><strong>The pane says "Update Estimate Navigator".</strong> The workbook was built with a newer
+    layout than this version of the add-in understands. Update the add-in, or ask your administrator to.</li>
+  <li><strong>Read back needs a local copy.</strong> The read-back command runs in a terminal in
+    the workbook's folder, so the workbook must be saved on this computer. If it is on OneDrive or
+    SharePoint, sync it to this computer first.</li>
+</ul>
+
+<h2>Contact</h2>
+<p>Email <a href="mailto:security@anvilrockroad.com">security@anvilrockroad.com</a>.</p>
+<footer class="muted">Estimate Navigator is provided by Anvil Rock Road.</footer>
+</main>
+</body>
+</html>

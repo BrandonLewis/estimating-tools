@@ -67,6 +67,40 @@ def test_optional_line_fields_omitted_when_none():
     assert "amount" not in plan.lines[0] and "exclusion_notes" not in plan.lines[0]
 
 
+# ---- alternate lines (BidManager #1486 A2) ----
+
+
+def test_alternate_line_both_included_and_alternate_coerces_is_included_false():
+    # is_alternate wins: the payload is always is_included=False, is_alternate=True,
+    # even when the extracted line set is_included=True by mistake.
+    q = CanonicalQuote(
+        vendor_name="Acme Striping", work_package_name="Striping",
+        lines=[QuoteLine(schedule_name="Base Bid", item_number="50",
+                         unit_price=4.0, is_included=True, is_alternate=True)],
+    )
+    plan = plan_quote(q)
+    assert plan.lines[0]["is_included"] is False
+    assert plan.lines[0]["is_alternate"] is True
+
+
+def test_alternate_line_payload_sends_not_included_and_alternate():
+    q = CanonicalQuote(
+        vendor_name="Acme Striping", work_package_name="Striping",
+        lines=[QuoteLine(schedule_name="Base Bid", item_number="50",
+                         unit_price=4.0, is_included=False, is_alternate=True)],
+    )
+    plan = plan_quote(q)
+    assert plan.lines[0]["is_included"] is False
+    assert plan.lines[0]["is_alternate"] is True
+
+
+def test_ordinary_line_payload_omits_is_alternate_key():
+    # payloads for ordinary (non-alternate) lines are unchanged: no is_alternate key
+    plan = plan_quote(_sample())
+    for line in plan.lines:
+        assert "is_alternate" not in line
+
+
 # ---- render_quote_plan tests (Phase 3) ----
 
 from estimating_tools.quotes.plan import QuotePlan, render_quote_plan
@@ -103,3 +137,24 @@ def test_render_quote_plan_escapes_pipe():
     plan = QuotePlan(work_package_name="wp|1")
     out = render_quote_plan(plan)
     assert "wp\\|1" in out
+
+
+def test_render_quote_plan_marks_alternate_line():
+    plan = QuotePlan(
+        work_package_name="Concrete Package",
+        quote_header={"vendor_name": "ACME Concrete", "is_dbe": False},
+        bid_item_refs=[{"schedule_name": "Base Bid", "item_number": "10"}],
+        lines=[{"schedule_name": "Base Bid", "item_number": "10", "is_included": False,
+                "is_alternate": True, "unit_price": 175.00, "quantity": 258.0}],
+    )
+    out = render_quote_plan(plan)
+    assert "is_alternate" in out
+    assert "True" in out
+
+
+def test_render_quote_plan_ordinary_line_shows_alternate_false():
+    plan = QuotePlan(
+        lines=[{"schedule_name": "Base Bid", "item_number": "10", "is_included": True}],
+    )
+    out = render_quote_plan(plan)
+    assert "False" in out

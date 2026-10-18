@@ -28,6 +28,19 @@ def test_init_scaffolds_project_and_bid_dirs(tmp_path):
     assert m.bid_dir == BID_DIR
 
 
+def test_init_accepts_string_bm_project_id(tmp_path):
+    # BidManager project ids are strings like "01-0H6414" (#361); ints still work.
+    rc = main(["init", "Job S", "--parent", str(tmp_path),
+               "--bm-project-id", "01-0H6414"])
+    assert rc == 0
+    m = ProjectManifest.load(tmp_path / "Job S" / "manifest.json")
+    assert m.bm_project_id == "01-0H6414"
+    rc = main(["init", "Job I", "--parent", str(tmp_path), "--bm-project-id", "42"])
+    assert rc == 0
+    m = ProjectManifest.load(tmp_path / "Job I" / "manifest.json")
+    assert m.bm_project_id == 42
+
+
 def test_init_without_bid_number_makes_project_only(tmp_path):
     rc = main(["init", "Job Y", "--parent", str(tmp_path)])
     assert rc == 0
@@ -154,12 +167,29 @@ def test_bid_frame_malformed_json_fails_cleanly(tmp_path):
     assert rc == 1
 
 
+def test_bid_frame_accepts_paged_list_bid_items_dict(tmp_path):
+    # list_bid_items returns {"items": [...], "total": N, ...} (#362); the
+    # paged envelope and a bare list are both accepted.
+    proj = _init(tmp_path)
+    paged = {"items": [{"id": 901, "item_number": "0010", "schedule_name": "A",
+                        "item_code": "03 30 00", "description": "Concrete",
+                        "unit": "CY"}],
+             "total": 1, "page": 1, "page_size": 50}
+    raw = tmp_path / "items.json"
+    raw.write_text(json.dumps(paged), encoding="utf-8")
+    rc = main(["bid-frame", str(proj), "--items", str(raw)])
+    assert rc == 0
+    m = ProjectManifest.load(proj / "manifest.json")
+    assert [i.item_number for i in m.bid_frame] == ["0010"]
+
+
 def test_bid_frame_rejects_non_list_json(tmp_path):
     proj = _init(tmp_path)
     raw = tmp_path / "items.json"
-    raw.write_text('{"items": []}', encoding="utf-8")
-    rc = main(["bid-frame", str(proj), "--items", str(raw)])
-    assert rc == 1
+    for text in ('{"rows": []}', '{"items": "nope"}', '42'):
+        raw.write_text(text, encoding="utf-8")
+        rc = main(["bid-frame", str(proj), "--items", str(raw)])
+        assert rc == 1, text
 
 
 def test_briefing_rejects_non_mapping_yaml(tmp_path):

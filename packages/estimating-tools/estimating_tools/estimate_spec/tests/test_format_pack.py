@@ -532,3 +532,40 @@ def test_only_fieldbook_declares_its_rate_host_recipe_a_bid_item_recipe():
     assert fp.load_pack(fp.ENGINE_DIR / "packs" / "fieldbook").seed["scaffold"][
         "rate_host_is_bid_recipe"] is True
     assert "rate_host_is_bid_recipe" not in fp.load_pack(LEGACY_DIR).seed["scaffold"]
+
+
+def test_fieldbook_declares_a_layout_map():
+    from estimating_tools.estimate_spec.tests._fieldbook import fieldbook_pack
+    lm = fieldbook_pack().layout_map
+    assert lm["version"] == 1
+    assert set(lm["tables"]) == {"index", "checks", "codes"}
+    assert lm["templates"]["item"]["recipe"] == "lump_sum"
+
+
+def test_a_pack_without_a_layout_map_has_none():
+    from estimating_tools.estimate_spec.tests._packs import LEGACY_DIR
+    assert fp.load_pack(LEGACY_DIR).layout_map is None
+
+
+def test_a_bad_layout_map_refuses_the_pack(tmp_path):
+    import shutil
+    from estimating_tools.estimate_spec.tests._fieldbook import FIELDBOOK_DIR
+    root = tmp_path / "pack"
+    shutil.copytree(FIELDBOOK_DIR, root)
+    manifest = root / "format.yaml"
+    manifest.write_text(manifest.read_text(encoding="utf-8").replace("version: 1\n  tables:", "version: 9\n  tables:"),
+                        encoding="utf-8")
+    with pytest.raises(fp.FormatPackError, match="version must be 1"):
+        fp.load_pack(root)
+
+
+def test_a_template_item_must_name_a_known_recipe(tmp_path):
+    import shutil
+    from estimating_tools.estimate_spec.tests._fieldbook import FIELDBOOK_DIR
+    root = tmp_path / "pack"
+    shutil.copytree(FIELDBOOK_DIR, root)
+    manifest = root / "format.yaml"
+    manifest.write_text(manifest.read_text(encoding="utf-8").replace("recipe: lump_sum", "recipe: nope"),
+                        encoding="utf-8")
+    with pytest.raises(fp.FormatPackError, match="templates.item.recipe"):
+        fp.load_pack(root)

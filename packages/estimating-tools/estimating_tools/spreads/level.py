@@ -1,8 +1,22 @@
 """Compute a leveled Spread from fetched BidSheet.ai data. Pure: no MCP/Django.
 
 Cell extended = unit_price * quantity (fallback to the line's stored `amount`).
-Best-per-item ranks on unit_price among included lines. No line / excluded line =
-coverage gap (never $0). Full item quantity comes from list_bid_items.
+Best-per-item ranks on unit_price among included lines. No line / excluded line /
+alternate line = coverage gap (never $0). Full item quantity comes from
+list_bid_items.
+
+Alternates: a line with ``is_alternate`` true (and therefore ``is_included``
+false -- the two are never both true in a correctly-planned line) becomes
+``Cell(status="alternate")``: it is priced the same way a bid cell is, but it is
+never eligible for best-per-item, outliers, the base ``total``/``items_bid``, or
+best-of-breed -- it stays a base coverage gap (reason "alternate") and instead
+feeds ``VendorTotal.total_with_alternates`` / ``items_bid_with_alternates`` (base +
+priced alternates) and sets ``Spread.has_alternates``.
+
+Defense in depth: ``build_spread`` checks ``is_alternate`` BEFORE ``is_included``,
+so a line that somehow carries both true (a bad write upstream) is still always
+treated as an alternate and never slips into the base -- the ordering, not just the
+data contract, keeps an alternate out of the base total.
 """
 from __future__ import annotations
 
@@ -19,6 +33,21 @@ def _num(value):
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _price(ln):
+    """unit_price, quantity, extended_amount for a line -- extended prefers
+    unit_price * quantity, falling back to the line's stored `amount`. Shared by
+    the bid and alternate paths in `build_spread` so both price a line the same
+    way."""
+    unit_price = _num(ln.get("unit_price"))
+    qty = _num(ln.get("quantity"))
+    extended = None
+    if unit_price is not None and qty is not None:
+        extended = unit_price * qty
+    if extended is None:
+        extended = _num(ln.get("amount"))
+    return unit_price, qty, extended
 
 
 def build_spread(items, bid_items, quotes, lines_by_quote) -> Spread:
@@ -79,6 +108,19 @@ def build_spread(items, bid_items, quotes, lines_by_quote) -> Spread:
                 gaps.append({"vendor_id": v["vendor_id"], "work_package_item_id": it["id"],
                              "reason": "no_bid"})
                 continue
+            # Check is_alternate BEFORE is_included: an alternate is never in the
+            # base regardless of what is_included says (defense in depth -- a line
+            # that somehow has both true must still never reach the bid branch).
+            if ln.get("is_alternate"):
+                unit_price, qty, extended = _price(ln)
+                row.cells[v["vendor_id"]] = Cell(
+                    vendor_id=v["vendor_id"], status="alternate",
+                    quote_line_item_id=ln["id"], is_included=False, is_alternate=True,
+                    unit_price=unit_price, quantity=qty, extended_amount=extended,
+                    exclusion_notes=ln.get("exclusion_notes", "") or "")
+                gaps.append({"vendor_id": v["vendor_id"], "work_package_item_id": it["id"],
+                             "reason": "alternate"})
+                continue
             if not ln.get("is_included", True):
                 row.cells[v["vendor_id"]] = Cell(
                     vendor_id=v["vendor_id"], status="excluded",
@@ -87,13 +129,7 @@ def build_spread(items, bid_items, quotes, lines_by_quote) -> Spread:
                 gaps.append({"vendor_id": v["vendor_id"], "work_package_item_id": it["id"],
                              "reason": "excluded"})
                 continue
-            unit_price = _num(ln.get("unit_price"))
-            qty = _num(ln.get("quantity"))
-            extended = None
-            if unit_price is not None and qty is not None:
-                extended = unit_price * qty
-            if extended is None:
-                extended = _num(ln.get("amount"))
+            unit_price, qty, extended = _price(ln)
             row.cells[v["vendor_id"]] = Cell(
                 vendor_id=v["vendor_id"], status="bid", quote_line_item_id=ln["id"],
                 unit_price=unit_price, quantity=qty, extended_amount=extended,
@@ -123,17 +159,26 @@ def build_spread(items, bid_items, quotes, lines_by_quote) -> Spread:
     for v in vendors:
         total = 0.0
         items_bid = 0
+        alt_total = 0.0
+        alt_items_bid = 0
         for row in rows:
             c = row.cells.get(v["vendor_id"])
             if c is not None and c.status == "bid" and c.extended_amount is not None:
                 total += c.extended_amount
                 items_bid += 1
+            if c is not None and c.status == "alternate" and c.extended_amount is not None:
+                alt_total += c.extended_amount
+                alt_items_bid += 1
         vendor_totals.append(VendorTotal(
             vendor_id=v["vendor_id"], display_name=v["display_name"],
             is_dbe=v["is_dbe"], status=v["status"], total=total,
-            items_bid=items_bid, items_total=items_total))
+            items_bid=items_bid, items_total=items_total,
+            total_with_alternates=total + alt_total,
+            items_bid_with_alternates=items_bid + alt_items_bid))
 
     best_of_breed_total = sum(r.best_extended for r in rows if r.best_extended is not None)
+    has_alternates = any(c.status == "alternate" for row in rows for c in row.cells.values())
 
     return Spread(vendors=vendors, rows=rows, vendor_totals=vendor_totals,
-                  best_of_breed_total=best_of_breed_total, outliers=outliers, gaps=gaps)
+                  best_of_breed_total=best_of_breed_total, outliers=outliers, gaps=gaps,
+                  has_alternates=has_alternates)

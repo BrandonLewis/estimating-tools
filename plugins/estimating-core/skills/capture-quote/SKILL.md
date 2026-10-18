@@ -36,7 +36,12 @@ bid items to already exist (from `push-estimate`).
    `work_package_name` (the scope being quoted), and `lines` — each a
    `(schedule_name, item_number)` with `unit_price` and/or `amount` (+ optional
    `quantity`), and `is_included=false` + `exclusion_notes` for any item the
-   vendor is NOT bidding.
+   vendor is NOT bidding. An item the vendor prices as an **alternate / option /
+   add** — outside their base total, e.g. "Add $12,000 for the architectural
+   finish" — set `is_alternate=true` **with its price**; `is_included` is forced
+   `false` by `plan_quote` regardless of what you set it to (is_alternate wins —
+   an alternate is never in the quoted base), so it is fine to leave it at its
+   default.
 2. **Resolve the vendor against the directory (set `vendor_id`):** before building the
    plan, link the quote to a directory organization so vendors are deduped and the quote
    surfaces the org's display name / DBE / contacts. `list_organizations(search=vendor_name)`:
@@ -65,7 +70,9 @@ bid items to already exist (from `push-estimate`).
    ```
 
    The rendered block shows the sections that will be written to BidSheet.ai (Work package
-   + quote header / Bid item refs / Line items). Ask the user to confirm before
+   + quote header / Bid item refs / Line items), with an `is_alternate` column in the Line
+   items table marking any alternate/option line (`True`) so the user can confirm it was
+   extracted correctly before it writes. Ask the user to confirm before
    proceeding to Find-or-create the work package. If they want to change anything, back up to
    step 3, adjust the input, and rebuild the plan; the render is not
    editable.
@@ -123,16 +130,20 @@ bid items to already exist (from `push-estimate`).
    planned line resolved to its `work_package_item_id` per step 7):
    - **The quote was just created this run** (no existing lines) → create each line with
      `create_work_package_quote_line_item(quote_id, work_package_item_id, unit_price=…,
-     amount=…, quantity=…, is_included=…, exclusion_notes=…)`. This is the initial
+     amount=…, quantity=…, is_included=…, is_alternate=…, exclusion_notes=…)` — pass
+     `is_alternate` for every line (the plan payload omits it when `false`, so pass
+     `plan.lines[i].get("is_alternate", False)` or equivalent). This is the initial
      capture (revision v1).
    - **`diff.unchanged`** → make NO writes; report "no change to <vendor>'s quote"
-     (re-capturing identical pricing is a no-op).
+     (re-capturing identical pricing is a no-op — `diff_quote_lines` treats a changed
+     `is_alternate` as a change too, so flipping a line between alternate and included
+     mints a revision like any other pricing change).
    - **`diff.changed` or `diff.added`** on a quote that already had lines → capture a
      REVISION: `create_quote_revision(quote_id, copy_line_items=True)` mints the new
      current revision (carrying the prior lines forward); record the new revision's
      `quote_id`. Then on the NEW revision: for each `diff.changed` line,
      `update_work_package_quote_line_item(line_item_id, unit_price=…, amount=…,
-     quantity=…, is_included=…, exclusion_notes=…)` — resolve `line_item_id` from the new
+     quantity=…, is_included=…, is_alternate=…, exclusion_notes=…)` — resolve `line_item_id` from the new
      revision's lines by `work_package_item_id` (the carried-forward copy of the line the
      diff's `existing_line_id` referred to); for each `diff.added` line,
      `create_work_package_quote_line_item(new_quote_id, work_package_item_id, …)`.

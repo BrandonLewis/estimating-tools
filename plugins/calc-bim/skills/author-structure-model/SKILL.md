@@ -97,6 +97,12 @@ written files after.
        classifications=["51-2.01"],          # [] = reference geometry, never a pay qty
        quantities={"volume_cf": footing.volume_cf}))
    ```
+   **Pay-item excavation is `IfcEarthworksElement`** (ObjectType `EXCAVATION`),
+   not `IfcEarthworksCut`: a cut is an `IfcFeatureElementSubtraction` that must
+   void a host through `IfcRelVoidsElement`, and an unhosted one is invalid
+   IFC. `emit_ifc` rewrites an unhosted `IfcEarthworksCut` to
+   `IfcEarthworksElement` with a one-line note on stderr; `Fill` stays
+   `IfcEarthworksFill`. Both take off by `GrossVolume` as before.
    `Element.from_geometry` delegates quantities to the geometry object; set them
    explicitly only when the geometry cannot. **Quantities are analytic** —
    never a section-area × length shortcut (wrong by a few percent on battered/

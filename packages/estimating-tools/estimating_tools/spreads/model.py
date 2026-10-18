@@ -7,7 +7,13 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Cell:
-    """One vendor's price for one item. status in {"bid","excluded","no_bid"}."""
+    """One vendor's price for one item. status in {"bid","excluded","no_bid",
+    "alternate"}. An "alternate" cell (``is_alternate=True``) is the vendor's
+    priced-or-not alternate/option on this item -- always `is_included=False` and
+    never in the base: not eligible for best-per-item, outliers, `total` /
+    `items_bid`, or best-of-breed, but it stays a base coverage gap (reason
+    "alternate") and feeds `VendorTotal.total_with_alternates` /
+    `items_bid_with_alternates` when priced."""
 
     vendor_id: int
     status: str
@@ -16,6 +22,7 @@ class Cell:
     quantity: float | None = None
     extended_amount: float | None = None
     is_included: bool = True
+    is_alternate: bool = False
     is_partial: bool = False
     exclusion_notes: str = ""
     not_comparable: bool = False
@@ -48,6 +55,11 @@ class VendorTotal:
     total: float
     items_bid: int
     items_total: int
+    # Set by build_spread: base total/items_bid plus this vendor's priced
+    # alternates (Cell(status="alternate") with an extended_amount), i.e. base +
+    # priced alternates. Equals `total`/`items_bid` when the vendor has none.
+    total_with_alternates: float = 0.0
+    items_bid_with_alternates: int = 0
 
 
 @dataclass
@@ -81,3 +93,5 @@ class Spread:
     # come from vendors who forbid separate acceptance) | "coverage"
     obtainable_best_mix_reason: str = ""
     condition_warnings: list[dict] = field(default_factory=list)
+    # True when any cell (priced or not) in `rows` is a vendor alternate.
+    has_alternates: bool = False

@@ -1,0 +1,33 @@
+{
+  "name": "Estimate Navigator",
+  "short_name": "Est. Navigator",
+  "provider": "Anvil Rock Road",
+  "description": "Navigate, check and edit estimate workbooks built by est-estimate.",
+  "support_url": "https://anvilrockroad.com/excel/addons/support.html",
+  "logo": "assets/logo.svg",
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "64": "assets/icon-64.png",
+    "80": "assets/icon-80.png",
+    "128": "assets/icon-128.png"
+  },
+  "colors": {
+    "light": {
+      "accent": "#24507A",
+      "on_accent": "#FFFFFF",
+      "surface": "#FFFFFF",
+      "text": "#1F2328",
+      "muted": "#5B616B",
+      "line": "#D5D9DF"
+    },
+    "dark": {
+      "accent": "#7FB0E0",
+      "on_accent": "#0E1A26",
+      "surface": "#1F1F1F",
+      "text": "#E8E8E8",
+      "muted": "#B3B0AD",
+      "line": "#3B3A39"
+    }
+  }
+}

@@ -78,7 +78,8 @@ def check_stamp(wb, pack) -> None:
 
 def _item_sheets(wb) -> list:
     return [ws.title for ws in wb.worksheets
-            if any(ws[f"{L.KIND_COL}{r}"].value == "ITEM" for r in range(1, min(ws.max_row, 5) + 1))]
+            if ws.title != L.TEMPLATES_SHEET
+            and any(ws[f"{L.KIND_COL}{r}"].value == "ITEM" for r in range(1, min(ws.max_row, 5) + 1))]
 
 
 def check_items(spec: dict, wb) -> None:

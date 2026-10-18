@@ -35,6 +35,8 @@ def _differs(planned: dict, existing: dict) -> bool:
             return True
     if bool(planned.get("is_included", True)) != bool(existing.get("is_included", True)):
         return True
+    if bool(planned.get("is_alternate", False)) != bool(existing.get("is_alternate", False)):
+        return True
     if (planned.get("exclusion_notes") or "") != (existing.get("exclusion_notes") or ""):
         return True
     return False

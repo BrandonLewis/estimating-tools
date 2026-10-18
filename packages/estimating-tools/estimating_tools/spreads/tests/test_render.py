@@ -118,6 +118,86 @@ def test_render_zero_winner_best_of_breed():
     assert "Best-of-breed total:" not in out
     assert "acceptance unverified for Acme" in out
 
+def test_render_alternate_cell_priced_marked_alt():
+    s = _spread()
+    s.rows[0].cells[92] = Cell(92, "alternate", unit_price=5.0, quantity=40.0,
+                               extended_amount=200.0, is_included=False, is_alternate=True)
+    s.has_alternates = True
+    out = render_spread(s)
+    assert "alt 5.00" in out
+
+
+def test_render_alternate_cell_unpriced_shows_alt_only():
+    s = _spread()
+    s.rows[0].cells[92] = Cell(92, "alternate", is_included=False, is_alternate=True)
+    s.has_alternates = True
+    out = render_spread(s)
+    lines = [ln for ln in out.splitlines() if ln.startswith("| 1 (Base Bid)")]
+    assert lines and "| alt |" in lines[0]
+
+
+def test_render_amount_only_alternate_cell_shows_alt_with_extended():
+    # no unit_price, but a stored extended amount (amount-only alternate) -> "alt (<amt>)"
+    s = _spread()
+    s.rows[0].cells[92] = Cell(92, "alternate", unit_price=None, quantity=None,
+                               extended_amount=800.0, is_included=False, is_alternate=True)
+    s.has_alternates = True
+    out = render_spread(s)
+    lines = [ln for ln in out.splitlines() if ln.startswith("| 1 (Base Bid)")]
+    assert lines and "| alt (800.00) |" in lines[0]
+
+
+def test_render_with_alternates_row_appears_when_has_alternates():
+    # Realistic fixture: a third row (item 3) carries Acme's priced alternate, so
+    # items_total grows to 3 and Acme's items_bid_with_alternates (2 base + 1
+    # alternate = 3) never exceeds it -- a vendor can never be "bid" on more items
+    # than exist.
+    s = _spread()
+    s.rows.append(Row(13, 103, "203", "3", "Base Bid", "Grading", "CY", 20.0, cells={
+        91: Cell(91, "alternate", unit_price=5.0, quantity=20.0, extended_amount=100.0,
+                 is_included=False, is_alternate=True),
+    }))
+    s.has_alternates = True
+    for vt in s.vendor_totals:
+        vt.items_total = 3
+    totals = {vt.vendor_id: vt for vt in s.vendor_totals}
+    totals[91].total_with_alternates = totals[91].total + 100.0
+    totals[91].items_bid_with_alternates = totals[91].items_bid + 1
+    totals[92].total_with_alternates = totals[92].total
+    totals[92].items_bid_with_alternates = totals[92].items_bid
+    out = render_spread(s)
+    assert "**With alternates**" in out
+    # appears right after the Total row
+    lines = out.splitlines()
+    total_idx = next(i for i, ln in enumerate(lines) if ln.startswith("| **Total**"))
+    assert lines[total_idx + 1].startswith("| **With alternates**")
+    assert "2100.00 (3/3)" in lines[total_idx + 1]
+
+
+def test_render_no_with_alternates_row_when_flag_false():
+    out = render_spread(_spread())
+    assert "With alternates" not in out
+
+
+def test_render_alternate_gap_reason():
+    s = _spread()
+    s.rows[0].cells[92] = Cell(92, "alternate", unit_price=5.0, quantity=40.0,
+                               extended_amount=200.0, is_included=False, is_alternate=True)
+    s.has_alternates = True
+    s.gaps = [{"vendor_id": 92, "work_package_item_id": 11, "reason": "alternate"}]
+    out = render_spread(s)
+    assert "- Bravo: item 1 (Base Bid) — alternate only (200.00)\n" in out
+
+
+def test_render_unpriced_alternate_gap_has_no_price_parens():
+    s = _spread()
+    s.rows[0].cells[92] = Cell(92, "alternate", is_included=False, is_alternate=True)
+    s.has_alternates = True
+    s.gaps = [{"vendor_id": 92, "work_package_item_id": 11, "reason": "alternate"}]
+    out = render_spread(s)
+    assert "- Bravo: item 1 (Base Bid) — alternate only\n" in out
+
+
 def test_render_mix_alone_triggers_summary_block():
     """Gate window: conditions matched, all flags True, no tags -> no groups,
     no warnings, no annotations; nobody covers the full package -> no

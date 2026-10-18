@@ -36,6 +36,13 @@ see the **Setup** block above.
      contract doc rather than any restated list. A unit that doesn't match
      the measure's dimension raises a config error naming the choices.
    - `item_number` and `schedule` (so rows map onto bid items)
+   - **lump sums and stated counts:** a `Count` code whose `unit` is `LS`
+     reports quantity **1** however many elements carry the code (they
+     still list under the row's `elements`, so the audit and the push see
+     what backs the lump sum). To state the pay count of any `Count` code
+     outright — the model carries a spare, or the item pays per pair — set
+     `count_as: <number>` on the entry (also per `measures:` entry); it
+     overrides the element count for LS and EA alike.
    - **one code paying several bid items:** use `measures:` (plural) — one
      row per entry over the same elements, each with its own
      `measure`/`unit`/`item_number` and optional `description`/`schedule`:
@@ -73,6 +80,64 @@ see the **Setup** block above.
    `--target bid-item-quantities` path is forbidden on live bids (BM #984).
    After the takeoff, reconcile it three ways with the `audit-quantities`
    skill in the **estimating-core** plugin.
+
+## Per-element verification workbook (est-bim takeoff-workbook)
+
+When the estimator wants to CHECK the rollup, not just receive it, write
+the per-element takeoff workbook from the same IFC(s) and map:
+
+```bash
+est-bim takeoff-workbook --ifc BIM/bridge.ifc --ifc BIM/approach-slabs.ifc \
+    --map BIM/bridge-takeoff-map.yaml --official bid_items.json --out Takeoff/takeoff.xlsx
+```
+
+`--ifc` repeats for several models; `--official` is optional — a JSON list
+of bid items (`[{item_number, quantity | estimated_quantity, description?}]`,
+or an object holding that list under `bid_items` / `items` / `bid_frame`,
+e.g. the project manifest's frame) that fills the Summary's Official qty;
+without it that column is blank. Needs openpyxl (the `xlsx` extra). Under
+the plugins it is already installed (`estimating_tools[plugin-core]` carries
+it); installed by pip instead, it is `pip install "bimforge[xlsx]"`.
+
+**Elements sheet — one row per element per pay code.** The column order is
+the contract (Arial, frozen header, blue = input the reviewer may edit,
+black = model value or formula):
+
+| # | Column | What it is |
+|---|--------|------------|
+| A–I | Structure, Element, Description, IFC class, Facility part, Cost code, Item #, Bid item, Pay unit | identity — structure (the IFC's building/facility name, else the file stem), the element's name and `Description`, its spatial container, the pay code (`(reference)` when unclassified), the map's item number and unit, the bid item's description |
+| J | **Qty** | `Count` from Qto (input, blue) |
+| K | **#_surfaces** | number of distinct planar faces of the element's tessellation |
+| L–N | **L (ft), W (ft), H (ft)** | `Length` / `Width` / `Height` from Qto, in US survey feet (inputs, blue) |
+| O | **CY** | formula: `CF (model) / 27` |
+| P | **Forming SF** | formula: `Side SF × Form sides + Soffit SF × Form soffit` |
+| Q | CF (model) | `GrossVolume` from Qto, in CF |
+| R | CF (L×W×H×Qty) | formula: the hand check |
+| S | Δ box vs model | formula: `R / Q − 1` — non-zero when the solid is not a box (battered, skewed, voided) |
+| T, U | Area SF, Weight LB | `GrossArea` / `GrossWeight` from Qto |
+| V–X | Top SF, Soffit SF, Side SF | the SFCA face split of the tessellation (`\|nz\| > 0.85` top/soffit, else side on the true slope) |
+| Y, Z | Form sides (1/0), Form soffit (1/0) | inputs (blue), defaulted by IFC class: footings, walls, columns, railings → sides; CIP slabs and beams → sides + soffit; precast, coverings, earthworks, pavements, rebar, proxies, geographic → none |
+| AA | Pay qty | formula in the map's pay unit for the code's measure (CY = `CY`, CF, SF = `Area SF`, SY = SF/9, LF = `L × Qty`, EA = `Qty`, LB, TON = LB/2000); a code with plural `measures:` uses its first entry |
+| AB, AC | GUID, Model file | provenance |
+| AD, AE | Pay measure, Pay measure (model) | the exact Qto measure named by the map and its value in the workbook's feet/pounds domain; net and gross quantities stay distinct |
+
+The pay quantity follows the map's exact measure, including NetVolume,
+NetArea, Width, Height, Perimeter and NetWeight. A missing mapped measure
+is an error. A Count row in LS, or with `count_as`, contributes its override
+once per cost code, regardless of how many elements back it.
+
+**Summary sheet** — one row per cost code (map codes plus any code found in
+the models, ordered by item number): Item #, Cost code, Bid item, Pay unit,
+Modelled qty (`SUMIFS` of Pay qty by cost code), Official qty (blue input),
+Variance, Variance %, Elements (`COUNTIFS`). A large variance is a finding
+to resolve against the plans, not a number to tune. **Legend** explains the
+colours and formulas; **Sources** lists each IFC with its SHA-256.
+
+Units: IFC metres → US survey feet (1200/3937 m) for lengths, areas and
+volumes; kilograms → pounds. The output is byte-deterministic (pinned
+docProps and zip dates), so a rebuild of unchanged models is identical and
+the workbook can be committed and diffed. A cost code with no map entry
+pays nothing and is reported on stderr as a review note.
 
 ## The contract (what a conforming IFC carries)
 

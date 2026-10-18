@@ -245,7 +245,7 @@ def test_a_measured_takeoff_sums_its_cy_columns():
     ws = build(spec)[ITEM2]
     (r,) = rows_of_kind(ws, "TAKEOFF")
     assert (ws[f"A{r}"].value, ws[f"B{r}"].value, ws[f"F{r}"].value) == (
-        "S-FTG-A1", f"=SUM(F{r}:H{r})", 14.8)
+        "S-FTG-A1", f"=SUM(F{r}:I{r})", 14.8)
 
 
 def test_a_partial_measured_line_renders_blank_for_the_missing_measurements():
@@ -259,9 +259,9 @@ def test_a_partial_measured_line_renders_blank_for_the_missing_measurements():
     ws = build(spec)[ITEM2]
     (r,) = rows_of_kind(ws, "TAKEOFF")
     assert (ws[f"A{r}"].value, ws[f"F{r}"].value) == ("Footing", 14.8)
-    for col in "DEGH":                   # length, height, wall_cy, deck_cy: not given
+    for col in "DEGHI":                  # length, height, wall_cy, deck_cy, other_cy: not given
         assert ws[f"{col}{r}"].value is None
-    assert ws[f"B{r}"].value == f"=SUM(F{r}:H{r})"
+    assert ws[f"B{r}"].value == f"=SUM(F{r}:I{r})"
 
 
 # ---------------------------------------------------------------- task blocks
@@ -676,7 +676,7 @@ def _check_rows(ws):
 
 def test_the_book_sheets_come_first_in_order(wb):
     assert wb.sheetnames == [
-        "Bid Form", "Cost Summary", "Markup", "Checks", "Rates", "Codes", *ITEMS]
+        "Bid Form", "Cost Summary", "Markup", "Checks", "Rates", "Codes", *ITEMS, "_templates"]
 
 
 def test_the_checks_sheet_has_one_row_per_rule_and_item(wb):
@@ -838,7 +838,7 @@ def test_the_example_workbook_matches_its_golden_snapshot():
         GOLDEN.write_text(json.dumps(got, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
     # a golden that lost its layout must not pass: every sheet is in it, item sheets in full
-    assert golden["order"] == ["Bid Form", "Cost Summary", "Markup", "Checks", "Rates", "Codes", *ITEMS]
+    assert golden["order"] == ["Bid Form", "Cost Summary", "Markup", "Checks", "Rates", "Codes", *ITEMS, "_templates"]
     assert len(golden["sheets"][ITEM2]["cells"]) > 300
     assert got == golden
 

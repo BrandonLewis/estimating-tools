@@ -45,15 +45,17 @@ def cmd_build(args) -> int:
     cmd_cip and cmd_summarize do: a missing file, unparseable YAML, or a spec
     the pack refuses is a user error, not a traceback.
     """
+    from estimating_tools.addin.brand import workbook_brand
     from estimating_tools.estimate_spec.build import build
     from estimating_tools.estimate_spec.recipe import RecipeError
 
     pack = _resolve_pack_or_report(args)
     if pack is None:
         return 2
+    brand = None if args.no_brand else workbook_brand(_load_profile())
     try:
         out = build(args.config, args.output, pack=pack,
-                    stamp=not args.no_stamp, lint=not args.no_lint)
+                    stamp=not args.no_stamp, lint=not args.no_lint, brand=brand)
     except FileNotFoundError:
         print(f"no such file: {args.config}", file=sys.stderr)
         return 1
@@ -523,6 +525,8 @@ def _parser() -> argparse.ArgumentParser:
                    help="omit the estimate_format workbook property")
     p.add_argument("--no-lint", action="store_true",
                    help="skip consumer-registered pre-render config checks (#256)")
+    p.add_argument("--no-brand", action="store_true",
+                   help="do not stamp the org profile's brand into the workbook")
     p.set_defaults(func=cmd_build)
 
     p = sub.add_parser("scaffold",
