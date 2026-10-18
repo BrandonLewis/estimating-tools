@@ -22,6 +22,14 @@ verbatim. Three things do NOT carry over, and this script rewrites them:
 3. The `open_artifact_editor` display contract — same namespacing rule.
 
 Run from the repo root:  python openworker/port_skills.py
+
+The OpenCode body (`port_body_opencode`, via `ported_skills`) is a library
+for `opencode/install.py`, the ONE supported way to install skills into
+OpenCode -- it has no CLI here, because the installer owns the ownership marker
+that lets a re-run update or prune its folders. OpenCode names an MCP tool
+`<server>_<tool>` (`mcp/catalog.ts`: sanitize(server) + "_" + sanitize(tool)),
+has no `load_skill` resources_path, and can run the artifact editor locally,
+so the OpenWorker body is wrong for it in three places.
 """
 
 from __future__ import annotations
@@ -138,6 +146,19 @@ SETUP_LINE = (
     "you should only need the fallback on a fresh or relocated Python env.)"
 )
 
+#: OpenCode's setup line. `opencode/install.py` builds the SAME shared runtime
+#: the Claude plugin's SessionStart hook does (`~/.estimating`, via
+#: plugin_runtime), so the skills keep their literal `~/.estimating/bin/` shim
+#: paths and the only recovery step is re-running that installer.
+OPENCODE_SETUP_LINE = (
+    "> **Setup:** the `est-*` tools are **not on `PATH`** -- every command below "
+    "names its shim under `~/.estimating/bin/`, which `python opencode/install.py` "
+    "(run from a checkout of the estimating-plugin repository) creates. If a shim is "
+    "missing, re-run that installer; it rebuilds the shared runtime and prints what "
+    "it did. Then retry. (Where `ensure-extra` or another tool says to restart the "
+    "session, re-run that installer instead -- OpenCode has no session hook.)"
+)
+
 _SETUP_RE = re.compile(
     r"^> \*\*Setup:\*\*.*?(?=\n\n|\n> \*\*|\Z)", re.MULTILINE | re.DOTALL
 )
@@ -161,8 +182,17 @@ DISPLAY_NOTE = (
 _DISPLAY_RE = re.compile(r"^> \*\*Display contract:\*\*", re.MULTILINE)
 
 
-def namespace_tools(text: str) -> tuple[str, int]:
-    """Prefix bare MCP tool names with OpenWorker's `mcp__<server>__` namespace.
+def _openworker_tool(server: str, tool: str) -> str:
+    return f"mcp__{server}__{tool}"
+
+
+def _opencode_tool(server: str, tool: str) -> str:
+    return f"{server}_{tool}"
+
+
+def namespace_tools(text: str, name_tool=_openworker_tool) -> tuple[str, int]:
+    """Prefix bare MCP tool names with the host's namespace: OpenWorker's
+    `mcp__<server>__` by default, or whatever `name_tool` builds.
 
     The negative lookbehind on `_` keeps the pass idempotent (a name that is
     already namespaced ends in `..._` before the match and is skipped).
@@ -171,16 +201,16 @@ def namespace_tools(text: str) -> tuple[str, int]:
     for server, tools in ((BIDMANAGER, BIDMANAGER_TOOLS), (ARTIFACT_EDITOR, ARTIFACT_EDITOR_TOOLS)):
         for tool in tools:
             pattern = re.compile(rf"(?<![\w_]){re.escape(tool)}(?![\w])")
-            text, n = pattern.subn(f"mcp__{server}__{tool}", text)
+            text, n = pattern.subn(name_tool(server, tool), text)
             count += n
     return text, count
 
 
-def rewrite_setup(text: str) -> tuple[str, bool]:
-    """Swap the plugin's wheel-install line for the OpenWorker one."""
+def rewrite_setup(text: str, line: str = SETUP_LINE) -> tuple[str, bool]:
+    """Swap the plugin's wheel-install line for the host's one."""
     if "**Setup:**" not in text:
         return text, False
-    return _SETUP_RE.sub(lambda _: SETUP_LINE, text, count=1), True
+    return _SETUP_RE.sub(lambda _: line, text, count=1), True
 
 
 def strip_plugin_root(text: str) -> str:
@@ -223,6 +253,58 @@ def port_body(text: str) -> tuple[str, dict]:
         "tools_namespaced": ns,
         "shims_stripped": shims,
     }
+
+
+def port_body_opencode(text: str) -> tuple[str, dict]:
+    """The OpenCode body: its tool names and setup line, and no OpenWorker
+    display note (OpenCode can run `est-artifact-app` as a local server).
+
+    Unlike OpenWorker, the `~/.estimating/bin/` shim paths are KEPT:
+    `opencode/install.py` builds the shared plugin runtime, so the paths the
+    skills name exist exactly as they do under Claude Code.
+    """
+    text, setup = rewrite_setup(text, OPENCODE_SETUP_LINE)
+    # There is no plugin root under OpenCode. Outside the setup line a
+    # reference to one would be an instruction the agent cannot follow, so it
+    # fails the port loudly rather than being blanked into a broken path.
+    for token in ("${CLAUDE_PLUGIN_ROOT}", "<plugin-root>"):
+        if token in text:
+            raise ValueError(f"{token} outside the setup line has no OpenCode equivalent")
+    text, ns = namespace_tools(text, _opencode_tool)
+    return text, {
+        "setup_rewritten": setup,
+        "display_annotated": False,
+        "tools_namespaced": ns,
+        "shims_stripped": 0,
+    }
+
+
+def ported_skills(body=port_body) -> list[tuple[str, Path, str, dict, list[Path]]]:
+    """Every plugin skill ported with `body`, as
+    `(name, source SKILL.md, ported text, stats, reference files)`.
+
+    Raises ValueError on a duplicate frontmatter name: both hosts key skills by
+    name, so a collision would silently drop one of them. A source with no
+    `name:` is reported on stderr and skipped.
+    """
+    out = []
+    seen: dict[str, Path] = {}
+    for src in sorted(REPO_ROOT.glob(SRC_GLOB)):
+        raw = src.read_text(encoding="utf-8")
+        name = frontmatter_name(raw)
+        if not name:
+            print(f"skip (no `name:` in frontmatter): {src}", file=sys.stderr)
+            continue
+        if name in seen:
+            raise ValueError(f"duplicate skill name {name!r}: {seen[name]} and {src}")
+        seen[name] = src
+        ported, stats = body(raw)
+        # Auxiliary docs under the skill's references/ ride along verbatim --
+        # nothing in them needs porting, but SKILL.md pointers to them must resolve.
+        refs = src.parent / "references"
+        ref_files = sorted(p for p in refs.rglob("*") if p.is_file()) if refs.is_dir() else []
+        out.append((name, src, ported, stats, ref_files))
+    return out
 
 
 def frontmatter_name(text: str) -> str | None:
@@ -297,33 +379,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--check", action="store_true",
                     help="verify the committed port matches the sources; write nothing")
     args = ap.parse_args(argv)
+    dest = DEST
+    body = port_body
 
-    sources = sorted(REPO_ROOT.glob(SRC_GLOB))
-    if not sources:
+    if not sorted(REPO_ROOT.glob(SRC_GLOB)):
         print(f"no SKILL.md found under {REPO_ROOT}/{SRC_GLOB}", file=sys.stderr)
+        return 1
+    try:
+        skills = ported_skills(body)
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
     stale: list[str] = []
-    seen: dict[str, Path] = {}
-    for src in sources:
-        raw = src.read_text(encoding="utf-8")
-        name = frontmatter_name(raw)
-        if not name:
-            print(f"skip (no `name:` in frontmatter): {src}", file=sys.stderr)
-            continue
-        if name in seen:
-            # OpenWorker keys skills by name in one flat dict — a collision would
-            # silently drop one of them.
-            print(f"ERROR: duplicate skill name {name!r}: {seen[name]} and {src}", file=sys.stderr)
-            return 1
-        seen[name] = src
-
-        ported, stats = port_body(raw)
-        out = DEST / name / "SKILL.md"
-        # Auxiliary docs under the skill's references/ ride along verbatim —
-        # nothing in them needs porting, but SKILL.md pointers to them must resolve.
+    seen = {name for name, *_ in skills}
+    for name, src, ported, stats, ref_files in skills:
         refs = src.parent / "references"
-        ref_files = sorted(p for p in refs.rglob("*") if p.is_file()) if refs.is_dir() else []
+        out = dest / name / "SKILL.md"
         if args.check:
             if not out.is_file() or out.read_text(encoding="utf-8") != ported:
                 stale.append(name)
@@ -354,7 +426,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{len(seen)} ported skills are up to date")
         return 0
 
-    print(f"\n{len(seen)} skills ported to {DEST}")
+    print(f"\n{len(seen)} skills ported to {dest}")
     return 0
 
 

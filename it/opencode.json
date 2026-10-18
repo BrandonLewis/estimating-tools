@@ -8,7 +8,7 @@
     },
     "conformed": {
       "type": "remote",
-      "url": "https://conformed-production.up.railway.app/mcp/",
+      "url": "https://conformed.ai/mcp/",
       "enabled": true
     }
   }

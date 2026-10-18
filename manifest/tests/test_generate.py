@@ -39,9 +39,9 @@ def _import_generate():
 def test_url_env_overrides_default_at_generation_time(monkeypatch):
     gen = _import_generate()
     server = {"id": "conformed", "url_env": "CONFORMED_MCP_URL",
-              "url_default": "https://conformed-production.up.railway.app/mcp/"}
+              "url_default": "https://conformed.ai/mcp/"}
     monkeypatch.delenv("CONFORMED_MCP_URL", raising=False)
-    assert gen._url(server) == "https://conformed-production.up.railway.app/mcp/"
+    assert gen._url(server) == "https://conformed.ai/mcp/"
     monkeypatch.setenv("CONFORMED_MCP_URL", "https://conformed.ai/mcp/")
     assert gen._url(server) == "https://conformed.ai/mcp/"
 
@@ -74,7 +74,7 @@ def test_claude_mcp_json_is_oauth_primary_for_both_servers():
     # all three servers present (two http + the plugin-local stdio app server)
     assert set(servers) == {"bidmanager", "conformed", "artifact-editor"}
     for name, expected_url in (("bidmanager", "https://www.bidsheet.ai/mcp/"),
-                               ("conformed", "https://conformed-production.up.railway.app/mcp/")):
+                               ("conformed", "https://conformed.ai/mcp/")):
         s = servers[name]
         assert s["type"] == "http"
         # Concrete URL — a plugin .mcp.json does NOT expand the bash "${VAR:-default}"
@@ -115,7 +115,7 @@ def test_cowork_doc_mentions_oauth_and_both_urls():
     doc = (ROOT / "it/cowork-connector.md").read_text()
     assert "OAuth" in doc
     assert "https://www.bidsheet.ai/mcp/" in doc
-    assert "https://conformed-production.up.railway.app/mcp/" in doc
+    assert "https://conformed.ai/mcp/" in doc
 
 
 def test_check_passes_when_committed_matches_then_fails_on_drift():
@@ -137,7 +137,7 @@ def test_gemini_settings_snippet_oauth_dynamic_discovery():
     servers = json.loads(raw)["mcpServers"]
     assert "bidmanager" in servers and "conformed" in servers
     for name, url in (("bidmanager", "https://www.bidsheet.ai/mcp/"),
-                      ("conformed", "https://conformed-production.up.railway.app/mcp/")):
+                      ("conformed", "https://conformed.ai/mcp/")):
         s = servers[name]
         assert s["httpUrl"] == url
         assert s["oauth"]["authProviderType"] == "dynamic_discovery"
@@ -151,7 +151,7 @@ def test_cursor_mcp_json_is_url_only_oauth():
     servers = json.loads(raw)["mcpServers"]
     assert "bidmanager" in servers and "conformed" in servers
     for name, url in (("bidmanager", "https://www.bidsheet.ai/mcp/"),
-                      ("conformed", "https://conformed-production.up.railway.app/mcp/")):
+                      ("conformed", "https://conformed.ai/mcp/")):
         assert servers[name]["url"] == url
         assert "headers" not in servers[name]   # interactive form is url-only
     assert "Authorization" not in raw and "secret" not in raw.lower()
@@ -163,7 +163,7 @@ def test_codex_config_snippet_bearer_token_env_var():
     raw = (ROOT / "it/codex-config.toml.snippet").read_text()
     assert "[mcp_servers.bidmanager]" in raw and "[mcp_servers.conformed]" in raw
     assert 'url = "https://www.bidsheet.ai/mcp/"' in raw
-    assert 'url = "https://conformed-production.up.railway.app/mcp/"' in raw
+    assert 'url = "https://conformed.ai/mcp/"' in raw
     assert 'bearer_token_env_var = "BIDMANAGER_BEARER"' in raw
     assert 'bearer_token_env_var = "CONFORMED_BEARER"' in raw
     # only the env var NAME, never a token value
@@ -178,7 +178,7 @@ def test_opencode_json_is_remote_oauth_primary():
     servers = cfg["mcp"]
     assert set(servers) == {"bidmanager", "conformed"}
     for name, url in (("bidmanager", "https://www.bidsheet.ai/mcp/"),
-                      ("conformed", "https://conformed-production.up.railway.app/mcp/")):
+                      ("conformed", "https://conformed.ai/mcp/")):
         s = servers[name]
         assert s == {"type": "remote", "url": url, "enabled": True}
     # OAuth-primary like Cursor: no header, no token material committed

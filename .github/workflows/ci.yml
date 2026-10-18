@@ -44,7 +44,7 @@ jobs:
         # pycel (CVE-2024-53924: evaluating an untrusted workbook runs code) is
         # never in [all]; it joins after the audit, only to evaluate test-built workbooks.
         run: pip install -e 'packages/estimating-tools[test]'
-      - run: python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests -q
+      - run: python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests opencode/tests -q
 
   checks:
     runs-on: ubuntu-latest

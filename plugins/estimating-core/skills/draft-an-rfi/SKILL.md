@@ -89,6 +89,14 @@ deliverable is a DRAFT — **sending stays a human act.**
 7. **Render letterhead docx (when a profile supplies a template).** If the
    active org profile carries `letterhead.template`:
 
+   Rendering needs docxtpl, the `docgen` extra, which the base install omits.
+   Install it into whichever interpreter runs `est-letterhead`, before the
+   first render:
+   - **Under the plugins**, it is the interpreter they keep under
+     `~/.estimating/`, reached only by `~/.estimating/bin/ensure-extra docgen`;
+     a bare `pip install` would land somewhere else and change nothing here.
+   - **Installed by pip instead**, it is `pip install "estimating_tools[docgen]"`.
+
    ```bash
    ~/.estimating/bin/est-letterhead "<draft.md>" -o "<bid working dir>/Correspondence/word-docs/<name>.docx"
    ```

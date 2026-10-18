@@ -7,7 +7,7 @@
       }
     },
     "conformed": {
-      "httpUrl": "https://conformed-production.up.railway.app/mcp/",
+      "httpUrl": "https://conformed.ai/mcp/",
       "oauth": {
         "authProviderType": "dynamic_discovery"
       }

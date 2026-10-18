@@ -129,6 +129,14 @@ found, see the **Setup** block above.
 
 ## Contours off a flattened sheet (est-bim contours / contour-surface)
 
+Building the surface needs scipy, the `terrain` extra, which the base install
+omits (`contours` runs without it; `contour-surface` stops). Install it into
+whichever interpreter runs `est-bim`, before the first surface:
+- **Under the plugins**, it is the interpreter they keep under
+  `~/.estimating/`, reached only by `~/.estimating/bin/ensure-extra terrain`;
+  a bare `pip install` would land somewhere else and change nothing here.
+- **Installed by pip instead**, it is `pip install "bimforge[terrain]"`.
+
 Agency CONTOUR GRADING sheets draw existing topo and proposed grading as
 different pen styles on one page; a signed set is flattened (no text
 layer) but the linework is exact CAD geometry. The discipline:

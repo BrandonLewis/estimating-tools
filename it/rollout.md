@@ -62,7 +62,8 @@ under `it/` — then apply it:
 - **OpenCode** — merge `it/opencode.json`'s `mcp` block into `opencode.json` (project root) or
   `~/.config/opencode/opencode.json` (global). Interactive: the remote entries are url-only, so
   OpenCode runs each server's OAuth flow on first connect (`opencode mcp auth bidmanager` signs
-  in ahead of time).
+  in ahead of time). `python opencode/install.py` does this merge for you, along with the
+  skills and CLIs (see "The CLIs and skills (OpenCode)" below).
 
 **Headless / CI (all four):** mint a short-lived token with `m2m-token` and supply it as a
 Bearer — never commit it:
@@ -79,17 +80,30 @@ Bearer — never commit it:
 To point at a different endpoint, edit the URL in the snippet (env-substitution syntax differs
 per client, so the snippets ship concrete URLs).
 
-**The CLIs and skills.** Outside the Claude plugin nothing installs the `est-*` tools or the
-skills for you. Install the two wheels from the GitHub release into a tool environment, then
-copy the harness-neutral skills (the OpenWorker port, which calls the installed CLIs instead of
-the plugin's `${CLAUDE_PLUGIN_ROOT}` shims):
+**The CLIs and skills (OpenCode).** Outside the Claude plugin nothing installs the `est-*` tools
+or the skills for you, so run the installer from a checkout of this repository:
 
-    gh release download vX.Y.Z -R BrandonLewis/estimating-plugin -p "*.whl" -D ~/est-wheels
-    uv tool install --find-links ~/est-wheels "estimating_tools[all]==X.Y.Z"
-    cp -r openworker/skills/* <the client's skill directory>   # OpenCode: ~/.config/opencode/skill/
+    python opencode/install.py                        # global: ~/.config/opencode
+    python opencode/install.py --project ~/bids/hwy-41  # per project: .opencode/skills + opencode.json
+    python opencode/install.py --dry-run              # print every action, write nothing
 
-The artifact editor is a local stdio server once the package is installed; OpenCode, for one,
-takes it as `"artifact-editor": {"type": "local", "command": ["est-artifact-app"]}`.
+It does three things, each idempotent. It builds the same shared runtime the Claude plugin's
+SessionStart hook builds (`~/.estimating`, from the wheels bundled in
+`plugins/estimating-core/dist`), so the skills keep their literal `~/.estimating/bin/est-*` paths
+and nothing has to be on `PATH` or in an activated venv. It writes the skills with OpenCode's
+tool names (`bidmanager_<tool>`, `artifact-editor_<tool>`) into `~/.config/opencode/skills`
+(`$XDG_CONFIG_HOME/opencode` if set), and removes ones it wrote earlier that a release dropped.
+Skill folders it did not write are never touched. Finally it merges `bidmanager`, `conformed`
+(from `it/opencode.json`) and a local `artifact-editor` server that runs the runtime's
+`est-artifact-app` shim into `opencode.json`. Entries it wrote earlier are upgraded when a
+release changes them. An entry you wrote or edited is kept, and a diff is printed. Other
+settings are never touched. A JSONC config with comments is refused untouched, with the entries
+to paste by hand. If the runtime build fails, it exits 1 before changing skills or config. It
+will not downgrade a runtime the Claude plugin has already moved to a newer release unless
+given `--force`.
+Restart OpenCode afterwards. To upgrade, pull and re-run; an unchanged install reports
+"up to date". Do not copy `openworker/skills/` instead: that port names MCP tools
+`mcp__bidmanager__<tool>`, OpenWorker's form, which OpenCode never registers.
 
 ## Adding your own plugins
 
