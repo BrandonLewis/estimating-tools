@@ -17,7 +17,7 @@ from estimating_tools.artifact_common import (
 from estimating_tools.artifacts import format_money, format_qty, md_table
 from estimating_tools.estimate_spec._shared import _is_valid_id
 from estimating_tools.estimate_spec.format_pack import bundled_pack
-from estimating_tools.estimate_spec.scaffold import placeholder_takeoff
+from estimating_tools.estimate_spec.scaffold import _skeleton_labor, placeholder_takeoff
 
 
 _COLUMNS = (
@@ -462,6 +462,15 @@ def _recipe_needs_takeoff(pack, recipe: str) -> bool:
     return False
 
 
+def _labor_required(pack) -> bool:
+    """True when the pack's vocabulary requires every item to carry `labor`
+    -- an unconditional item_rules entry (no `if:`) listing it in `required`,
+    as fieldbook's "every item has at least one task" rule does."""
+    rules = (pack.vocabulary or {}).get("item_rules") or []
+    return any("if" not in rule and "labor" in (rule.get("required") or [])
+               for rule in rules)
+
+
 def _stub_new_item(row: dict, row_idx: int, pack=None) -> dict:
     """Produce a new item stub from a row with no id and no matching base.
 
@@ -470,8 +479,12 @@ def _stub_new_item(row: dict, row_idx: int, pack=None) -> dict:
     rate_host_recipe`) when its schema requires no takeoff — the same
     reasoning that makes it a safe placeholder in scaffold.py — else the
     pack's default item recipe (`seed.scaffold.default_item_recipe`) plus a
-    zeroed placeholder takeoff. Either way the agent reshapes the item (recipe,
-    takeoff, labor) via `render_item` after adding the row through compact.
+    zeroed placeholder takeoff. Its `labor` is empty, unless the pack requires
+    every item to carry a task (`_labor_required`): then it is scaffold's own
+    skeleton task (`seed.scaffold.first_slot` / `first_cost_code`, the seed's
+    `default_crew`), so the stub still validates. Either way the agent reshapes
+    the item (recipe, takeoff, labor) via `render_item` after adding the row
+    through compact.
     """
     pack = pack or bundled_pack()
     sc = pack.seed["scaffold"]
@@ -504,7 +517,7 @@ def _stub_new_item(row: dict, row_idx: int, pack=None) -> dict:
         "sheet":       item_no,
         "description": task_name,
         "uom":         uom,
-        "labor":       [],
+        "labor":       _skeleton_labor(pack) if _labor_required(pack) else [],
     }
     if takeoff is not None:
         stub["takeoff"] = takeoff

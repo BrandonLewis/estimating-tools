@@ -24,7 +24,7 @@ from estimating_tools.estimate_spec.format_pack import load_pack
 SPEC_DIR = Path(__file__).resolve().parents[1]
 ALT_DIR = Path(__file__).resolve().parent / "fixtures" / "packs" / "alt"
 ALT_SAMPLE = ALT_DIR / "examples" / "sample.estimate.yaml"
-DEMO_DIR = SPEC_DIR / "packs" / "demo"
+LEGACY_DIR = SPEC_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
 
 
 @pytest.fixture(scope="module")
@@ -417,7 +417,7 @@ def test_unknown_item_recipe_names_the_item_recipe_and_pack():
     from estimating_tools.estimate_spec.build import generate
     from estimating_tools.estimate_spec.recipe import RecipeError
 
-    demo = load_pack(DEMO_DIR)
+    demo = load_pack(LEGACY_DIR)
     config = {
         "project": "Synthetic",
         "bid_date": "2026-01-01",
@@ -465,7 +465,7 @@ def test_a_global_promoted_once_still_works():
     case: one rate-host item) renders without incident."""
     from estimating_tools.estimate_spec.build import generate
 
-    demo = load_pack(DEMO_DIR)
+    demo = load_pack(LEGACY_DIR)
     wb = generate(_rate_host_config("ITEM-1"), demo)
     assert "Rates" in wb.sheetnames
 
@@ -478,7 +478,7 @@ def test_a_global_promoted_twice_names_both_origins_and_the_pack():
     from estimating_tools.estimate_spec.build import EstimateBuilder
     from estimating_tools.estimate_spec.recipe import RecipeError
 
-    demo = load_pack(DEMO_DIR)
+    demo = load_pack(LEGACY_DIR)
     builder = EstimateBuilder({"project": "Synthetic", "items": []}, demo)
 
     builder.cur_exports = {"rates.table": "$A$2:$B$2"}
@@ -502,7 +502,7 @@ def test_a_global_promoted_twice_via_two_items_fails_end_to_end():
     from estimating_tools.estimate_spec.build import generate
     from estimating_tools.estimate_spec.recipe import RecipeError
 
-    demo = load_pack(DEMO_DIR)
+    demo = load_pack(LEGACY_DIR)
     with pytest.raises(RecipeError) as exc_info:
         generate(_rate_host_config("ITEM-1", "ITEM-2"), demo)
     msg = str(exc_info.value)

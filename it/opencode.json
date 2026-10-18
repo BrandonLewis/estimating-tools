@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "bidmanager": {
+      "type": "remote",
+      "url": "https://www.bidsheet.ai/mcp/",
+      "enabled": true
+    },
+    "conformed": {
+      "type": "remote",
+      "url": "https://conformed-production.up.railway.app/mcp/",
+      "enabled": true
+    }
+  }
+}

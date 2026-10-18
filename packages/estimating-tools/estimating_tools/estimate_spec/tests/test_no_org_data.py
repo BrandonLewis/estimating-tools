@@ -78,14 +78,14 @@ def test_provenance_is_optional_for_a_consumer_pack(tmp_path):
     *shipped* pack without one is a test failure (the test above) -- the
     loader itself stays permissive."""
     shadow = tmp_path / "no_provenance_pack"
-    shutil.copytree(ES_DIR / "packs" / "demo", shadow, ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(ES_DIR / "packs" / "fieldbook", shadow, ignore=shutil.ignore_patterns("__pycache__"))
     manifest = shadow / "format.yaml"
     doc = yaml.safe_load(manifest.read_text(encoding="utf-8"))
     doc.pop("provenance", None)
     manifest.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
 
     pack = fp.load_pack(shadow)  # must not raise -- provenance is optional
-    assert pack.name == "demo"
+    assert pack.name == "fieldbook"
 
 
 def test_load_pack_accepts_provenance_authored():
@@ -93,5 +93,5 @@ def test_load_pack_accepts_provenance_authored():
     (it doesn't reject unknown top-level manifest keys) -- allowing
     provenance: is not a behavior change to load_pack, just documented here
     so a future stricter manifest schema doesn't silently start rejecting it."""
-    pack = fp.load_pack(ES_DIR / "packs" / "demo")
-    assert pack.name == "demo"
+    pack = fp.load_pack(ES_DIR / "packs" / "fieldbook")
+    assert pack.name == "fieldbook"

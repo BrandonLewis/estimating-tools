@@ -27,7 +27,7 @@ from estimating_tools.intake.manifest import ProjectManifest
 
 FIXTURES = Path(__file__).parent / "fixtures"
 ES = fp.ENGINE_DIR
-DEMO_DIR = ES / "packs" / "demo"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
 ALT_DIR = FIXTURES / "packs" / "alt"
 
 _MIN_PACK_MANIFEST = """\
@@ -44,7 +44,7 @@ files:
 
 @pytest.fixture(scope="module")
 def demo_pack():
-    return fp.load_pack(DEMO_DIR)
+    return fp.load_pack(LEGACY_DIR)
 
 
 @pytest.fixture(scope="module")
@@ -84,7 +84,7 @@ def _write_min_pack(tmp_path: Path, name: str = "copy", *, scaffold: dict | None
     root = tmp_path / name
     root.mkdir(parents=True)
     for f in ("units.yaml", "tokens.yaml", "recipes.yaml", "vocabulary.yaml", "seed.yaml"):
-        shutil.copy(DEMO_DIR / f, root / f)
+        shutil.copy(LEGACY_DIR / f, root / f)
     (root / "format.yaml").write_text(_MIN_PACK_MANIFEST.format(name=name), encoding="utf-8")
     seed_path = root / "seed.yaml"
     doc = yaml.safe_load(seed_path.read_text(encoding="utf-8"))
@@ -268,7 +268,7 @@ def test_scaffold_without_mob_item_injects_rate_host_and_builds(alt_pack):
 def test_scaffold_no_bid_frame_errors():
     m = ProjectManifest(name="Empty")
     with pytest.raises(ValueError, match="bid frame"):
-        scaffold_spec(m)
+        scaffold_spec(m, pack=fp.load_pack(LEGACY_DIR))
 
 
 def test_sheet_names_fit_excel(alt_pack):
@@ -328,7 +328,7 @@ def test_scaffold_entry_crews_spliced_to_top_level(alt_pack):
 
 def test_validate_scaffold_entries_rejects_missing_source():
     with pytest.raises(ValueError, match="source"):
-        validate_scaffold_entries([{"item_code": "X"}])
+        validate_scaffold_entries([{"item_code": "X"}], pack=fp.load_pack(LEGACY_DIR))
 
 
 def test_validate_scaffold_entries_rejects_bad_labor_block():
@@ -336,7 +336,7 @@ def test_validate_scaffold_entries_rejects_bad_labor_block():
            "labor": [{"slot": "a lowercase slot", "description": "d",
                       "crew": [{"trade": "FITTER", "days": 0}]}]}
     with pytest.raises(ValueError, match="invalid scaffold entry"):
-        validate_scaffold_entries([bad])
+        validate_scaffold_entries([bad], pack=fp.load_pack(LEGACY_DIR))
 
 
 def test_validate_scaffold_entries_rejects_non_list():
@@ -429,7 +429,8 @@ def test_cli_scaffold_merge_updates_unedited_and_keeps_hand_edits(tmp_path, alt_
 
 
 def test_merge_adds_new_items_and_keeps_existing():
-    fresh = scaffold_spec(sample_bridge_manifest(), sample_bridge_structures()).spec
+    fresh = scaffold_spec(sample_bridge_manifest(), sample_bridge_structures(),
+                          pack=fp.load_pack(LEGACY_DIR)).spec
     existing = {"project": "X", "markup": 0, "rate_table": fresh["rate_table"],
                 "items": [dict(fresh["items"][0])]}
     hand = {"recipe": "work_item", "sheet": "HAND 1", "item_no": "HAND-1",
@@ -444,3 +445,32 @@ def test_merge_adds_new_items_and_keeps_existing():
     nos = [it["item_no"] for it in merged["items"]]
     assert "HAND-1" in nos and set(report.added) == {"2217-38", "2217-39", "2217-40"}
     assert "HAND-1" in report.kept
+
+
+# ---------------------------------------------------------------------------
+# the seed's rate-table trades carry their kind (fieldbook phase 3b)
+# ---------------------------------------------------------------------------
+
+def test_scaffold_writes_each_seed_trade_with_its_kind(tmp_path):
+    from estimating_tools.estimate_spec.tests._packs import patched_pack
+
+    def seed(doc):
+        doc["rate_table_trades"].append({"trade": "LOADER", "kind": "equipment"})
+
+    pack = patched_pack(tmp_path, seed=seed)
+    spec = scaffold_spec(_min_bid_items(), pack=pack).spec
+    assert spec["rate_table"][0] == {"trade": "SUPR", "rate": 0}     # a bare name: labor, as before
+    assert spec["rate_table"][-1] == {"trade": "LOADER", "rate": 0, "kind": "equipment"}
+    validate_spec(spec, pack=pack)
+
+
+def test_scaffold_carries_the_seeds_cost_codes_as_the_org_code_list(demo_pack):
+    spec = scaffold_spec(_min_bid_items(), pack=demo_pack).spec
+    assert spec["cost_codes"] == demo_pack.seed["cost_codes"]
+    assert spec["cost_codes"] is not demo_pack.seed["cost_codes"]      # a copy, never the pack's own
+    validate_spec(spec, pack=demo_pack)
+
+
+def test_scaffold_writes_no_cost_codes_when_the_seed_has_none(tmp_path):
+    pack = fp.load_pack(_write_min_pack(tmp_path, seed_drop=("cost_codes",)))
+    assert "cost_codes" not in scaffold_spec(_min_bid_items(), pack=pack).spec

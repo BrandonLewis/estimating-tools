@@ -3,7 +3,7 @@
 Usage:
   python manifest/generate.py --client claude   # writes plugins/estimating-core/.mcp.json
   python manifest/generate.py --client cowork    # writes it/cowork-connector.md
-  python manifest/generate.py --client gemini|cursor|codex  # writes it/<client> snippet
+  python manifest/generate.py --client gemini|cursor|codex|opencode  # writes it/<client> snippet
   python manifest/generate.py --check            # regen to memory, diff vs committed (CI guard)
 
 Servers may declare a `clients` list to limit which renderers include them
@@ -29,6 +29,7 @@ COWORK_OUT = ROOT / "it" / "cowork-connector.md"
 GEMINI_OUT = ROOT / "it" / "gemini-settings.snippet.json"
 CURSOR_OUT = ROOT / "it" / "cursor-mcp.json"
 CODEX_OUT = ROOT / "it" / "codex-config.toml.snippet"
+OPENCODE_OUT = ROOT / "it" / "opencode.json"
 
 
 def _servers():
@@ -38,7 +39,8 @@ def _servers():
 def _for(client):
     # Absent `clients` field = all clients (today's behavior for the http servers).
     return [s for s in _servers()
-            if client in s.get("clients", ["claude", "cowork", "gemini", "cursor", "codex"])]
+            if client in s.get("clients", ["claude", "cowork", "gemini", "cursor", "codex",
+                                         "opencode"])]
 
 
 def _url(s) -> str:
@@ -122,6 +124,17 @@ def render_codex() -> str:
     return "\n".join(blocks)
 
 
+def render_opencode() -> str:
+    # OpenCode's `mcp` block: remote servers are url-only, so OpenCode runs the
+    # server's OAuth flow on first connect (`opencode mcp auth <id>` to sign in
+    # ahead of time). Headless runs add a Bearer header from the environment —
+    # see it/rollout.md; no token is committed here.
+    servers = {s["id"]: {"type": "remote", "url": _url(s), "enabled": True}
+               for s in _for("opencode")}
+    return json.dumps({"$schema": "https://opencode.ai/config.json", "mcp": servers},
+                      indent=2) + "\n"
+
+
 def write(path: Path, text: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     # Deterministic bytes on every platform (LF, UTF-8) — the outputs are committed
@@ -131,7 +144,8 @@ def write(path: Path, text: str):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="generate")
-    ap.add_argument("--client", choices=["claude", "cowork", "gemini", "cursor", "codex"])
+    ap.add_argument("--client",
+                    choices=["claude", "cowork", "gemini", "cursor", "codex", "opencode"])
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args(argv)
 
@@ -141,6 +155,7 @@ def main(argv=None) -> int:
         GEMINI_OUT: render_gemini(),
         CURSOR_OUT: render_cursor(),
         CODEX_OUT: render_codex(),
+        OPENCODE_OUT: render_opencode(),
     }
     if args.check:
         drift = [p.name for p, text in targets.items() if not p.exists() or p.read_text() != text]
@@ -149,7 +164,7 @@ def main(argv=None) -> int:
             return 1
         return 0
     paths = {"claude": CLAUDE_OUT, "cowork": COWORK_OUT, "gemini": GEMINI_OUT,
-             "cursor": CURSOR_OUT, "codex": CODEX_OUT}
+             "cursor": CURSOR_OUT, "codex": CODEX_OUT, "opencode": OPENCODE_OUT}
     if args.client:
         write(paths[args.client], targets[paths[args.client]])
     else:

@@ -14,8 +14,8 @@ from estimating_tools.estimate_spec import build as build_mod
 from estimating_tools.estimate_spec import format_pack as fp
 
 SPEC_DIR = Path(__file__).resolve().parents[1]
-DEMO_DIR = SPEC_DIR / "packs" / "demo"
-EXAMPLE = DEMO_DIR / "examples" / "demo-pipeline.estimate.yaml"
+LEGACY_DIR = SPEC_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
+EXAMPLE = LEGACY_DIR / "examples" / "demo-pipeline.estimate.yaml"
 
 
 class _FakeEP:
@@ -54,7 +54,7 @@ def test_build_runs_checks_to_stderr_and_still_writes(monkeypatch, tmp_path, cap
     # A finding must NOT abort the render — it is advisory only.
     monkeypatch.setattr(build_mod, "run_config_checks", lambda cfg: ["missing FUEL block"])
     out = tmp_path / "out.xlsx"
-    result = build_mod.build(str(EXAMPLE), str(out), pack=fp.load_pack(DEMO_DIR))
+    result = build_mod.build(str(EXAMPLE), str(out), pack=fp.load_pack(LEGACY_DIR))
     assert Path(result).exists()
     assert "missing FUEL block" in capsys.readouterr().err
 
@@ -63,7 +63,7 @@ def test_build_lint_false_skips_checks(monkeypatch, tmp_path, capsys):
     called = []
     monkeypatch.setattr(build_mod, "run_config_checks", lambda cfg: called.append(1) or [])
     out = tmp_path / "out.xlsx"
-    build_mod.build(str(EXAMPLE), str(out), pack=fp.load_pack(DEMO_DIR), lint=False)
+    build_mod.build(str(EXAMPLE), str(out), pack=fp.load_pack(LEGACY_DIR), lint=False)
     assert called == []
     assert capsys.readouterr().err == ""
 
@@ -74,7 +74,7 @@ def test_cli_no_lint_flag_disables_checks(monkeypatch, tmp_path):
     monkeypatch.setattr(build_mod, "build",
                         lambda config, output, pack=None, stamp=True, lint=True: seen.update(lint=lint) or str(output))
     out = tmp_path / "o.xlsx"
-    assert cli.main(["build", str(EXAMPLE), "-o", str(out), "--format", str(DEMO_DIR), "--no-lint"]) == 0
+    assert cli.main(["build", str(EXAMPLE), "-o", str(out), "--format", str(LEGACY_DIR), "--no-lint"]) == 0
     assert seen["lint"] is False
-    assert cli.main(["build", str(EXAMPLE), "-o", str(out), "--format", str(DEMO_DIR)]) == 0
+    assert cli.main(["build", str(EXAMPLE), "-o", str(out), "--format", str(LEGACY_DIR)]) == 0
     assert seen["lint"] is True

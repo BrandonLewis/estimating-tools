@@ -12,8 +12,8 @@ from estimating_tools.estimate_spec import build as B
 from estimating_tools.estimate_spec import format_pack as fp
 
 ES = Path(fp.__file__).resolve().parent
-DEMO_DIR = ES / "packs" / "demo"
-SAMPLE = DEMO_DIR / "examples" / "demo-pipeline.estimate.yaml"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
+SAMPLE = LEGACY_DIR / "examples" / "demo-pipeline.estimate.yaml"
 
 
 def _config():
@@ -21,9 +21,14 @@ def _config():
 
 
 def test_build_py_names_no_unit_and_no_format_literal():
-    pack = fp.bundled_pack()
-    banned = set(pack.units) | {"Summary", "LUMBER", "HARDWARE", "$G$2", "$H$2",
-                                "takeoff_variants", "item_header", "rate_table"}
+    """No unit name of any pack -- the bundled one, the legacy_demo fixture,
+    the alt fixture -- appears as a literal in build.py."""
+    units = set()
+    for pack in (fp.bundled_pack(), fp.load_pack(LEGACY_DIR),
+                 fp.load_pack(ES / "tests" / "fixtures" / "packs" / "alt")):
+        units |= set(pack.units)
+    banned = units | {"Summary", "LUMBER", "HARDWARE", "$G$2", "$H$2",
+                      "takeoff_variants", "item_header", "rate_table"}
     tree = ast.parse((ES / "build.py").read_text(encoding="utf-8"))
     found = sorted({n.value for n in ast.walk(tree)
                     if isinstance(n, ast.Constant) and n.value in banned})
@@ -32,7 +37,7 @@ def test_build_py_names_no_unit_and_no_format_literal():
 
 def _copy_pack(tmp_path: Path, mutate) -> fp.FormatPack:
     root = tmp_path / "copy"
-    shutil.copytree(DEMO_DIR, root, ignore=shutil.ignore_patterns(
+    shutil.copytree(LEGACY_DIR, root, ignore=shutil.ignore_patterns(
         "*.py", "__pycache__", "tests", "examples", "packs"))
     doc = yaml.safe_load((root / "recipes.yaml").read_text())
     mutate(doc)
@@ -58,7 +63,7 @@ def test_a_rate_table_can_live_on_its_own_sheet(tmp_path):
 
 
 def test_the_cover_comes_from_the_recipe(tmp_path):
-    default_cover = fp.load_pack(DEMO_DIR).recipes["recipes"]["cover"]["sheet_name"]
+    default_cover = fp.load_pack(LEGACY_DIR).recipes["recipes"]["cover"]["sheet_name"]
 
     def mutate(doc):
         doc["recipes"]["cover"]["sheet_name"] = "Bid"

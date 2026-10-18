@@ -12,14 +12,15 @@ from estimating_tools.estimate_spec import artifact, scaffold, summarize
 from estimating_tools.estimate_spec import format_pack as fp
 
 ES = Path(fp.__file__).resolve().parent
-DEMO_DIR = ES / "packs" / "demo"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
 
 
 def _copy_pack(tmp_path: Path, *, trades=None, units=None) -> fp.FormatPack:
     root = tmp_path / "copy"
-    shutil.copytree(DEMO_DIR, root, ignore=shutil.ignore_patterns(
+    shutil.copytree(LEGACY_DIR, root, ignore=shutil.ignore_patterns(
         "*.py", "__pycache__", "tests", "examples", "packs"))
-    text = (root / "format.yaml").read_text().replace("name: demo", "name: copy")
+    text = (root / "format.yaml").read_text().replace("name: legacy_demo", "name: copy")
+    assert "name: copy" in text            # the copy is its own pack, not the fixture by name
     (root / "format.yaml").write_text(text)
     if trades is not None:
         vocab = yaml.safe_load((root / "vocabulary.yaml").read_text())
@@ -31,7 +32,7 @@ def _copy_pack(tmp_path: Path, *, trades=None, units=None) -> fp.FormatPack:
 
 
 def _schema_with_trade(extra: str) -> list:
-    return list(fp.load_pack(DEMO_DIR).vocabulary["trades"]) + [extra]
+    return list(fp.load_pack(LEGACY_DIR).vocabulary["trades"]) + [extra]
 
 
 FORMAT_FILES = {"units.yaml", "tokens.yaml", "recipes.yaml", "vocabulary.yaml", "seed.yaml",
@@ -73,7 +74,7 @@ def test_summarize_defaults_come_from_the_pack(tmp_path, monkeypatch):
     happens to name. The omitted-pack fallback reads `bundled_pack()`,
     proven generically by redirecting it (no test may depend on which pack
     is bundled) rather than asserting today's specific bundled default."""
-    units = {"units": copy.deepcopy(fp.load_pack(DEMO_DIR).units)}
+    units = {"units": copy.deepcopy(fp.load_pack(LEGACY_DIR).units)}
     units["units"]["rates"]["params"]["tax_rate"] = {"type": "number", "default": 0.5}
     pack = _copy_pack(tmp_path, units=units)
     assert summarize._units_default("tax_rate", 0.0, pack) == 0.5
@@ -85,7 +86,7 @@ def test_summarize_defaults_come_from_the_pack(tmp_path, monkeypatch):
 def _spec_with_a_retargeted_crew_row() -> dict:
     """The demo pack's own example, with its first labor crew row retargeted
     to book an unknown trade (ZZTOP), not present in the pack's vocabulary."""
-    spec = yaml.safe_load((DEMO_DIR / "examples" / "demo-pipeline.estimate.yaml")
+    spec = yaml.safe_load((LEGACY_DIR / "examples" / "demo-pipeline.estimate.yaml")
                           .read_text(encoding="utf-8"))
     for item in spec["items"]:
         for block in item.get("labor") or []:
@@ -97,7 +98,7 @@ def _spec_with_a_retargeted_crew_row() -> dict:
 
 
 def test_validate_spec_uses_the_pack_schema(tmp_path):
-    demo = fp.load_pack(DEMO_DIR)
+    demo = fp.load_pack(LEGACY_DIR)
     spec = _spec_with_a_retargeted_crew_row()
     with pytest.raises(ValueError, match="schema violation"):
         scaffold.validate_spec(spec, pack=demo)

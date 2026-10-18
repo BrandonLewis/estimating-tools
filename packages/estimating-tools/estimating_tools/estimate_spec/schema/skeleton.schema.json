@@ -27,6 +27,19 @@
         "source":  { "type": "string", "description": "Where the library lives, e.g. a BidSheet.ai cost code system id." }
       }
     },
+    "cost_codes": {
+      "type": "array",
+      "description": "The org's cost-code list (scaffold copies it from the pack seed's cost_codes). Generic and optional: a pack that lays it out (fieldbook's Codes sheet: the cost-code dropdown, de-duplicated, plus any task code not on it) reads it; every other pack ignores it.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code"],
+        "properties": {
+          "code":        { "type": "string", "minLength": 1 },
+          "description": { "type": "string" }
+        }
+      }
+    },
     "schedule": { "$vocab": "schedule" },
     "rate_table": {
       "type": "array",

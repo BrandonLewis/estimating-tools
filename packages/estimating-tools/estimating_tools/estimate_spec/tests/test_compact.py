@@ -12,6 +12,20 @@ from estimating_tools.artifact_common import split_pipes
 from estimating_tools.estimate_spec.compact import render_compact
 
 
+@pytest.fixture(autouse=True)
+def _bundled_pack_is_legacy_demo(monkeypatch):
+    """compact's grammar is generic: a new row's stub (`pack or
+    bundled_pack()`) is shaped by the legacy_demo fixture here unless a test
+    names its own pack, so no test in this file depends on whichever pack
+    format_pack.py bundles (fieldbook's stub is tested in
+    test_fieldbook_compat.py)."""
+    import estimating_tools.estimate_spec.compact as compact_mod
+    from estimating_tools.estimate_spec.format_pack import ENGINE_DIR, load_pack
+
+    legacy = load_pack(ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo")
+    monkeypatch.setattr(compact_mod, "bundled_pack", lambda: legacy)
+
+
 _COLUMN_HEADER_LINE = (
     "| id | wbs | cost_code | category | item_no | task_name | crew_id "
     "| duration | qty | uom | cost |"
@@ -1048,12 +1062,12 @@ def test_parse_compact_new_row_with_no_optional_fields_omits_them():
 from estimating_tools.estimate_spec.compact import _stub_new_item
 from estimating_tools.estimate_spec.format_pack import ENGINE_DIR, load_pack
 
-DEMO_DIR = ENGINE_DIR / "packs" / "demo"
+LEGACY_DIR = ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
 
 
 @pytest.fixture(scope="module")
 def demo_pack():
-    return load_pack(DEMO_DIR)
+    return load_pack(LEGACY_DIR)
 
 
 def test_compact_stub_uses_pack_default_recipe(demo_pack, monkeypatch):

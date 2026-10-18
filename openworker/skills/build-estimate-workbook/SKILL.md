@@ -44,20 +44,32 @@ the other:
   BidSheet.ai estimate model. See "CIP buildup usage" below.
 
 ## Inputs
-- A `*.estimate.yaml` config (see `packages/estimating-tools/estimating_tools/estimate_spec/packs/demo/examples/` for a sample) — hand-authored, or scaffolded from an intake briefing (preferred, below).
+- A `*.estimate.yaml` config (see `packages/estimating-tools/estimating_tools/estimate_spec/packs/fieldbook/examples/` for a sample) — hand-authored, or scaffolded from an intake briefing (preferred, below).
 - A **format pack** decides what the workbook looks like: a directory with `format.yaml`
   naming its `units.yaml` (structure), `tokens.yaml` (style), `recipes.yaml` (composition),
   `vocabulary.yaml` (permitted trades, cost blocks, takeoff kinds) and `seed.yaml` (what a
   fresh spec starts with). Packs are data only. Resolution: `--format <dir>` on the command,
-  else the org profile's `estimating.format`, else the demo pack bundled with the tool. A pack
+  else the org profile's `estimating.format`, else the fieldbook pack bundled with the tool. A pack
   that is named but missing or invalid is an error, never a silent fall back.
   A pack declares which extra tools (`summarize`, the artifact editor) it supports in
   `format.yaml`'s `supports:` list; those tools refuse any other pack.
-- The tool ships only the generic **demo pack** (`estimate_spec/packs/demo/`, example at
-  `packs/demo/examples/demo-pipeline.estimate.yaml`) — enough to prove the engine works
-  out of the box, but it declares no `supports:` and prices nothing real. An org supplies
-  its own format pack (its real units/tokens/recipes/vocabulary/seed) through its profile's
-  `estimating.format`, or names one explicitly with `--format <dir>`.
+- With no pack named, an estimator gets **fieldbook**, the bundled default
+  (`estimate_spec/packs/fieldbook/`, example at
+  `packs/fieldbook/examples/demo-pipeline.estimate.yaml`): a complete, generic format — a
+  Bid Form that matches the agency's arithmetic, a Cost Summary by cost type, Markup by
+  cost type, live Checks, one Rates table (labor and equipment by full name), the org's
+  cost-code list as the code dropdown, and one sheet per item with a task block per cost
+  code. The estimator edits the workbook in Excel and you read the edits back into the
+  spec (see "read Excel edits back" below). It declares no `supports:`, so `summarize` and
+  the inline item editor refuse it.
+- An org adopts its own format by naming its own pack — in its profile's
+  `estimating.format` (the `create-org-profile` skill sets it), or per command with
+  `--format <dir>`. The quickest start is a copy of `packs/fieldbook/` with the org's own
+  trades (`vocabulary.yaml`) and its rate-table trades and cost-code list (`seed.yaml`);
+  `packs/README.md`, shipped beside it, is the full contract. `scaffold`,
+  `apply-takeoff` and `scaffold-save` write files, so they refuse the bundled pack unless
+  something names a pack — `--format <estimate_spec>/packs/fieldbook` is a valid choice.
+  The demo pack that used to be the default is retired.
 
 ## Workflow — scaffold from a briefing (preferred)
 
@@ -128,12 +140,13 @@ hand-build the frame — scaffold it:
    the bundled default — see `## Inputs` above. `--no-lint` skips
    consumer-registered pre-render config checks.
 3. Open the result and sanity-check totals, exports, and landmarks.
-4. Iterate on the YAML, not the spreadsheet — re-run to regenerate.
+4. Iterate on the YAML and re-run to regenerate — or, on a fieldbook workbook, let the
+   estimator edit it in Excel and read the edits back into the spec first (below).
 
 ## Workflow — edit one item inline (alternative)
 
 **Requires a pack declaring `supports: artifact`.** `render_item` and `parse_item`
-refuse any other pack with a `FormatPackError`, and the bundled demo pack declares
+refuse any other pack with a `FormatPackError`, and the bundled fieldbook pack declares
 no capabilities at all — so on a default install this workflow errors on the first
 call. Resolve the pack first and check, before offering the workflow:
 
@@ -183,6 +196,70 @@ Use this when the user wants to tweak one item (a single Excel sheet's worth of 
    ```bash
    est-estimate <path/to/spec.yaml> -o <output.xlsx>
    ```
+
+## Workflow — read Excel edits back into the spec (fieldbook)
+
+A workbook built with the fieldbook pack (the bundled default, or a copy of it named with
+`--format` / `estimating.format`) is edited in
+Excel: the estimator types inputs and copies and pastes rows and whole task blocks. The spec
+stays the source of truth, so those edits are read back into it before the next rebuild or
+`bm-sync`. When the user says "read it back" (or hands you an edited fieldbook workbook):
+
+1. **Dry run.** Nothing is written:
+   ```bash
+   est-estimate read-back <bid>.estimate.yaml <bid>.xlsx --report readback.md
+   ```
+   Exit 2 means refused — the file is not a workbook, was not built by fieldbook, was built by
+   another fieldbook version, was built from a spec with other items, the spec itself does
+   not build (or cannot be read the way `build` reads it), or `--report` names the spec or the
+   workbook. Say why and stop; never edit the spec
+   by hand to force it. Tell the user not to edit or re-save the workbook between this dry run
+   and the `--write` in step 3: the write reads the workbook again, and must apply exactly what
+   they reviewed.
+
+2. **Show the report** verbatim in a fenced block, then walk the user through it:
+   - **Problems** (exit 1): nothing will be written. Each line names a sheet row and what to fix
+     there (a blank count, a formula in an input, two blocks with the same code, a blank
+     Source, two Markup rows with one label, a Bond row whose label was changed). The user fixes them in Excel, saves, and you run step 1 again.
+     One problem is not fixed in Excel: **"built from a different version of the spec"** — the
+     spec changed after this workbook was built (another read-back, a hand edit, a `bm-sync`
+     fetch), so applying it would quietly undo those newer edits (the Changes list shows them
+     being reverted). Default: rebuild the workbook from the current spec and redo the edits
+     there. Only if the user explicitly wants this workbook to win, add `--force` to steps 1
+     and 3 (the problem becomes a notice) and walk them through every change it reverts first.
+   - **Changes**: what the spec will take — new tasks (a pasted block with a new code), renamed
+     tasks (a code retyped in place), new, removed and reordered crew rows, cost lines, takeoff
+     rows and rates, and every changed input.
+   - **Needs you**: crew resources with no rate row. Ask for each one's kind (labor or
+     equipment) and $/hr. Best: the user adds the rate on the Rates sheet, above the "insert
+     new rates above this row" row, saves, and you read back again. They may also go ahead —
+     the resource is applied as typed and check 2 stays ✗ until a rate exists.
+   - **Formula cells typed over**: ignored; the rebuild restores each formula, so what was
+     typed there is lost. Say so.
+   - **Untagged rows**: pasted from outside the workbook, so not read — never guessed. Ask the
+     user to re-enter them into a copied crew or cost-line row inside a task block.
+   - **Notices**: read, but worth a word — e.g. an edited item description, item unit or
+     project name is not read back (change it in the spec / bid schedule), or a shared YAML
+     anchor was expanded.
+
+3. **Confirm, then write.** Only after the user says yes:
+   ```bash
+   est-estimate read-back <bid>.estimate.yaml <bid>.xlsx --write
+   ```
+   It saves `<bid>.estimate.yaml.bak-YYYYmmdd-HHMMSS` next to the spec first, then edits the
+   spec in place: comments, key order, quoting and line endings stay as they were; padding and
+   alignment inside and before one-line `{ ... }` / `[ ... ]` are normalised, and blank lines
+   between list rows can move where rows were added or deleted. Text YAML 1.1 would misread
+   (`Yes`, `Off`, `1:30`) is written quoted, so `build` reads it as typed. With nothing to change
+   it writes nothing, backup included.
+
+4. **Rebuild** with the same pack the workbook was built with (step 2 of the hand-authored
+   workflow above), and tell the user to reopen the workbook: the new tasks appear in the
+   recap and the Checks sheet reads the rebuilt numbers.
+
+5. **Optionally sync to BidSheet.ai** with the `bm-sync` skill. Its base snapshot is the spec
+   as of the last BidSheet.ai fetch; when this read-back is the only edit since then, the
+   `.bak-*` file from step 3 is that snapshot.
 
 ## CIP buildup usage
 
@@ -240,7 +317,7 @@ est-estimate summarize <spec.yaml>
 ```
 
 **Requires a pack declaring `supports: summarize`.** The command refuses any
-other pack with a `FormatPackError` naming it, and the bundled demo pack
+other pack with a `FormatPackError` naming it, and the bundled fieldbook pack
 declares no capabilities — so `summarize` is not available on a default
 install. When the pack does not support it, say so and fall back to opening
 the workbook in Excel or LibreOffice to recalculate; never quote a total read

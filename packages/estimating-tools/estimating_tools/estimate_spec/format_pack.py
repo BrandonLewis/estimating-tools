@@ -36,7 +36,10 @@ from pathlib import Path
 import yaml
 
 ENGINE_DIR = Path(__file__).resolve().parent
-BUNDLED = ENGINE_DIR / "packs" / "demo"
+#: The pack `resolve_pack` falls back to when nothing names one. Fieldbook
+#: since phase 3b; the demo pack it replaced survives only as the frozen
+#: tests/fixtures/packs/legacy_demo fixture.
+BUNDLED = ENGINE_DIR / "packs" / "fieldbook"
 SKELETON = ENGINE_DIR / "schema" / "skeleton.schema.json"
 MANIFEST = "format.yaml"
 _REQUIRED = ("units", "tokens", "recipes", "vocabulary", "seed")
@@ -70,6 +73,11 @@ _SCAFFOLD_RECIPE_KEYS = ("default_item_recipe", "rate_host_recipe")
 _TOOLS = ("summarize", "artifact")
 #: Keys `protect:` may carry. See `FormatPack.protect`.
 _PROTECT_KEYS = frozenset({"sheets", "password"})
+#: Keys a `seed.cost_codes` entry may carry.
+_SEED_CODE_KEYS = frozenset({"code", "description"})
+#: Keys a `seed.rate_table_trades` mapping entry may carry.
+_SEED_TRADE_KEYS = frozenset({"trade", "kind"})
+_RATE_KINDS = ("labor", "equipment")
 
 
 class FormatPackError(ValueError):
@@ -348,6 +356,14 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                 f"mapping of percentages by cost type (got "
                 f"{type(default_markup).__name__} {default_markup!r})")
 
+    _check_seed_rate_trades(seed, f"{root}: pack '{meta.get('name')}'")
+    _check_seed_cost_codes(seed, f"{root}: pack '{meta.get('name')}'")
+
+    if not isinstance(scaffold.get("rate_host_is_bid_recipe", False), bool):
+        raise FormatPackError(
+            f"{root}: pack '{meta.get('name')}' seed.scaffold.rate_host_is_bid_recipe "
+            f"must be true or false (got {scaffold['rate_host_is_bid_recipe']!r})")
+
     first_cost_code = scaffold.get("first_cost_code")
     if first_cost_code is not None and (
             not isinstance(first_cost_code, str) or not first_cost_code):
@@ -397,6 +413,94 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                       schema=schema, vocabulary=vocab,
                       seed=docs["seed"], supports=frozenset(supports), labor=labor,
                       protect=protect, chosen=chosen, strict=strict)
+
+
+def _check_seed_rate_trades(seed: dict, who: str) -> None:
+    """`seed.rate_table_trades` (optional): each entry a resource name (a
+    labor rate row) or `{trade: NAME, kind: labor|equipment}`."""
+    if "rate_table_trades" not in seed:
+        return
+    entries = seed["rate_table_trades"]
+    if not isinstance(entries, list):
+        raise FormatPackError(f"{who} seed.rate_table_trades must be a list, got {entries!r}")
+    for i, entry in enumerate(entries):
+        where = f"{who} seed.rate_table_trades[{i}]"
+        if isinstance(entry, dict):
+            unknown = set(entry) - _SEED_TRADE_KEYS
+            if unknown:
+                raise FormatPackError(f"{where}: unknown keys {sorted(unknown)} "
+                                      f"(allowed: {sorted(_SEED_TRADE_KEYS)})")
+            name, kind = entry.get("trade"), entry.get("kind", "labor")
+            if kind not in _RATE_KINDS:
+                raise FormatPackError(f"{where}: kind must be one of {list(_RATE_KINDS)}, "
+                                      f"got {kind!r}")
+        else:
+            name = entry
+        if not isinstance(name, str) or not name:
+            raise FormatPackError(
+                f"{where}: must be a resource name or {{trade: NAME, kind: labor|equipment}}, "
+                f"got {entry!r}")
+
+
+def _check_seed_cost_codes(seed: dict, who: str) -> None:
+    """`seed.cost_codes` (optional): `[{code, description}]`, the org's code
+    list. scaffold copies it into a spec's own `cost_codes`, which the schema
+    checks, so a malformed seed list is refused here, by name, instead of
+    failing every scaffold."""
+    if "cost_codes" not in seed:
+        return
+    codes = seed["cost_codes"]
+    if not isinstance(codes, list):
+        raise FormatPackError(f"{who} seed.cost_codes must be a list, got {codes!r}")
+    for i, entry in enumerate(codes):
+        where = f"{who} seed.cost_codes[{i}]"
+        if not isinstance(entry, dict) or set(entry) - _SEED_CODE_KEYS:
+            raise FormatPackError(f"{where}: must be a mapping with keys "
+                                  f"{sorted(_SEED_CODE_KEYS)}, got {entry!r}")
+        if not isinstance(entry.get("code"), str) or not entry["code"]:
+            raise FormatPackError(f"{where}: code must be non-empty text, got {entry!r}")
+        if not isinstance(entry.get("description", ""), str):
+            raise FormatPackError(f"{where}: description must be text, got {entry!r}")
+
+
+def seed_rate_trades(seed: dict | None) -> list[dict]:
+    """The seed's rate-table trades as `[{trade, kind}]`: a bare name is a
+    labor rate row; `{trade, kind}` names its kind (an equipment rate row).
+    Shape-checked at load by `_check_seed_rate_trades`."""
+    out = []
+    for entry in (seed or {}).get("rate_table_trades") or []:
+        if isinstance(entry, dict):
+            out.append({"trade": entry["trade"], "kind": entry.get("kind", "labor")})
+        else:
+            out.append({"trade": entry, "kind": "labor"})
+    return out
+
+
+#: `scaffold_meta.source` and `item_no` of the rate-table host `scaffold`
+#: injects when no mobilization item was selected (see scaffold.py).
+RATE_HOST_SOURCE = "scaffold:rate_host"
+RATE_HOST_ITEM_NO = "RATES"
+
+
+def is_rate_host(item: dict, pack: FormatPack) -> bool:
+    """True when `item` is the pack's rate-table host -- the item that carries
+    no reusable bid-item content (scaffold-save skips it; apply-takeoff does
+    not list it as unmatched).
+
+    By default every item of `seed.scaffold.rate_host_recipe` is the host: a
+    pack whose rate table lives on that recipe's own sheet uses the recipe for
+    nothing else (the legacy_demo fixture's `setup`). A pack whose host recipe
+    is also an ordinary bid-item recipe -- its rate table lives elsewhere, as
+    fieldbook's lives on its Rates book sheet and its host recipe is
+    `lump_sum` -- opts in with `seed.scaffold.rate_host_is_bid_recipe: true`;
+    then only the scaffold-injected host (`item_no` RATES / `scaffold_meta.
+    source` scaffold:rate_host) is, and its lump-sum bid items are not."""
+    sc = pack.seed["scaffold"]
+    if sc.get("rate_host_is_bid_recipe"):
+        meta = item.get("scaffold_meta")
+        return (str(item.get("item_no", "")) == RATE_HOST_ITEM_NO
+                or (isinstance(meta, dict) and meta.get("source") == RATE_HOST_SOURCE))
+    return item.get("recipe") == sc["rate_host_recipe"]
 
 
 def require_support(pack: FormatPack, tool: str) -> None:

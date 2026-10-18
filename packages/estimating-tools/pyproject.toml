@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "estimating_tools"
-version = "0.1.89"
+version = "0.1.90"
 description = "Deterministic construction estimating and engineering tools."
 readme = "README.md"
 license = "Apache-2.0"
@@ -14,18 +14,21 @@ requires-python = ">=3.10"
 # floor must stay <= that wheel's version. bimforge is also published to PyPI
 # from BrandonLewis/BIMForge (same version line), so a registry resolution
 # gets the same code the wheel carries.
-dependencies = ["pyyaml", "bimforge>=0.1.87"]
+dependencies = ["pyyaml", "bimforge>=0.1.88"]
 
 [project.optional-dependencies]
 excel = ["openpyxl"]
 pdf = ["pdfplumber"]
 schedule = ["openpyxl"]
-estimate_spec = ["openpyxl", "pyyaml"]
+# ruamel.yaml: `est-estimate read-back --write` rewrites the spec in round-trip
+# mode so the estimator's comments, key order and quoting survive. 0.18 and
+# 0.19 are both proven (no pip-audit advisory for either); 0.20 is unreleased.
+estimate_spec = ["openpyxl", "pyyaml", "ruamel.yaml>=0.18,<0.20"]
 docgen = ["docxtpl", "python-docx", "markdown-it-py", "openpyxl"]
 profiles = ["jsonschema", "pyyaml"]
 intake = ["pyyaml"]
 importers = ["openpyxl", "jsonschema"]
-plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "mcp>=2,<3"]
+plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "mcp>=2,<3", "ruamel.yaml>=0.18,<0.20"]
 # Test-only: pycel evaluates the workbooks the test suite builds. Never in
 # `all` -- pycel 1.0b30 carries CVE-2024-53924 (evaluating an untrusted
 # workbook runs code), and `all` is what users install. Pinned to 1.0b30.x:
@@ -33,7 +36,7 @@ plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "mcp>=2,<3"]
 # is tied to 1.0b30's call shape, and a later pycel may change it.
 test = ["pycel>=1.0b30,<1.1"]
 dev = ["estimating_tools[all,test]", "build"]
-all = ["openpyxl", "pdfplumber", "docxtpl", "python-docx", "markdown-it-py", "pytest", "jsonschema", "mcp>=2,<3", "bimforge[all]>=0.1.87"]
+all = ["openpyxl", "pdfplumber", "docxtpl", "python-docx", "markdown-it-py", "pytest", "jsonschema", "mcp>=2,<3", "bimforge[all]>=0.1.88", "ruamel.yaml>=0.18,<0.20"]
 
 [project.urls]
 Homepage = "https://github.com/BrandonLewis/estimating-tools"

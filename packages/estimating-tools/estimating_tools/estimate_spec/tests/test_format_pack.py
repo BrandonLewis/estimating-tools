@@ -10,7 +10,7 @@ from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.profiles.model import Profile
 
 ES = Path(fp.__file__).resolve().parent
-DEMO_DIR = ES / "packs" / "demo"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
 ALT_DIR = Path(__file__).resolve().parent / "fixtures" / "packs" / "alt"
 MANIFEST = """\
 name: {name}
@@ -28,7 +28,7 @@ def _make_pack(tmp_path: Path, name: str = "copy") -> Path:
     root = tmp_path / name
     root.mkdir(parents=True)
     for f in ("units.yaml", "tokens.yaml", "recipes.yaml", "vocabulary.yaml", "seed.yaml"):
-        shutil.copy(DEMO_DIR / f, root / f)
+        shutil.copy(LEGACY_DIR / f, root / f)
     (root / "format.yaml").write_text(MANIFEST.format(name=name), encoding="utf-8")
     return root
 
@@ -51,10 +51,10 @@ def test_bundled_pack_loads_whatever_bundled_names_and_caches_it(monkeypatch):
     proven generically by redirecting it to the demo pack rather than
     asserting facts about whichever pack the plugin bundles today (no test
     may depend on which pack is bundled)."""
-    demo = fp.load_pack(DEMO_DIR)
+    demo = fp.load_pack(LEGACY_DIR)
     monkeypatch.setattr(fp, "bundled_pack", lambda: demo)
     pack = fp.bundled_pack()
-    assert pack.name == "demo"
+    assert pack.name == "legacy_demo"
     assert "job_header" in pack.units             # the units MAP, not the document
     assert "$defs" in pack.schema
     assert "styles" in pack.tokens
@@ -120,10 +120,10 @@ def test_resolution_cli_beats_profile_beats_bundled(tmp_path, monkeypatch):
     assert fp.resolve_pack(None, profile).name == "prof"
     # "beats bundled": redirect the bundled pack to the demo pack rather
     # than asserting today's specific bundled name.
-    demo = fp.load_pack(DEMO_DIR)
+    demo = fp.load_pack(LEGACY_DIR)
     monkeypatch.setattr(fp, "bundled_pack", lambda: demo)
-    assert fp.resolve_pack(None, Profile(data={})).name == "demo"
-    assert fp.resolve_pack().name == "demo"
+    assert fp.resolve_pack(None, Profile(data={})).name == "legacy_demo"
+    assert fp.resolve_pack().name == "legacy_demo"
 
 
 def test_a_named_pack_that_is_missing_never_falls_back(tmp_path):
@@ -187,7 +187,7 @@ def test_the_cli_reports_a_broken_recipes_document(tmp_path, capsys):
     root = _make_pack(tmp_path)
     recipes = root / "recipes.yaml"
     recipes.write_text(recipes.read_text().replace("unit: job_header", "unit: no_such_unit", 1))
-    sample = DEMO_DIR / "examples" / "demo-pipeline.estimate.yaml"
+    sample = LEGACY_DIR / "examples" / "demo-pipeline.estimate.yaml"
     assert main(["build", str(sample), "-o", str(tmp_path / "o.xlsx"), "--format", str(root)]) == 2
     assert "format pack error" in capsys.readouterr().err
 
@@ -241,12 +241,16 @@ def test_a_pack_declaring_summarize_states_its_own_crew_factor(monkeypatch):
     assert fp.bundled_pack().labor["crew_factor_default"] == 2
 
 
-def test_bundled_pack_is_the_demo_pack():
+def test_bundled_pack_is_the_fieldbook_pack():
     """The one deliberate exception to 'no test may depend on which pack is
     bundled': this test IS the assertion that the plugin's shipped default
-    is the generic demo pack, not any org's reference pack."""
+    is the generic fieldbook pack, authored from scratch -- not any org's
+    reference pack, and not the retired demo pack, which survives only as the
+    frozen legacy_demo test fixture."""
     pack = fp.bundled_pack()
-    assert pack.name == "demo"
+    assert pack.name == "fieldbook"
+    assert fp.BUNDLED == fp.ENGINE_DIR / "packs" / "fieldbook"
+    assert not (fp.ENGINE_DIR / "packs" / "demo").exists()
     assert "mob_item" not in (pack.recipes or {}).get("recipes", {})
 
 
@@ -427,7 +431,7 @@ def test_foreman_trade_is_required_of_a_pack_declaring_summarize(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_a_pack_loaded_by_path_is_chosen():
-    assert fp.load_pack(DEMO_DIR).chosen is True
+    assert fp.load_pack(LEGACY_DIR).chosen is True
 
 
 def test_the_bundled_fallback_is_not_chosen():
@@ -440,7 +444,7 @@ def test_the_bundled_fallback_is_not_chosen():
 def test_the_bundled_pack_named_explicitly_is_chosen():
     """--format pointing at the bundled pack is a choice like any other: the
     escape hatch require_chosen's message offers has to actually work."""
-    assert fp.resolve_pack(str(DEMO_DIR), None).chosen is True
+    assert fp.resolve_pack(str(fp.BUNDLED), None).chosen is True
 
 
 def test_a_profile_named_pack_is_chosen():
@@ -449,14 +453,14 @@ def test_a_profile_named_pack_is_chosen():
 
 
 def test_require_chosen_passes_a_named_pack():
-    fp.require_chosen(fp.load_pack(DEMO_DIR), "scaffold")
+    fp.require_chosen(fp.load_pack(LEGACY_DIR), "scaffold")
 
 
 def test_require_chosen_refuses_the_unchosen_fallback_naming_both_fixes():
     with pytest.raises(fp.FormatPackError) as exc:
         fp.require_chosen(fp.bundled_pack(), "scaffold")
     message = str(exc.value)
-    assert message.startswith("scaffold would use the bundled 'demo' pack")
+    assert message.startswith("scaffold would use the bundled 'fieldbook' pack")
     assert "ESTIMATING_PROFILES" in message and "--format" in message
 
 
@@ -468,3 +472,63 @@ def test_scaffold_verbs_are_not_supports_entries():
     assert set(fp._TOOLS) == {"summarize", "artifact"}
     for verb in ("scaffold", "apply-takeoff", "scaffold-save"):
         assert verb not in fp._TOOLS
+
+
+# ---------------------------------------------------------------------------
+# seed.rate_table_trades: a name (labor) or {trade, kind} (fieldbook phase 3b)
+# ---------------------------------------------------------------------------
+
+def test_seed_rate_trades_reads_names_and_kinds():
+    seed = {"rate_table_trades": ["Laborer", {"trade": "Loader", "kind": "equipment"},
+                                  {"trade": "Pipelayer", "kind": "labor"}]}
+    assert fp.seed_rate_trades(seed) == [
+        {"trade": "Laborer", "kind": "labor"}, {"trade": "Loader", "kind": "equipment"},
+        {"trade": "Pipelayer", "kind": "labor"}]
+    assert fp.seed_rate_trades({}) == []
+
+
+@pytest.mark.parametrize("bad", [
+    "Laborer",                                    # not a list
+    [3],                                          # neither a name nor a mapping
+    [""],                                         # a blank name
+    [{"kind": "equipment"}],                      # no trade
+    [{"trade": "Loader", "kind": "machine"}],     # an unknown kind
+    [{"trade": "Loader", "rate": 3}],             # an unknown key
+])
+def test_a_malformed_seed_rate_table_trades_is_refused(tmp_path, bad):
+    root = _edit_seed(_make_pack(tmp_path), lambda d: d.update(rate_table_trades=bad))
+    with pytest.raises(fp.FormatPackError, match=r"seed\.rate_table_trades"):
+        fp.load_pack(root)
+
+
+def test_a_seed_equipment_trade_loads(tmp_path):
+    root = _edit_seed(_make_pack(tmp_path), lambda d: d["rate_table_trades"].append(
+        {"trade": "Loader", "kind": "equipment"}))
+    assert fp.seed_rate_trades(fp.load_pack(root).seed)[-1] == {"trade": "Loader",
+                                                                "kind": "equipment"}
+
+
+@pytest.mark.parametrize("bad", [
+    "01-100",                                     # not a list
+    [{"description": "no code"}],                 # no code
+    [{"code": ""}],                               # a blank code
+    [{"code": "01-100", "name": "typo"}],         # an unknown key
+])
+def test_a_malformed_seed_cost_codes_is_refused(tmp_path, bad):
+    root = _edit_seed(_make_pack(tmp_path), lambda d: d.update(cost_codes=bad))
+    with pytest.raises(fp.FormatPackError, match=r"seed\.cost_codes"):
+        fp.load_pack(root)
+
+
+@pytest.mark.parametrize("bad", ["yes", 1, None])
+def test_a_non_boolean_rate_host_is_bid_recipe_is_refused(tmp_path, bad):
+    root = _edit_seed(_make_pack(tmp_path),
+                      lambda d: d["scaffold"].update(rate_host_is_bid_recipe=bad))
+    with pytest.raises(fp.FormatPackError, match=r"seed\.scaffold\.rate_host_is_bid_recipe"):
+        fp.load_pack(root)
+
+
+def test_only_fieldbook_declares_its_rate_host_recipe_a_bid_item_recipe():
+    assert fp.load_pack(fp.ENGINE_DIR / "packs" / "fieldbook").seed["scaffold"][
+        "rate_host_is_bid_recipe"] is True
+    assert "rate_host_is_bid_recipe" not in fp.load_pack(LEGACY_DIR).seed["scaffold"]

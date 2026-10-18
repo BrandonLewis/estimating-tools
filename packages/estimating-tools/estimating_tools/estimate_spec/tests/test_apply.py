@@ -27,13 +27,13 @@ from estimating_tools.estimate_spec.tests.test_scaffold import (
     sample_bridge_manifest, sample_bridge_structures)
 
 FIXTURES = Path(__file__).parent / "fixtures"
-DEMO_DIR = ENGINE_DIR / "packs" / "demo"
+LEGACY_DIR = ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
 ALT_DIR = FIXTURES / "packs" / "alt"
 
 
 @pytest.fixture(scope="module")
 def demo_pack():
-    return load_pack(DEMO_DIR)
+    return load_pack(LEGACY_DIR)
 
 
 @pytest.fixture(scope="module")
@@ -394,7 +394,7 @@ def test_real_sample_bridge_takeoff_matches_the_synthetic_numbers(alt_pack):
 # never silently clobber one spec item (last-wins qty overwrite)
 # ---------------------------------------------------------------------------
 
-def test_second_row_matching_same_item_flags_instead_of_clobbering():
+def test_second_row_matching_same_item_flags_instead_of_clobbering(demo_pack):
     spec = {"items": [{"item_no": "129", "qty": 0.0, "unit": "LF",
                        "recipe": "flat_item"}]}
     takeoff = CanonicalTakeoff(organization_id=1, project_ref="B1", rows=[])
@@ -405,7 +405,7 @@ def test_second_row_matching_same_item_flags_instead_of_clobbering():
         TakeoffRow(description="Drive pile", kind="quantity", quantity=1.0,
                    unit="EA", cost_code="PILE-200W-DRV", item_number="129"),
     ]
-    result = apply_takeoff(spec, takeoff, force=True)
+    result = apply_takeoff(spec, takeoff, force=True, pack=demo_pack)
     (item,) = result.spec["items"]
     assert item["qty"] == 41.0                       # first row applied…
     clashes = [r for r in result.unmatched_rows
@@ -413,3 +413,18 @@ def test_second_row_matching_same_item_flags_instead_of_clobbering():
     assert len(clashes) == 1                         # …second flagged, loudly
     assert clashes[0]["item_number"] == "129"
     assert clashes[0]["quantity"] == 1.0
+
+
+def test_apply_lists_a_fieldbook_lump_sum_bid_item_as_unmatched():
+    """fieldbook's rate_host_recipe is `lump_sum`, also the recipe of its real
+    lump-sum bid items: one no takeoff row matched is reported as unmatched;
+    only the scaffold-injected rate host is left out."""
+    pack = load_pack(ENGINE_DIR / "packs" / "fieldbook")
+    spec = {"items": [
+        {"item_no": "RATES", "qty": 0, "uom": "LS", "recipe": "lump_sum",
+         "description": "Rate table host (no mobilization item selected)",
+         "scaffold_meta": {"source": "scaffold:rate_host"}},
+        {"item_no": "1", "qty": 1, "uom": "LS", "recipe": "lump_sum",
+         "description": "Mobilization"}]}
+    result = apply_takeoff(spec, CanonicalTakeoff(organization_id=0, rows=[]), pack=pack)
+    assert result.unmatched_items == [{"item_no": "1", "description": "Mobilization"}]

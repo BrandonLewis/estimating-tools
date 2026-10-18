@@ -3770,11 +3770,11 @@
       "00000000"
      ],
      "font": [
-      "Calibri",
-      11.0,
+      "Arial",
+      8.0,
       false,
       false,
-      "theme:1",
+      "FF5B6770",
       null,
       false,
       null
@@ -3782,7 +3782,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": null
+     "v": "=IFERROR(INDEX('Codes'!$C$1:$C$5,MATCH(A11,'Codes'!$A$1:$A$5,0)),0)"
     },
     "S13": {
      "align": [
@@ -4101,7 +4101,7 @@
      "'Rates'!$A$5:$A$12"
     ]
    ],
-   "freeze_panes": null,
+   "freeze_panes": "A2",
    "hidden_columns": [
     "Q",
     "R",
@@ -4115,6 +4115,13 @@
     "B4:H4",
     "B5:H5"
    ],
+   "print": {
+    "fit_to_height": 0,
+    "fit_to_page": true,
+    "fit_to_width": 1,
+    "orientation": "landscape",
+    "title_rows": "$1:$1"
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -13322,11 +13329,11 @@
       "00000000"
      ],
      "font": [
-      "Calibri",
-      11.0,
+      "Arial",
+      8.0,
       false,
       false,
-      "theme:1",
+      "FF5B6770",
       null,
       false,
       null
@@ -13334,7 +13341,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": null
+     "v": "=IFERROR(INDEX('Codes'!$C$1:$C$5,MATCH(A18,'Codes'!$A$1:$A$5,0)),0)"
     },
     "S20": {
      "align": [
@@ -13560,11 +13567,11 @@
       "00000000"
      ],
      "font": [
-      "Calibri",
-      11.0,
+      "Arial",
+      8.0,
       false,
       false,
-      "theme:1",
+      "FF5B6770",
       null,
       false,
       null
@@ -13572,7 +13579,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": null
+     "v": "=IFERROR(INDEX('Codes'!$C$1:$C$5,MATCH(A30,'Codes'!$A$1:$A$5,0)),0)"
     },
     "S32": {
      "align": [
@@ -14708,7 +14715,7 @@
      "\"QUOTE,PLUG\""
     ]
    ],
-   "freeze_panes": null,
+   "freeze_panes": "A2",
    "hidden_columns": [
     "Q",
     "R",
@@ -14726,6 +14733,13 @@
     "B1:F1",
     "B30:J30"
    ],
+   "print": {
+    "fit_to_height": 0,
+    "fit_to_page": true,
+    "fit_to_width": 1,
+    "orientation": "landscape",
+    "title_rows": "$1:$1"
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -19245,11 +19259,11 @@
       "00000000"
      ],
      "font": [
-      "Calibri",
-      11.0,
+      "Arial",
+      8.0,
       false,
       false,
-      "theme:1",
+      "FF5B6770",
       null,
       false,
       null
@@ -19257,7 +19271,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": null
+     "v": "=IFERROR(INDEX('Codes'!$C$1:$C$5,MATCH(A15,'Codes'!$A$1:$A$5,0)),0)"
     },
     "S16": {
      "align": [
@@ -19702,7 +19716,7 @@
      "\"QUOTE,PLUG\""
     ]
    ],
-   "freeze_panes": null,
+   "freeze_panes": "A2",
    "hidden_columns": [
     "Q",
     "R",
@@ -19715,6 +19729,13 @@
     "B8:H8",
     "B9:H9"
    ],
+   "print": {
+    "fit_to_height": 0,
+    "fit_to_page": true,
+    "fit_to_width": 1,
+    "orientation": "landscape",
+    "title_rows": "$1:$1"
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -20833,11 +20854,18 @@
     ]
    ],
    "data_validations": [],
-   "freeze_panes": null,
+   "freeze_panes": "A4",
    "hidden_columns": [],
    "merges": [
     "A1:F1"
    ],
+   "print": {
+    "fit_to_height": 0,
+    "fit_to_page": true,
+    "fit_to_width": 1,
+    "orientation": "portrait",
+    "title_rows": "$1:$3"
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -21416,6 +21444,84 @@
      "locked": true,
      "nf": "General",
      "v": 8
+    },
+    "A35": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 9
+    },
+    "A36": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 9
+    },
+    "A37": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 9
     },
     "A5": {
      "align": [
@@ -22045,6 +22151,84 @@
      "nf": "General",
      "v": "No crew pairs an operator-included machine with an operator row"
     },
+    "B35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Every task's cost code is on the org's code list"
+    },
+    "B36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Every task's cost code is on the org's code list"
+    },
+    "B37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Every task's cost code is on the org's code list"
+    },
     "B5": {
      "align": [
       null,
@@ -22648,6 +22832,84 @@
      "v": 2
     },
     "C33": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 3
+    },
+    "C35": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
+    "C36": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "C37": {
      "align": [
       "center",
       null,
@@ -23301,6 +23563,84 @@
      "nf": "#,##0",
      "v": "=SUMIF('3 - VALVES'!$Q:$Q,\"SUBTOTAL\",'3 - VALVES'!$T:$T)"
     },
+    "D35": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": "=COUNTIF('1 - MOBILIZATION'!$Q:$Q,\"TASK\")"
+    },
+    "D36": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": "=COUNTIF('2 - 8IN MAIN'!$Q:$Q,\"TASK\")"
+    },
+    "D37": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": "=COUNTIF('3 - VALVES'!$Q:$Q,\"TASK\")"
+    },
     "D5": {
      "align": [
       null,
@@ -23903,6 +24243,84 @@
      "nf": "#,##0",
      "v": 0
     },
+    "E35": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": "=SUMIF('1 - MOBILIZATION'!$Q:$Q,\"TASK\",'1 - MOBILIZATION'!$S:$S)"
+    },
+    "E36": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": "=SUMIF('2 - 8IN MAIN'!$Q:$Q,\"TASK\",'2 - 8IN MAIN'!$S:$S)"
+    },
+    "E37": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0",
+     "v": "=SUMIF('3 - VALVES'!$Q:$Q,\"TASK\",'3 - VALVES'!$S:$S)"
+    },
     "E5": {
      "align": [
       null,
@@ -24504,6 +24922,84 @@
      "locked": true,
      "nf": "General",
      "v": "=IFERROR(IF(D33=0,\"\u2713\",\"\u2717\"),\"\u2717\")"
+    },
+    "F35": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IFERROR(IF(D35=E35,\"\u2713\",\"\u2717\"),\"\u2717\")"
+    },
+    "F36": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IFERROR(IF(D36=E36,\"\u2713\",\"\u2717\"),\"\u2717\")"
+    },
+    "F37": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IFERROR(IF(D37=E37,\"\u2713\",\"\u2717\"),\"\u2717\")"
     },
     "F5": {
      "align": [
@@ -25458,6 +25954,147 @@
      ]
     ],
     [
+     "F35",
+     [
+      [
+       "expression",
+       null,
+       [
+        "$F35=\"\u2713\""
+       ],
+       45,
+       null,
+       {
+        "fill": [
+         "FFE3F1E8",
+         "FFE3F1E8"
+        ],
+        "font": [
+         true,
+         false,
+         "FF1D7A46"
+        ],
+        "numFmt": null
+       }
+      ],
+      [
+       "expression",
+       null,
+       [
+        "$F35=\"\u2717\""
+       ],
+       46,
+       null,
+       {
+        "fill": [
+         "FFFBE4E2",
+         "FFFBE4E2"
+        ],
+        "font": [
+         true,
+         false,
+         "FFB42318"
+        ],
+        "numFmt": null
+       }
+      ]
+     ]
+    ],
+    [
+     "F36",
+     [
+      [
+       "expression",
+       null,
+       [
+        "$F36=\"\u2713\""
+       ],
+       47,
+       null,
+       {
+        "fill": [
+         "FFE3F1E8",
+         "FFE3F1E8"
+        ],
+        "font": [
+         true,
+         false,
+         "FF1D7A46"
+        ],
+        "numFmt": null
+       }
+      ],
+      [
+       "expression",
+       null,
+       [
+        "$F36=\"\u2717\""
+       ],
+       48,
+       null,
+       {
+        "fill": [
+         "FFFBE4E2",
+         "FFFBE4E2"
+        ],
+        "font": [
+         true,
+         false,
+         "FFB42318"
+        ],
+        "numFmt": null
+       }
+      ]
+     ]
+    ],
+    [
+     "F37",
+     [
+      [
+       "expression",
+       null,
+       [
+        "$F37=\"\u2713\""
+       ],
+       49,
+       null,
+       {
+        "fill": [
+         "FFE3F1E8",
+         "FFE3F1E8"
+        ],
+        "font": [
+         true,
+         false,
+         "FF1D7A46"
+        ],
+        "numFmt": null
+       }
+      ],
+      [
+       "expression",
+       null,
+       [
+        "$F37=\"\u2717\""
+       ],
+       50,
+       null,
+       {
+        "fill": [
+         "FFFBE4E2",
+         "FFFBE4E2"
+        ],
+        "font": [
+         true,
+         false,
+         "FFB42318"
+        ],
+        "numFmt": null
+       }
+      ]
+     ]
+    ],
+    [
      "F5",
      [
       [
@@ -25647,11 +26284,18 @@
     ]
    ],
    "data_validations": [],
-   "freeze_panes": null,
+   "freeze_panes": "A4",
    "hidden_columns": [],
    "merges": [
     "A1:F1"
    ],
+   "print": {
+    "fit_to_height": 0,
+    "fit_to_page": true,
+    "fit_to_width": 1,
+    "orientation": "portrait",
+    "title_rows": "$1:$3"
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -25779,6 +26423,32 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
+     "v": "02-300"
+    },
+    "A5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
      "v": "02-510"
     },
     "B1": {
@@ -25805,7 +26475,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "Mobilize crew and equipment"
+     "v": "Mobilization"
     },
     "B2": {
      "align": [
@@ -25831,7 +26501,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "Trench excavation & pipe laying"
+     "v": "Trench excavation and pipe laying"
     },
     "B3": {
      "align": [
@@ -25857,7 +26527,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "Backfill & compaction"
+     "v": "Backfill and compaction"
     },
     "B4": {
      "align": [
@@ -25883,7 +26553,163 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "Set valves and boxes"
+     "v": "Pavement restoration"
+    },
+    "B5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Valves and appurtenances"
+    },
+    "C1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
+    "C2": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
+    "C3": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
+    "C4": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
+    "C5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1F2933",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
     }
    },
    "conditional": [],
@@ -25891,6 +26717,13 @@
    "freeze_panes": null,
    "hidden_columns": [],
    "merges": [],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -25907,7 +26740,8 @@
    "sheet_state": "hidden",
    "widths": {
     "A": 12.0,
-    "B": 40.0
+    "B": 40.0,
+    "C": 8.0
    }
   },
   "Cost Summary": {
@@ -27860,11 +28694,18 @@
    },
    "conditional": [],
    "data_validations": [],
-   "freeze_panes": null,
+   "freeze_panes": "C3",
    "hidden_columns": [],
    "merges": [
     "A1:L1"
    ],
+   "print": {
+    "fit_to_height": 0,
+    "fit_to_page": true,
+    "fit_to_width": 1,
+    "orientation": "landscape",
+    "title_rows": "$1:$2"
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -29324,6 +30165,13 @@
     "A1:E1",
     "A9:C9"
    ],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -30737,11 +31585,18 @@
      "\"Yes,No\""
     ]
    ],
-   "freeze_panes": null,
+   "freeze_panes": "A5",
    "hidden_columns": [],
    "merges": [
     "A1:H1"
    ],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,

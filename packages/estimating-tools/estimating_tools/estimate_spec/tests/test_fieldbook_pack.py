@@ -176,14 +176,49 @@ def test_count_styled_cells_use_a_plain_general_format(wb):
     assert wb["Rates"]["B2"].number_format == "General"
 
 
-def test_the_codes_sheet_is_hidden_and_lists_every_task(wb):
+def _codes(ws) -> list:
+    return [(ws[f"A{r}"].value, ws[f"B{r}"].value, ws[f"C{r}"].value)
+            for r in range(1, ws.max_row + 1)]
+
+
+def test_the_codes_sheet_is_hidden_and_lists_the_org_code_list(wb):
+    """The example carries the org's list (`cost_codes`, the seed's five);
+    every task code is on it, so nothing is appended. C = on the org list."""
     ws = wb["Codes"]
     assert ws.sheet_state == "hidden"
-    assert [(ws[f"A{r}"].value, ws[f"B{r}"].value) for r in range(1, 5)] == [
-        ("01-100", "Mobilize crew and equipment"),
-        ("02-100", "Trench excavation & pipe laying"),
-        ("02-200", "Backfill & compaction"),
-        ("02-510", "Set valves and boxes")]
+    assert _codes(ws) == [
+        ("01-100", "Mobilization", 1),
+        ("02-100", "Trench excavation and pipe laying", 1),
+        ("02-200", "Backfill and compaction", 1),
+        ("02-300", "Pavement restoration", 1),
+        ("02-510", "Valves and appurtenances", 1)]
+
+
+def test_a_task_code_off_the_org_list_follows_it_once():
+    spec = example_spec()
+    spec["cost_codes"] = spec["cost_codes"][:2]                  # 01-100, 02-100
+    spec["items"][2]["labor"][0]["cost_code"] = "02-200"         # two tasks now share 02-200
+    assert _codes(build(spec)["Codes"]) == [
+        ("01-100", "Mobilization", 1),
+        ("02-100", "Trench excavation and pipe laying", 1),
+        ("02-200", "Backfill & compaction", 0)]                  # the first task's description
+
+
+def test_without_an_org_list_the_codes_sheet_lists_each_task_code_once():
+    spec = example_spec()
+    del spec["cost_codes"]
+    spec["items"][2]["labor"][0]["cost_code"] = "02-100"         # item 3 reuses item 2's code
+    assert _codes(build(spec)["Codes"]) == [
+        ("01-100", "Mobilize crew and equipment", 0),
+        ("02-100", "Trench excavation & pipe laying", 0),
+        ("02-200", "Backfill & compaction", 0)]
+
+
+def test_a_task_header_looks_its_code_up_on_the_org_list(wb):
+    ws = wb[ITEM2]
+    (head,) = task_block(ws, "02-100")["TASK"]
+    assert ws[f"{OK}{head}"].value == (
+        f"=IFERROR(INDEX('Codes'!$C$1:$C$5,MATCH(A{head},'Codes'!$A$1:$A$5,0)),0)")
 
 
 # ---------------------------------------------------------------- takeoff
@@ -651,7 +686,8 @@ def test_the_checks_sheet_has_one_row_per_rule_and_item(wb):
     for r in rows:
         per_rule.setdefault(ws[f"A{r}"].value, []).append(ws[f"C{r}"].value)
     assert per_rule == {1: [1, 2, 3], 2: [1, 2, 3], 3: [1, 2, 3], 4: ["all"],
-                        5: [1, 2, 3], 6: [1, 2, 3], 7: [1, 2, 3], 8: [1, 2, 3]}
+                        5: [1, 2, 3], 6: [1, 2, 3], 7: [1, 2, 3], 8: [1, 2, 3],
+                        9: [1, 2, 3]}
     assert all(ws[f"F{r}"].value.startswith("=IFERROR(IF(") for r in rows)
     cf = {str(c.sqref): [rule.formula for rule in c.rules] for c in ws.conditional_formatting}
     assert sorted(cf) == sorted(f"F{r}" for r in rows)
@@ -805,3 +841,61 @@ def test_the_example_workbook_matches_its_golden_snapshot():
     assert golden["order"] == ["Bid Form", "Cost Summary", "Markup", "Checks", "Rates", "Codes", *ITEMS]
     assert len(golden["sheets"][ITEM2]["cells"]) > 300
     assert got == golden
+
+
+def test_the_seed_names_only_resources_the_vocabulary_permits():
+    from estimating_tools.estimate_spec.format_pack import seed_rate_trades
+
+    pack = fieldbook_pack()
+    trades = set(pack.vocabulary["trades"])
+    assert {t["trade"] for t in seed_rate_trades(pack.seed)} <= trades
+    assert {m["trade"] for crew in pack.seed["crews"] for m in crew["members"]} <= trades
+    assert {m["trade"] for m in pack.seed["default_crew"]} <= trades
+
+
+def test_check_9_compares_task_headers_with_their_org_list_flags(wb):
+    ws = wb["Checks"]
+    (r,) = [r for r in _check_rows(ws) if (ws[f"A{r}"].value, ws[f"C{r}"].value) == (9, 2)]
+    item = "'2 - 8IN MAIN'"
+    assert ws[f"B{r}"].value == "Every task's cost code is on the org's code list"
+    assert ws[f"D{r}"].value == f'=COUNTIF({item}!$Q:$Q,"TASK")'
+    assert ws[f"E{r}"].value == f'=SUMIF({item}!$Q:$Q,"TASK",{item}!$S:$S)'
+
+
+def test_without_an_org_list_there_is_no_check_9():
+    spec = example_spec()
+    del spec["cost_codes"]
+    ws = build(spec)["Checks"]
+    assert 9 not in {ws[f"A{r}"].value for r in _check_rows(ws)}
+
+
+# ---------------------------------------------------------------- freeze + print
+
+def test_the_bid_form_prints_one_page_wide_under_its_column_heads(wb):
+    ws = wb["Bid Form"]
+    assert ws.freeze_panes == "A4"                           # project, bid date, heads stay put
+    assert ws.page_setup.orientation == "portrait"
+    assert ws.sheet_properties.pageSetUpPr.fitToPage is True
+    assert (ws.page_setup.fitToWidth, ws.page_setup.fitToHeight) == (1, 0)
+    assert ws.print_title_rows == "$1:$3"
+
+
+def test_item_sheets_freeze_their_header_band_and_print_landscape(wb):
+    for name in ITEMS:
+        ws = wb[name]
+        assert ws.freeze_panes == "A2", name                 # item #, description, bid qty
+        assert ws.page_setup.orientation == "landscape", name
+        assert ws.sheet_properties.pageSetUpPr.fitToPage is True, name
+        assert (ws.page_setup.fitToWidth, ws.page_setup.fitToHeight) == (1, 0), name
+        assert ws.print_title_rows == "$1:$1", name
+
+
+def test_the_other_book_sheets_freeze_their_column_heads(wb):
+    assert {s: wb[s].freeze_panes for s in ("Cost Summary", "Markup", "Checks", "Rates", "Codes")} == {
+        "Cost Summary": "C3", "Markup": None, "Checks": "A4", "Rates": "A5", "Codes": None}
+    for name, orientation, rows in (("Cost Summary", "landscape", "$1:$2"),
+                                    ("Checks", "portrait", "$1:$3")):
+        ws = wb[name]
+        assert ws.page_setup.orientation == orientation, name
+        assert (ws.page_setup.fitToWidth, ws.page_setup.fitToHeight) == (1, 0), name
+        assert ws.print_title_rows == rows, name

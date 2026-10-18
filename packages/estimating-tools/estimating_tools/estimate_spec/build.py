@@ -12,8 +12,12 @@ sheet that had not yet been laid out when the referring cell was placed.
 from __future__ import annotations
 
 import argparse
+import datetime
+import hashlib
+import json
 import re
 import sys
+from collections.abc import Mapping
 from importlib.metadata import entry_points
 from pathlib import Path
 
@@ -23,6 +27,7 @@ from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection, Side
 from openpyxl.utils import column_index_from_string, get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.properties import PageSetupProperties
 
 from estimating_tools.estimate_spec import recipe as R
 
@@ -369,8 +374,11 @@ class StyleFactory:
             cell.protection = protection
 
 
-def _coerce(text):
-    """Resolved string -> formula / date / number / text for openpyxl."""
+def coerce_cell_value(text):
+    """Resolved string -> formula / date / number / text for openpyxl.
+
+    Public: read-back compares a workbook cell with what this wrote for a spec
+    value, so it must use the same conversion."""
     if not isinstance(text, str):
         return text
     if text.startswith("="):
@@ -388,6 +396,29 @@ def _coerce(text):
         return float(text)
     except ValueError:
         return text
+
+
+#: The old private name, kept so existing callers and tests keep working.
+_coerce = coerce_cell_value
+
+
+def _sheet_setup(ws, sdef: dict) -> None:
+    """A recipe's or book sheet's `freeze:` and `print:` (validated at load
+    by recipe.validate_recipes); a sheet that sets neither is untouched."""
+    if "freeze" in sdef:
+        ws.freeze_panes = sdef["freeze"]
+    page = sdef.get("print")
+    if not page:
+        return
+    if "orientation" in page:
+        ws.page_setup.orientation = page["orientation"]
+    if "fit_to_width" in page:
+        # N pages wide, as many pages tall as it takes (0 = unlimited).
+        ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+        ws.page_setup.fitToWidth = page["fit_to_width"]
+        ws.page_setup.fitToHeight = 0
+    if "repeat_rows" in page:
+        ws.print_title_rows = page["repeat_rows"]
 
 
 def _matches(element, wanted):
@@ -925,6 +956,7 @@ class EstimateBuilder:
             ws.column_dimensions[col].width = width
         for col in recipe.get("hidden_columns") or []:
             ws.column_dimensions[col].hidden = True
+        _sheet_setup(ws, recipe)
 
         cols = sorted(recipe.get("column_widths") or {}, key=column_index_from_string)
         if cols:
@@ -1000,6 +1032,7 @@ class EstimateBuilder:
                 self.wb[sheet].column_dimensions[col].hidden = True
             if sdef.get("hidden"):
                 self.wb[sheet].sheet_state = "hidden"
+            _sheet_setup(self.wb[sheet], sdef)
             cols = sorted(widths, key=column_index_from_string)
             if cols:
                 self.fill_span[sheet] = (cols[0], cols[-1])
@@ -1300,12 +1333,43 @@ class EstimateBuilder:
         return self.wb
 
 
+def _canonical(v):
+    """`v` as plain JSON data: mappings of str keys, lists, and scalars --
+    whatever mapping/sequence/scalar subclasses the loader produced (PyYAML's
+    dicts, ruamel.yaml's round-trip types) and dates as ISO text."""
+    if isinstance(v, Mapping):
+        return {str(k): _canonical(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_canonical(x) for x in v]
+    if v is None or isinstance(v, bool):
+        return v
+    if isinstance(v, int):
+        return int(v)
+    if isinstance(v, float):
+        return float(v)
+    if isinstance(v, (datetime.date, datetime.datetime)):
+        return v.isoformat()
+    return str(v)
+
+
+def spec_fingerprint(config) -> str:
+    """sha256 of the spec's data (a canonical JSON dump, keys sorted) -- the
+    `estimate_spec_sha` stamp, so read-back can tell a workbook built from
+    this very spec from one built before the spec last changed."""
+    text = json.dumps(_canonical(config), sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def generate(config, pack=None, *, stamp=True):
     """Render an estimate workbook (openpyxl Workbook) from a config in a format pack.
 
     `pack` defaults to the bundled pack. With `stamp`, the workbook carries the
     pack's name and version as the custom property `estimate_format`, so any
-    .xlsx traces to the format that produced it.
+    .xlsx traces to the format that produced it, and the spec's own
+    fingerprint as `estimate_spec_sha` (`spec_fingerprint`, taken before
+    anything reads the config), so read-back can refuse a workbook built
+    from an older version of the spec.
 
     A pack that sets `strict: true` in its manifest also gets its composed
     schema checked here, before anything is laid out -- the same jsonschema
@@ -1317,6 +1381,7 @@ def generate(config, pack=None, *, stamp=True):
     from openpyxl.packaging.custom import StringProperty
 
     from estimating_tools.estimate_spec.format_pack import bundled_pack
+    fingerprint = spec_fingerprint(config) if stamp else None
     effective_pack = pack or bundled_pack()
     if effective_pack.strict:
         import jsonschema
@@ -1333,6 +1398,7 @@ def generate(config, pack=None, *, stamp=True):
     if stamp:
         wb.custom_doc_props.append(StringProperty(
             name="estimate_format", value=f"{builder.pack.name} {builder.pack.version}"))
+        wb.custom_doc_props.append(StringProperty(name="estimate_spec_sha", value=fingerprint))
     return wb
 
 

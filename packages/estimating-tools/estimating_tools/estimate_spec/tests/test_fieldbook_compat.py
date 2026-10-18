@@ -116,3 +116,63 @@ def test_cli_build_refuses_the_same_specs_with_a_nonzero_exit(tmp_path, capsys):
         assert rc != 0
         assert "schema violation" in capsys.readouterr().err
         assert not (tmp_path / f"{key}.xlsx").exists()
+
+
+def test_a_scaffolded_fieldbook_rate_table_carries_the_seeds_equipment_kinds():
+    pack = fieldbook_pack()
+    spec = _scaffolded(pack).spec
+    assert spec["rate_table"] == [
+        {"trade": "Superintendent", "rate": 0},
+        {"trade": "Equipment Operator", "rate": 0},
+        {"trade": "Laborer", "rate": 0},
+        {"trade": "Pipelayer", "rate": 0},
+        {"trade": "Excavator, 320 class", "rate": 0, "kind": "equipment"},
+        {"trade": "Loader, 950 class", "rate": 0, "kind": "equipment"},
+        {"trade": "Plate compactor", "rate": 0, "kind": "equipment"}]
+    rates = generate(spec, pack)["Rates"]
+    shown = {rates[f"A{r}"].value: rates[f"B{r}"].value for r in range(1, rates.max_row + 1)}
+    assert shown["Laborer"] == "Labor"
+    assert shown["Excavator, 320 class"] == shown["Plate compactor"] == "Equipment"
+
+
+def test_a_compact_new_row_stubs_an_item_the_fieldbook_schema_accepts():
+    """compact's new-row stub carries the pack's skeleton task when the pack
+    requires one (fieldbook: every item needs a task with a cost code); an
+    empty `labor: []` would fail fieldbook's own schema."""
+    pack = fieldbook_pack()
+    spec = example_spec()
+    new_row = "| - | - | - | - | 4 | Traffic control | - | - | - | LS | - |"
+    parsed = parse_compact(render_compact(spec) + "\n" + new_row,
+                           base_spec=copy.deepcopy(spec), pack=pack)
+    stub = parsed["items"][-1]
+    assert (stub["item_no"], stub["recipe"], stub["sheet"]) == ("4", "lump_sum", "4")
+    assert stub["labor"] == [{"slot": "01", "description": "(fill in)",
+                              "crew": [{"trade": "Laborer", "count": 2, "days": 0}],
+                              "cost_code": "01-100"}]
+    validate_spec(parsed, pack=pack)
+    assert "4" in generate(parsed, pack).sheetnames
+
+
+def test_a_scaffolded_fieldbook_spec_carries_the_seeds_code_list():
+    pack = fieldbook_pack()
+    spec = _scaffolded(pack).spec
+    assert [c["code"] for c in spec["cost_codes"]] == [
+        "01-100", "02-100", "02-200", "02-300", "02-510"]
+
+
+# ---------------------------------------------------------------- the bundled default
+
+def test_with_no_pack_named_build_lays_out_fieldbook(tmp_path, monkeypatch):
+    """What an estimator gets with no org pack: no --format, no profile ->
+    the bundled pack, which is fieldbook (phase 3b)."""
+    import openpyxl
+
+    from estimating_tools.estimate_spec.cli import main
+    from estimating_tools.estimate_spec.tests._fieldbook import EXAMPLE
+
+    monkeypatch.delenv("ESTIMATING_PROFILES", raising=False)
+    out = tmp_path / "bid.xlsx"
+    assert main(["build", str(EXAMPLE), "-o", str(out)]) == 0
+    wb = openpyxl.load_workbook(out)
+    assert wb.sheetnames[:6] == ["Bid Form", "Cost Summary", "Markup", "Checks", "Rates", "Codes"]
+    assert {p.name: p.value for p in wb.custom_doc_props.props}["estimate_format"] == "fieldbook 1"

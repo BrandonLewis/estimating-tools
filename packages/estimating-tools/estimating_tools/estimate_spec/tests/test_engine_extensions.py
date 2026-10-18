@@ -1149,3 +1149,120 @@ def test_a_ref_error_template_that_itself_fails_to_resolve_raises_a_recipe_error
 ])
 def test_coerce_keeps_a_leading_zero_padded_number_as_text(text, expected):
     assert B._coerce(text) == expected
+
+
+# ---- freeze panes and print setup (fieldbook phase 3b) ---------------------
+
+def test_a_recipe_may_freeze_panes_and_set_up_printing(tmp_path):
+    def recipes(doc):
+        doc["recipes"]["line_item"]["freeze"] = "A3"
+        doc["recipes"]["line_item"]["print"] = {
+            "orientation": "landscape", "fit_to_width": 1, "repeat_rows": "1:2"}
+
+    wb = B.generate(legacy_example(), patched_pack(tmp_path, recipes=recipes))
+    ws = wb["2 - 8IN MAIN"]
+    assert ws.freeze_panes == "A3"
+    assert ws.page_setup.orientation == "landscape"
+    assert ws.sheet_properties.pageSetUpPr.fitToPage is True
+    assert (ws.page_setup.fitToWidth, ws.page_setup.fitToHeight) == (1, 0)
+    assert ws.print_title_rows == "$1:$2"                  # openpyxl stores the rows absolute
+    setup = wb["SETUP"]                                    # the setup recipe sets neither
+    assert setup.freeze_panes is None
+    assert setup.page_setup.orientation is None
+    assert setup.print_title_rows is None
+
+
+def test_a_book_sheet_may_freeze_panes_and_set_up_printing(tmp_path):
+    def recipes(doc):
+        _book_recipes(doc)
+        doc["book"][0]["freeze"] = "B2"
+        doc["book"][0]["print"] = {"orientation": "portrait", "fit_to_width": 1}
+
+    wb = B.generate(legacy_example(), patched_pack(tmp_path, units=_book_units, recipes=recipes))
+    front, back = wb["Front"], wb["Back"]
+    assert front.freeze_panes == "B2"
+    assert front.page_setup.orientation == "portrait"
+    assert (front.page_setup.fitToWidth, front.page_setup.fitToHeight) == (1, 0)
+    assert front.print_title_rows is None                  # no repeat_rows given
+    assert back.freeze_panes is None and back.page_setup.orientation is None
+
+
+def test_freeze_and_print_survive_save_and_reload(tmp_path):
+    def recipes(doc):
+        doc["recipes"]["line_item"]["freeze"] = "A2"
+        doc["recipes"]["line_item"]["print"] = {
+            "orientation": "landscape", "fit_to_width": 2, "repeat_rows": "1:1"}
+
+    path = tmp_path / "out.xlsx"
+    B.generate(legacy_example(), patched_pack(tmp_path, recipes=recipes)).save(path)
+    ws = openpyxl.load_workbook(path)["2 - 8IN MAIN"]
+    assert ws.freeze_panes == "A2"
+    assert ws.page_setup.orientation == "landscape"
+    assert ws.sheet_properties.pageSetUpPr.fitToPage is True
+    assert (ws.page_setup.fitToWidth, ws.page_setup.fitToHeight) == (2, 0)
+    assert ws.print_title_rows == "$1:$1"
+
+
+@pytest.mark.parametrize("bad, match", [
+    ({"freeze": "a3"}, "freeze must be a cell reference"),
+    ({"freeze": "A0"}, "freeze must be a cell reference"),
+    ({"freeze": 3}, "freeze must be a cell reference"),
+    ({"freeze": "ZZZ2"}, "freeze 'ZZZ2' is past Excel's last column, XFD"),
+    ({"print": "landscape"}, "print must be a mapping"),
+    ({"print": {}}, "print must be a mapping"),
+    ({"print": {"paper": "A4"}}, r"print: unknown keys \['paper'\]"),
+    ({"print": {"orientation": "sideways"}}, "print orientation must be portrait or landscape"),
+    ({"print": {"fit_to_width": 0}}, "print fit_to_width must be a whole number of pages"),
+    ({"print": {"fit_to_width": True}}, "print fit_to_width must be a whole number of pages"),
+    ({"print": {"repeat_rows": "3"}}, "print repeat_rows must be"),
+    ({"print": {"repeat_rows": "3:1"}}, "print repeat_rows must be"),
+    ({"print": {"repeat_rows": "0:2"}}, "print repeat_rows must be"),
+])
+def test_malformed_freeze_or_print_is_refused_at_load(tmp_path, bad, match):
+    def recipes(doc):
+        doc["recipes"]["line_item"].update(bad)
+
+    with pytest.raises(fp.FormatPackError, match=r"recipes\.line_item: " + match):
+        patched_pack(tmp_path / "r", recipes=recipes)
+
+    def book(doc):
+        _book_recipes(doc)
+        doc["book"][0].update(bad)
+
+    with pytest.raises(fp.FormatPackError, match=r"book\[0\]: " + match):
+        patched_pack(tmp_path / "b", units=_book_units, recipes=book)
+
+
+# ---- concat / unique are checked at load (fieldbook phase 3b review) -------
+
+@pytest.mark.parametrize("params, match", [
+    ({"codes": {"concat": [], "sort": "code"}}, r"params\.codes: concat: unknown keys \['sort'\]"),
+    ({"codes": {"concat": [], "unique": ""}}, r"params\.codes: concat: unique must be"),
+    ({"codes": {"concat": [], "unique": 3}}, r"params\.codes: concat: unique must be"),
+    ({"codes": {"unique": "code", "for_each": "config.items", "as": "{it}"}},
+     r"params\.codes: unique: needs concat:"),
+    ({"codes": {"concat": [{"concat": [], "uniq": "code"}]}},
+     r"params\.codes\.concat\[0\]: concat: unknown keys \['uniq'\]"),
+])
+def test_a_malformed_concat_param_is_refused_at_load(tmp_path, params, match):
+    def recipes(doc):
+        units = doc["recipes"]["line_item"]["units"]
+        units.append({"unit": units[1]["unit"], "key": "concat_probe", "params": params})
+
+    with pytest.raises(fp.FormatPackError, match=r"recipes\.line_item\[\d+\]: " + match):
+        patched_pack(tmp_path, recipes=recipes)
+
+
+def test_a_well_formed_concat_param_loads(tmp_path):
+    def recipes(doc):
+        units = doc["recipes"]["line_item"]["units"]
+        units.append({"unit": units[1]["unit"], "key": "concat_probe", "params": {
+            "codes": {"unique": True, "concat": [["a"], {"concat": [], "unique": "code"}]}}})
+
+    patched_pack(tmp_path, recipes=recipes)            # must not raise
+
+
+def test_every_shipped_and_fixture_pack_passes_the_concat_check():
+    for root in (fp.BUNDLED, fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo",
+                 fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "alt"):
+        fp.load_pack(root)

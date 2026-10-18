@@ -12,8 +12,8 @@ from estimating_tools.estimate_spec import build as B
 from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.estimate_spec.scaffold import scaffold_spec, validate_spec
 
-DEMO_DIR = fp.ENGINE_DIR / "packs" / "demo"
-EXAMPLE = DEMO_DIR / "examples" / "demo-pipeline.estimate.yaml"
+LEGACY_DIR = fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
+EXAMPLE = LEGACY_DIR / "examples" / "demo-pipeline.estimate.yaml"
 GOLDEN = fp.ENGINE_DIR / "tests" / "fixtures" / "demo-pipeline.golden.json"
 
 ALT_DIR = Path(__file__).resolve().parent / "fixtures" / "packs" / "alt"
@@ -22,7 +22,7 @@ ALT_EXAMPLE = ALT_DIR / "examples" / "sample.estimate.yaml"
 
 @pytest.fixture(scope="module")
 def demo():
-    return fp.load_pack(DEMO_DIR)
+    return fp.load_pack(LEGACY_DIR)
 
 
 @pytest.fixture(scope="module")
@@ -104,8 +104,9 @@ def test_the_demo_golden(demo):
 
 # ---- A2: extra tools refuse a pack that does not declare support ----------
 #
-# The demo pack stays the pack that declares no capabilities, so refusal is
-# still exercised: `summarize`/`artifact` refuse a pack that never opted in.
+# The legacy_demo fixture (the retired demo pack, frozen) declares no
+# capabilities, so refusal is still exercised: `summarize`/`artifact` refuse a
+# pack that never opted in.
 # The alt pack is the fixture that DOES opt in (its format.yaml declares
 # `supports: [summarize, artifact]`) — it's the only pack left, once the
 # reference pack departs, that can prove those two capability-gated modules
@@ -125,7 +126,7 @@ def test_alt_pack_declares_its_own_crew_factor_default(alt):
 
 def test_summarize_refuses_a_pack_that_does_not_support_it(demo):
     from estimating_tools.estimate_spec.summarize import summarize
-    with pytest.raises(fp.FormatPackError, match="pack 'demo' does not support summarize"):
+    with pytest.raises(fp.FormatPackError, match="pack 'legacy_demo' does not support summarize"):
         summarize(_example(), pack=demo)
 
 
@@ -140,7 +141,7 @@ def test_summarize_prices_the_alt_pack(alt):
 
 def test_cli_summarize_refuses_a_pack_that_does_not_support_it(capsys):
     from estimating_tools.estimate_spec.cli import main
-    assert main(["summarize", str(EXAMPLE), "--format", str(DEMO_DIR)]) == 2
+    assert main(["summarize", str(EXAMPLE), "--format", str(LEGACY_DIR)]) == 2
     captured = capsys.readouterr()
     assert "format pack error" in captured.err
     assert "does not support summarize" in captured.err
@@ -155,7 +156,7 @@ def test_cli_summarize_prices_the_alt_pack(capsys):
 
 def test_the_artifact_parser_refuses_a_pack_that_does_not_support_it(demo):
     from estimating_tools.estimate_spec.artifact import parse_item
-    with pytest.raises(fp.FormatPackError, match="pack 'demo' does not support artifact"):
+    with pytest.raises(fp.FormatPackError, match="pack 'legacy_demo' does not support artifact"):
         parse_item("## Metadata\n", item_no="1", pack=demo)
 
 

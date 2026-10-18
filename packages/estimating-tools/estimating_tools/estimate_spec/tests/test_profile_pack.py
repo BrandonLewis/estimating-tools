@@ -15,17 +15,17 @@ from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.estimate_spec.cli import main
 
 ES = Path(fp.__file__).resolve().parent
-DEMO_DIR = ES / "packs" / "demo"
-SAMPLE = DEMO_DIR / "examples" / "demo-pipeline.estimate.yaml"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
+SAMPLE = LEGACY_DIR / "examples" / "demo-pipeline.estimate.yaml"
 
 
 def _profile(tmp_path: Path, extra: str = "") -> Path:
     """A real profile directory whose estimating.format names a copied pack."""
     prof = tmp_path / "org"
-    shutil.copytree(DEMO_DIR, prof / "packs" / "mine", ignore=shutil.ignore_patterns(
+    shutil.copytree(LEGACY_DIR, prof / "packs" / "mine", ignore=shutil.ignore_patterns(
         "*.py", "__pycache__", "tests", "examples", "packs"))
     manifest = prof / "packs" / "mine" / "format.yaml"
-    manifest.write_text(manifest.read_text().replace("name: demo", "name: mine"))
+    manifest.write_text(manifest.read_text().replace("name: legacy_demo", "name: mine"))
     (prof / "profile.yaml").write_text(
         "estimating:\n  format: packs/mine\n" + extra, encoding="utf-8")
     return prof
@@ -80,11 +80,11 @@ def test_no_profiles_configured_uses_the_bundled_pack(tmp_path, monkeypatch):
     redirecting the bundled pack to the demo pack rather than depending on
     whichever pack format_pack.py bundles today."""
     monkeypatch.delenv("ESTIMATING_PROFILES", raising=False)
-    demo = fp.load_pack(DEMO_DIR)
+    demo = fp.load_pack(LEGACY_DIR)
     monkeypatch.setattr(fp, "bundled_pack", lambda: demo)
     rc, out = _build(tmp_path)
     assert rc == 0
-    assert _stamp(out) == "demo 1"
+    assert _stamp(out) == "legacy_demo 1"
 
 
 def test_one_layers_dropped_format_is_not_masked_by_another(tmp_path, monkeypatch, capsys):

@@ -13,8 +13,8 @@ from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.estimate_spec.cli import main
 
 ES = Path(fp.__file__).resolve().parent
-DEMO_DIR = ES / "packs" / "demo"
-SAMPLE = DEMO_DIR / "examples" / "demo-pipeline.estimate.yaml"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
+SAMPLE = LEGACY_DIR / "examples" / "demo-pipeline.estimate.yaml"
 
 
 def _config():
@@ -28,14 +28,15 @@ def _cells(wb):
 
 
 def _demo_pack() -> fp.FormatPack:
-    return fp.load_pack(DEMO_DIR)
+    return fp.load_pack(LEGACY_DIR)
 
 
 def _copy_pack(tmp_path: Path) -> Path:
     root = tmp_path / "copy"
-    shutil.copytree(DEMO_DIR, root, ignore=shutil.ignore_patterns(
+    shutil.copytree(LEGACY_DIR, root, ignore=shutil.ignore_patterns(
         "*.py", "__pycache__", "tests", "examples", "packs"))
-    text = (root / "format.yaml").read_text().replace("name: demo", "name: copy")
+    text = (root / "format.yaml").read_text().replace("name: legacy_demo", "name: copy")
+    assert "name: copy" in text            # the copy is its own pack, not the fixture by name
     (root / "format.yaml").write_text(text)
     return root
 
@@ -72,7 +73,7 @@ def test_rendering_does_not_mutate_the_cached_pack():
 def test_the_workbook_names_its_format():
     wb = B.generate(_config(), _demo_pack())
     props = {p.name: p.value for p in wb.custom_doc_props.props}
-    assert props["estimate_format"] == "demo 1"
+    assert props["estimate_format"] == "legacy_demo 1"
 
 
 def test_the_stamp_is_suppressible():

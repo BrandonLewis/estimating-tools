@@ -7,13 +7,13 @@ from estimating_tools.estimate_spec.artifact import find_item, replace_item
 from estimating_tools.estimate_spec import format_pack as fp
 
 
-DEMO_DIR = fp.ENGINE_DIR / "packs" / "demo"
+LEGACY_DIR = fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
 ALT_DIR = Path(__file__).resolve().parent / "fixtures" / "packs" / "alt"
 
 
 @pytest.fixture(scope="module")
 def demo_pack():
-    return fp.load_pack(DEMO_DIR)
+    return fp.load_pack(LEGACY_DIR)
 
 
 @pytest.fixture(autouse=True)

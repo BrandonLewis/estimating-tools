@@ -6,6 +6,8 @@ globals:
   rate_table:  { export: rates.table,       scope: workbook, qualify: sheet }
   rate_names:  { export: rates.names,       scope: workbook, qualify: sheet }
   code_list:   { export: code_list.col,     scope: workbook, qualify: sheet }
+  code_range:  { export: code_rows.codes,   scope: workbook, qualify: sheet }
+  code_listed: { export: code_rows.listed,  scope: workbook, qualify: sheet }
   mk_labor:    { export: markup_grid.labor, scope: workbook, qualify: sheet }
   mk_equip:    { export: markup_grid.equip, scope: workbook, qualify: sheet }
   mk_matl:     { export: markup_grid.matl,  scope: workbook, qualify: sheet }
@@ -18,6 +20,8 @@ recipes:
       { A: 34, B: 10, C: 7, D: 11, E: 11, F: 13, G: 10, H: 12, I: 10, J: 24,
         K: 8, L: 12, M: 12, N: 12, O: 12, P: 13, Q: 10, R: 10, S: 6, T: 6 }
     hidden_columns: &tags [Q, R, S, T]
+    freeze: A2                         # the header band (item #, description, bid qty) stays put
+    print: &item_print { orientation: landscape, fit_to_width: 1, repeat_rows: "1:1" }
     units:
       - unit: item_header
         params:
@@ -66,6 +70,8 @@ recipes:
   lump_sum:
     column_widths: *widths
     hidden_columns: *tags
+    freeze: A2
+    print: *item_print
     units:
       - unit: item_header
         params:
@@ -88,6 +94,8 @@ book:
   - sheet_name: Bid Form
     position: before_items
     column_widths: { A: 10, B: 40, C: 12, D: 8, E: 14, F: 16 }
+    freeze: A4                         # project, bid date and column heads stay put
+    print: { orientation: portrait, fit_to_width: 1, repeat_rows: "1:3" }   # one page wide
     units:
       - unit: bid_form_head
         params:
@@ -107,6 +115,8 @@ book:
   - sheet_name: Cost Summary
     position: before_items
     column_widths: { A: 8, B: 34, C: 8, D: 12, E: 12, F: 12, G: 12, H: 13, I: 12, J: 12, K: 12, L: 14 }
+    freeze: C3                         # column heads, item # and description stay put
+    print: { orientation: landscape, fit_to_width: 1, repeat_rows: "1:2" }
     units:
       - unit: cost_summary_head
       - unit: cost_summary_row
@@ -158,6 +168,8 @@ book:
   - sheet_name: Checks
     position: before_items
     column_widths: { A: 5, B: 56, C: 8, D: 14, E: 14, F: 9 }
+    freeze: A4
+    print: { orientation: portrait, fit_to_width: 1, repeat_rows: "1:3" }
     units:
       - unit: checks_head
       - { unit: check_takeoff,  for_each: book.items, key: "ck1[{it.item_no}]", params: &check_item { item_no: "{it.item_no}", sheet: "{it.sheet}" } }
@@ -168,10 +180,12 @@ book:
       - { unit: check_bid_form, for_each: book.items, key: "ck6[{it.item_no}]", params: *check_item }
       - { unit: check_codes,    for_each: book.items, key: "ck7[{it.item_no}]", params: *check_item }
       - { unit: check_operator, for_each: book.items, key: "ck8[{it.item_no}]", params: *check_item }
+      - { unit: check_code_list, when: config.cost_codes, for_each: book.items, key: "ck9[{it.item_no}]", params: *check_item }
 
   - sheet_name: Rates
     position: before_items
     column_widths: { A: 30, B: 11, C: 10, D: 10, E: 10, F: 17, G: 10, H: 10 }
+    freeze: A5                         # the table's column heads stay put
     units:
       - unit: rates_shift
         params: { shift_hours: { from: config.shift_hours, default: 8 } }
@@ -191,9 +205,18 @@ book:
   - sheet_name: Codes
     position: before_items
     hidden: true
-    column_widths: { A: 12, B: 40 }
+    column_widths: { A: 12, B: 40, C: 8 }
     units:
       - unit: code_rows
-        for_each: book.items
-        params: { tasks: { from: it.labor, default: [] } }
+        params:
+          codes:                       # the org's list, then each task code not on it
+            unique: code
+            concat:
+              - for_each: config.cost_codes
+                as: { code: "{it.code}", description: { from: it.description, default: "" }, listed: 1 }
+              - concat:
+                  for_each: config.items
+                  as:
+                    for_each: it.labor
+                    as: { code: "{it.cost_code}", description: "{it.description}", listed: 0 }
       - unit: code_list

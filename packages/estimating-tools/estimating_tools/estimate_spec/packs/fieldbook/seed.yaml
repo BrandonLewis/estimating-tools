@@ -1,6 +1,14 @@
 # What a fresh fieldbook spec starts with, and how apply-takeoff routes
 # measured geometry. Read by scaffold, apply-takeoff and compact.
-rate_table_trades: [Superintendent, Equipment Operator, Laborer, Pipelayer]
+# A bare name is a labor rate row; {trade, kind: equipment} an equipment one.
+rate_table_trades:
+  - Superintendent
+  - Equipment Operator
+  - Laborer
+  - Pipelayer
+  - { trade: "Excavator, 320 class", kind: equipment }
+  - { trade: "Loader, 950 class", kind: equipment }
+  - { trade: Plate compactor, kind: equipment }
 default_crew:
   - { trade: Laborer, count: 2, days: 0 }
 crews:
@@ -22,6 +30,7 @@ scaffold:
   default_item_recipe: line_item
   rate_host_recipe:    lump_sum
   rate_host_sheet:     "Setup"        # never "Rates": that is a book sheet
+  rate_host_is_bid_recipe: true       # lump_sum is also a bid-item recipe: only the injected RATES host is the rate host
   rate_host_prefix:    MOB
   default_prefix:      ITEM
   first_slot:          "01"

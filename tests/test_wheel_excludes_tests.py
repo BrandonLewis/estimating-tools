@@ -81,26 +81,26 @@ def test_wheel_ships_no_client_project_data(wheel):
 
 
 #: What the estimating_tools wheel must carry for `est-estimate` to work at
-#: all on a fresh install: the bundled demo pack (its manifest, the documents
+#: all on a fresh install: the bundled fieldbook pack (its manifest, the documents
 #: it names, and its worked example) and the schema skeleton the pack's
 #: vocabulary is composed into. A pack is data, so a missing file here is not
 #: an import error at build time — it is a FormatPackError the first time a
 #: customer runs the tool.
 REQUIRED_FORMAT_DATA = (
-    "estimating_tools/estimate_spec/packs/demo/format.yaml",
-    "estimating_tools/estimate_spec/packs/demo/units.yaml",
-    "estimating_tools/estimate_spec/packs/demo/tokens.yaml",
-    "estimating_tools/estimate_spec/packs/demo/recipes.yaml",
-    "estimating_tools/estimate_spec/packs/demo/vocabulary.yaml",
-    "estimating_tools/estimate_spec/packs/demo/seed.yaml",
+    "estimating_tools/estimate_spec/packs/fieldbook/format.yaml",
+    "estimating_tools/estimate_spec/packs/fieldbook/units.yaml",
+    "estimating_tools/estimate_spec/packs/fieldbook/tokens.yaml",
+    "estimating_tools/estimate_spec/packs/fieldbook/recipes.yaml",
+    "estimating_tools/estimate_spec/packs/fieldbook/vocabulary.yaml",
+    "estimating_tools/estimate_spec/packs/fieldbook/seed.yaml",
     "estimating_tools/estimate_spec/schema/skeleton.schema.json",
     # The pack-author contract: the required key set a third party needs to
     # write a pack. It is only documentation if it reaches them.
     "estimating_tools/estimate_spec/packs/README.md",
 )
 
-#: The demo pack's examples are what the skills point a new user at.
-REQUIRED_FORMAT_GLOB = "estimating_tools/estimate_spec/packs/demo/examples/*.estimate.yaml"
+#: The bundled pack's examples are what the skills point a new user at.
+REQUIRED_FORMAT_GLOB = "estimating_tools/estimate_spec/packs/fieldbook/examples/*.estimate.yaml"
 
 
 @pytest.fixture(scope="module")
@@ -142,6 +142,21 @@ def test_the_deleted_format_layout_is_not_resurrected(freshly_built_wheel):
         "estimating_tools/estimate_spec/schema/estimate.schema.json",
     ) if n in names]
     assert not gone, f"{freshly_built_wheel.name} resurrects the pre-pack layout: {gone}"
+
+
+def ships_retired_demo_pack(names) -> list:
+    """Wheel paths under the retired estimate_spec/packs/demo/ (fieldbook phase 3b)."""
+    return sorted(n for n in names if n.startswith("estimating_tools/estimate_spec/packs/demo/"))
+
+
+def test_the_retired_demo_pack_is_not_shipped(freshly_built_wheel):
+    """packs/demo was retired when fieldbook became the bundled default; its
+    frozen copy is the test-only legacy_demo fixture. A build that ships it
+    again would put a second, stale default pack in users' hands."""
+    names = zipfile.ZipFile(freshly_built_wheel).namelist()
+    assert not ships_retired_demo_pack(names), (
+        f"{freshly_built_wheel.name} ships the retired demo pack: "
+        f"{ships_retired_demo_pack(names)}")
 
 
 @pytest.mark.parametrize("wheel", WHEELS, ids=lambda w: w.name)

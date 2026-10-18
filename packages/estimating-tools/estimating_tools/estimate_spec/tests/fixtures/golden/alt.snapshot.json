@@ -7704,6 +7704,13 @@
     "E42:F43",
     "E45:F45"
    ],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -12514,6 +12521,13 @@
     "E26:F27",
     "E29:F29"
    ],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -12887,6 +12901,13 @@
    "freeze_panes": null,
    "hidden_columns": [],
    "merges": [],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -16342,6 +16363,13 @@
     "E19:F20",
     "E22:F22"
    ],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,
@@ -17518,6 +17546,13 @@
     "A2:G2",
     "A4:G4"
    ],
+   "print": {
+    "fit_to_height": null,
+    "fit_to_page": false,
+    "fit_to_width": null,
+    "orientation": null,
+    "title_rows": null
+   },
    "protected": false,
    "protection": {
     "deleteRows": true,

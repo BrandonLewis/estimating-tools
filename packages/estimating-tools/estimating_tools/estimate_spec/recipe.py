@@ -19,7 +19,8 @@ the raw value (dict, list, number or None), not its string form.
 Param values, recursively: a string is a template; {from: PATH, default: X}
 reads PATH (X when the key is absent); {for_each: PATH, as: V} builds a list;
 {sum_existing: [EXPORT, ...]} sums the exports already published on this
-sheet; other dicts and lists resolve element-wise.
+sheet; {concat: V, unique: FIELD} splices V's lists into one, keeping the
+first element per FIELD value; other dicts and lists resolve element-wise.
 """
 from __future__ import annotations
 
@@ -36,7 +37,11 @@ _RESERVED_GLOBALS = frozenset({"p", "it", "item", "config", "r", "row", "ref", "
 _GLOBAL_KEYS = frozenset({"export", "default", "scope", "qualify"})
 #: Keys a `book:` entry's sheet mapping may carry.
 BOOK_SHEET_KEYS = frozenset({"sheet_name", "position", "column_widths", "units",
-                             "hidden", "hidden_columns"})
+                             "hidden", "hidden_columns", "freeze", "print"})
+#: Keys a recipe's or book sheet's `print:` mapping may carry.
+PRINT_KEYS = frozenset({"orientation", "fit_to_width", "repeat_rows"})
+_CELL_REF_RE = re.compile(r"^([A-Z]{1,3})([1-9][0-9]*)$")
+_ROW_SPAN_RE = re.compile(r"^([1-9][0-9]*):([1-9][0-9]*)$")
 #: Where a book sheet lands relative to the item sheets.
 BOOK_POSITIONS = ("before_items", "after_items")
 #: Excel's own sheet-title limit and the characters it refuses in one.
@@ -145,12 +150,54 @@ def resolve_value(value, scopes: dict):
             seq = get_path(scopes, value["for_each"])
             seq = [] if seq is MISSING or seq is None else seq
             return [resolve_value(value["as"], {**scopes, "it": el}) for el in seq]
+        if "concat" in value:
+            return _concat(value, scopes)
         if "sum_existing" in value:
             published = scopes.get("exports", {})
             refs = [f"{{ref:{k}}}" for k in value["sum_existing"] if k in published]
             return "=SUM(" + ",".join(refs) + ")"
         return {k: resolve_value(v, scopes) for k, v in value.items()}
     return value
+
+
+#: Keys a `{concat: ...}` param value may carry.
+_CONCAT_KEYS = frozenset({"concat", "unique"})
+
+
+def _concat(value: dict, scopes: dict) -> list:
+    """`{concat: V, unique: FIELD}`: V resolves to a list whose list elements
+    are spliced in, one level (so a `for_each` whose `as` is itself a
+    `for_each` comes out flat), in order. `unique: FIELD` then keeps only the
+    first element per value of FIELD, compared as text (YAML may hand back
+    31 or "31"); an element without FIELD is always kept. `unique: true`
+    compares whole (scalar) elements instead."""
+    unknown = set(value) - _CONCAT_KEYS
+    if unknown:
+        raise RecipeError(f"concat: unknown keys {sorted(unknown)} (allowed: {sorted(_CONCAT_KEYS)})")
+    parts = resolve_value(value["concat"], scopes)
+    if not isinstance(parts, list):
+        raise RecipeError(f"concat: must resolve to a list, got {type(parts).__name__}")
+    out = []
+    for part in parts:
+        out.extend(part if isinstance(part, list) else [part])
+    unique = value.get("unique")
+    if unique is None:
+        return out
+    if unique is not True and not (isinstance(unique, str) and unique):
+        raise RecipeError(f"concat: unique must be a field name or true, got {unique!r}")
+    seen, kept = set(), []
+    for el in out:
+        if unique is True:
+            key = str(el)
+        elif isinstance(el, dict) and unique in el:
+            key = str(el[unique])
+        else:
+            kept.append(el)
+            continue
+        if key not in seen:
+            seen.add(key)
+            kept.append(el)
+    return kept
 
 
 def is_active(entry: dict, scopes: dict) -> bool:
@@ -218,6 +265,38 @@ def _check_entry(entry: dict, where: str, recipes_doc: dict, units: dict) -> Non
         raise RecipeError(f"{where}: instance_defaults needs default_key")
     if "sheet" in entry and not (units.get(entry.get("unit")) or {}).get("anchor"):
         raise RecipeError(f"{where}: 'sheet' is allowed only on anchored units")
+    if "params" in entry:
+        _check_param_forms(entry["params"], f"{where}: params")
+
+
+def _check_param_forms(value, path: str) -> None:
+    """Load-time shape check of every `{concat: V, unique: FIELD}` form in a
+    unit entry's params (resolve_value raises the same errors only when the
+    entry is laid out): known keys only, `unique` a field name or true, and
+    `unique` never without `concat` (it would be silently ignored)."""
+    if isinstance(value, list):
+        for i, v in enumerate(value):
+            _check_param_forms(v, f"{path}[{i}]")
+        return
+    if not isinstance(value, dict):
+        return
+    if "concat" in value:
+        unknown = set(value) - _CONCAT_KEYS
+        if unknown:
+            raise RecipeError(f"{path}: concat: unknown keys {sorted(unknown)} "
+                              f"(allowed: {sorted(_CONCAT_KEYS)})")
+        unique = value.get("unique")
+        if unique is not None and unique is not True and not (
+                isinstance(unique, str) and unique):
+            raise RecipeError(f"{path}: concat: unique must be a field name or true, "
+                              f"got {unique!r}")
+        _check_param_forms(value["concat"], f"{path}.concat")
+        return
+    if "unique" in value:
+        raise RecipeError(f"{path}: unique: needs concat: (unique de-duplicates a "
+                          f"concat: list and is ignored anywhere else)")
+    for k, v in value.items():
+        _check_param_forms(v, f"{path}.{k}")
 
 
 def _check_sheet_name(name, where: str) -> None:
@@ -264,6 +343,49 @@ def _check_hidden_columns(value, where: str) -> None:
                 f"{where}: hidden_columns entry {col!r} is past Excel's last column, XFD")
 
 
+def _check_freeze(value, where: str) -> None:
+    """`freeze: "A3"` -- the top-left cell of the scrolling pane: rows above
+    it and columns left of it stay put (Excel's own freeze-panes cell)."""
+    m = _CELL_REF_RE.match(value) if isinstance(value, str) else None
+    if not m:
+        raise RecipeError(
+            f"{where}: freeze must be a cell reference such as \"A3\" (the top-left "
+            f"cell that scrolls), got {value!r}")
+    if _column_index(m.group(1)) > _MAX_COLUMN_INDEX:
+        raise RecipeError(f"{where}: freeze {value!r} is past Excel's last column, XFD")
+
+
+def _check_print(value, where: str) -> None:
+    """`print: {orientation, fit_to_width, repeat_rows}` -- page setup."""
+    if not isinstance(value, dict) or not value:
+        raise RecipeError(
+            f"{where}: print must be a mapping with any of {sorted(PRINT_KEYS)}, got {value!r}")
+    unknown = set(value) - PRINT_KEYS
+    if unknown:
+        raise RecipeError(f"{where}: print: unknown keys {sorted(unknown)} "
+                          f"(allowed: {sorted(PRINT_KEYS)})")
+    if "orientation" in value and value["orientation"] not in ("portrait", "landscape"):
+        raise RecipeError(f"{where}: print orientation must be portrait or landscape, "
+                          f"got {value['orientation']!r}")
+    width = value.get("fit_to_width", 1)
+    if isinstance(width, bool) or not isinstance(width, int) or width < 1:
+        raise RecipeError(f"{where}: print fit_to_width must be a whole number of pages "
+                          f"(1 or more), got {width!r}")
+    if "repeat_rows" in value:
+        m = _ROW_SPAN_RE.match(value["repeat_rows"]) if isinstance(value["repeat_rows"], str) else None
+        if not m or int(m.group(1)) > int(m.group(2)):
+            raise RecipeError(
+                f"{where}: print repeat_rows must be \"FIRST:LAST\" rows (e.g. \"1:3\"), "
+                f"got {value['repeat_rows']!r}")
+
+
+def _check_sheet_setup(sheet: dict, where: str) -> None:
+    if "freeze" in sheet:
+        _check_freeze(sheet["freeze"], where)
+    if "print" in sheet:
+        _check_print(sheet["print"], where)
+
+
 def validate_recipes(recipes_doc: dict, units: dict) -> None:
     """Refuse a recipes document the engine cannot render, naming where."""
     for gname, g in (recipes_doc.get("globals") or {}).items():
@@ -285,6 +407,7 @@ def validate_recipes(recipes_doc: dict, units: dict) -> None:
             _check_entry(entry, f"recipes.{rname}[{i}]", recipes_doc, units)
         if "hidden_columns" in recipe:
             _check_hidden_columns(recipe["hidden_columns"], f"recipes.{rname}")
+        _check_sheet_setup(recipe, f"recipes.{rname}")
 
     book = recipes_doc.get("book")
     if book is None:
@@ -315,6 +438,7 @@ def validate_recipes(recipes_doc: dict, units: dict) -> None:
             _check_hidden_columns(sheet["hidden_columns"], where)
         if "hidden" in sheet and not isinstance(sheet["hidden"], bool):
             raise RecipeError(f"{where}: hidden must be true or false")
+        _check_sheet_setup(sheet, where)
         units_list = sheet.get("units", [])
         if not isinstance(units_list, list):
             raise RecipeError(f"{where}.units: must be a list, got {units_list!r}")
