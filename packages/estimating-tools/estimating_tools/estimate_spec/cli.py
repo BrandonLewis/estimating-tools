@@ -16,6 +16,9 @@ Subcommands:
                  this is how the number is known before Excel opens the
                  workbook (summarize.py; arithmetic-consistency only, NOT
                  a rate check)
+  read-back      an edited fieldbook workbook -> the updated spec and a
+                 Markdown report; a dry run unless --write, which first
+                 saves a timestamped backup of the spec (readback/)
 
 Deterministic file operations only; MCP lookups stay at the skill layer
 (build-estimate-workbook fetches BM bid-item scaffolds to scaffolds.json)."""
@@ -23,6 +26,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -30,7 +35,7 @@ from pathlib import Path
 import yaml
 
 _SUBCOMMANDS = ("build", "scaffold", "apply-takeoff", "scaffold-save",
-                "cip-buildup", "summarize")
+                "cip-buildup", "summarize", "read-back")
 
 
 def cmd_build(args) -> int:
@@ -391,6 +396,116 @@ def cmd_scaffold_save(args) -> int:
     return 0
 
 
+def _emit(text: str, *, file=None) -> None:
+    """Print `text`, even to a console whose code page cannot show it (a
+    Windows console piped through cp1252): the report's arrows and dots
+    come out as escapes there instead of a UnicodeEncodeError."""
+    try:
+        print(text, file=file)
+    except UnicodeEncodeError:
+        print(text.encode("ascii", "backslashreplace").decode("ascii"), file=file)
+
+
+def _backup_path(spec_path: Path) -> Path:
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup = spec_path.with_name(f"{spec_path.name}.bak-{stamp}")
+    n = 2
+    while backup.exists():
+        backup = spec_path.with_name(f"{spec_path.name}.bak-{stamp}-{n}")
+        n += 1
+    return backup
+
+
+def _same_file(a: Path, b: Path) -> bool:
+    """Do `a` and `b` name one file -- by another case on a case-folding file
+    system, relative vs absolute, through `..` or a symlink? `samefile` when
+    both exist, else the normalised real paths."""
+    try:
+        return os.path.samefile(a, b)
+    except OSError:
+        return os.path.normcase(os.path.realpath(a)) == os.path.normcase(os.path.realpath(b))
+
+
+def cmd_read_back(args) -> int:
+    """Read an edited fieldbook workbook back into its spec.
+
+    Prints the report (and writes it to --report). Exit 0: read -- a dry
+    run, or written with --write, or nothing to write. Exit 1: problems
+    that block writing (the report lists them; nothing is written) --
+    including a workbook built from an older version of the spec, unless
+    --force. Exit 2: refused -- a file cannot be read, or the workbook is not
+    a fieldbook workbook built from this spec.
+    """
+    try:
+        from ruamel.yaml import YAMLError
+
+        from estimating_tools.estimate_spec.readback.spec_io import SpecYaml, SpecYamlError
+    except ImportError:
+        _emit("read-back needs ruamel.yaml: pip install 'estimating_tools[estimate_spec]'",
+              file=sys.stderr)
+        return 2
+    from estimating_tools.estimate_spec.readback import (
+        ReadBackRefused, load_workbook, read_back, render_report)
+
+    spec_path = Path(args.spec)
+    if args.report:
+        for what, path in (("spec", spec_path), ("workbook", Path(args.workbook))):
+            if _same_file(Path(args.report), path):
+                _emit(f"read-back refused: --report {args.report} is the {what} itself "
+                      f"({path}) -- give the report its own file name", file=sys.stderr)
+                return 2
+    try:
+        raw = spec_path.read_bytes().decode("utf-8")
+        doc = SpecYaml(raw.replace("\r\n", "\n"))
+    except FileNotFoundError:
+        _emit(f"no such file: {spec_path}", file=sys.stderr)
+        return 2
+    except (UnicodeDecodeError, YAMLError) as exc:
+        _emit(f"invalid YAML in {spec_path}: {exc}", file=sys.stderr)
+        return 2
+    except SpecYamlError as exc:
+        _emit(f"read-back refused: {spec_path} cannot be read the way build reads it: {exc}",
+              file=sys.stderr)
+        return 2
+    spec = doc.spec
+    if not isinstance(spec, dict):
+        _emit(f"invalid spec {spec_path}: expected a mapping", file=sys.stderr)
+        return 2
+    try:
+        result = read_back(spec, load_workbook(args.workbook), force=args.force)
+    except ReadBackRefused as exc:
+        _emit(f"read-back refused: {exc}", file=sys.stderr)
+        return 2
+    report = render_report(result, workbook=Path(args.workbook).name, spec=spec_path.name)
+    _emit(report)
+    if args.report:
+        Path(args.report).write_text(report, encoding="utf-8")
+        _emit(f"report -> {args.report}")
+    problems = result.findings.problems
+    if problems:
+        _emit(f"blocked: {len(problems)} problem(s) -- nothing written", file=sys.stderr)
+        return 1
+    if not result.changed:
+        _emit("nothing to write: the workbook matches the spec")
+        return 0
+    changes = len(result.findings.changes)
+    if not args.write:
+        _emit(f"dry run: {changes} change(s) -- run again with --write to apply them")
+        return 0
+    # Round-trip YAML: the spec's comments, key order and quoting survive,
+    # and so do its line endings.
+    try:
+        text = doc.dumps(result.spec)
+    except SpecYamlError as exc:
+        _emit(f"blocked: {exc}", file=sys.stderr)
+        return 1
+    backup = _backup_path(spec_path)
+    shutil.copy2(spec_path, backup)
+    spec_path.write_text(text, encoding="utf-8", newline="\r\n" if "\r\n" in raw else "\n")
+    _emit(f"wrote {changes} change(s) to {spec_path} (backup: {backup.name})")
+    return 0
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="est-estimate",
@@ -480,6 +595,20 @@ def _parser() -> argparse.ArgumentParser:
                         "estimating.format; this verb writes, so it refuses "
                         "the bundled pack unless you name it here)")
     p.set_defaults(func=cmd_scaffold_save)
+
+    p = sub.add_parser("read-back",
+                       help="Read an edited fieldbook workbook back into its spec "
+                            "(a dry run unless --write).")
+    p.add_argument("spec", help="the *.estimate.yaml the workbook was built from")
+    p.add_argument("workbook", help="the edited .xlsx")
+    p.add_argument("--write", action="store_true",
+                   help="write the updated spec (after saving SPEC.bak-YYYYmmdd-HHMMSS)")
+    p.add_argument("--report", default=None, help="also write the Markdown report here")
+    p.add_argument("--force", action="store_true",
+                   help="apply a workbook built from an older version of the spec (its "
+                        "estimate_spec_sha stamp differs) over the current spec -- a notice, "
+                        "not a problem; it undoes every spec edit made since it was built")
+    p.set_defaults(func=cmd_read_back)
     return parser
 
 

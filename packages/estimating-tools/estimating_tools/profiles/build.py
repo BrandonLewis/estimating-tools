@@ -54,9 +54,10 @@ class ProfileInputs:
     #: `estimating.format` — the org's estimate workbook format pack (a
     #: directory holding format.yaml; relative paths resolve against the
     #: profile directory). Without it every est-estimate verb falls to the
-    #: bundled demo pack, which declares no capabilities and prices nothing
-    #: real, so a profile that names no pack is a profile that does not yet
-    #: produce the org's workbook.
+    #: bundled fieldbook pack -- complete but generic (generic trades and
+    #: cost codes, no declared capabilities) -- and the verbs that write files
+    #: refuse a pack nothing named, so a profile that names no pack is a
+    #: profile that does not yet produce the org's workbook.
     estimating_format: str = ""
 
 

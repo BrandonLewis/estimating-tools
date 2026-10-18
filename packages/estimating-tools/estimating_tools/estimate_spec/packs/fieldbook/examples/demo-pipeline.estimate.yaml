@@ -16,6 +16,14 @@ rate_table:
   - { trade: "Excavator, 320 class", rate: 145.00, kind: equipment, includes_operator: false }
   - { trade: "Loader, 950 class", rate: 110.00, kind: equipment, includes_operator: false }
   - { trade: Plate compactor, rate: 35.00, kind: equipment, includes_operator: false }
+# The org's cost-code list (scaffold copies it from the pack seed): the task
+# headers' code dropdown, and check 9 flags a task whose code is not on it.
+cost_codes:
+  - { code: "01-100", description: Mobilization }
+  - { code: "02-100", description: Trench excavation and pipe laying }
+  - { code: "02-200", description: Backfill and compaction }
+  - { code: "02-300", description: Pavement restoration }
+  - { code: "02-510", description: Valves and appurtenances }
 items:
   - recipe: lump_sum
     sheet: 1 - MOBILIZATION

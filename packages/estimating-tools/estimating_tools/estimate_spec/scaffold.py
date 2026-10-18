@@ -26,7 +26,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from estimating_tools.estimate_spec.format_pack import bundled_pack
+from estimating_tools.estimate_spec.format_pack import (
+    RATE_HOST_ITEM_NO, RATE_HOST_SOURCE, bundled_pack, seed_rate_trades)
 
 # Fallback mobilization classifier when the org profile declares no
 # estimating.mob_item_codes: LS items whose description says mobilization.
@@ -385,7 +386,7 @@ def scaffold_spec(manifest, structures: list | None = None, *,
         host = {
             "recipe": sc["rate_host_recipe"],
             "sheet": sc["rate_host_sheet"],
-            "item_no": "RATES",
+            "item_no": RATE_HOST_ITEM_NO,
             "description": "Rate table host (no mobilization item selected)",
             "qty": 0,
             "uom": "LS",
@@ -393,7 +394,7 @@ def scaffold_spec(manifest, structures: list | None = None, *,
                       "re-scaffold with the mobilization item included."],
             "labor": _skeleton_labor(pack),
         }
-        host["scaffold_meta"] = {"source": "scaffold:rate_host", "schedule": None,
+        host["scaffold_meta"] = {"source": RATE_HOST_SOURCE, "schedule": None,
                                  "official_qty": None,
                                  "field_hashes": field_hashes(host)}
         if generated_at:
@@ -413,8 +414,15 @@ def scaffold_spec(manifest, structures: list | None = None, *,
     # (seed.scaffold.default_markup) instead of the plain 0 every other
     # pack's skeleton keeps.
     spec["markup"] = copy.deepcopy(sc.get("default_markup", 0))
-    spec["rate_table"] = [{"trade": t, "rate": 0}
-                          for t in (pack.seed or {}).get("rate_table_trades", [])]
+    # Each seed trade at rate 0, an equipment one marked so (a labor row
+    # keeps the bare {trade, rate} every pack has always scaffolded).
+    spec["rate_table"] = [
+        {"trade": t["trade"], "rate": 0, **({"kind": t["kind"]} if t["kind"] != "labor" else {})}
+        for t in seed_rate_trades(pack.seed)]
+    # The org's code list: fieldbook lays it out as the cost-code dropdown
+    # (and checks every task's code against it); other packs ignore it.
+    if (pack.seed or {}).get("cost_codes"):
+        spec["cost_codes"] = copy.deepcopy(pack.seed["cost_codes"])
     spec["items"] = spec_items
 
     crews = _collect_crews(entries_by_code, spec_items) or copy.deepcopy(

@@ -9,7 +9,7 @@ import pytest
 from estimating_tools.estimate_spec import format_pack as fp
 
 ES = Path(fp.__file__).resolve().parent
-DEMO_DIR = ES / "packs" / "demo"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
 ALT_DIR = Path(__file__).resolve().parent / "fixtures" / "packs" / "alt"
 
 # NOTE: this file used to also pin the composed schema against a frozen
@@ -33,7 +33,7 @@ def test_the_skeleton_names_no_vocabulary():
 
 
 def test_one_trade_list():
-    pack = fp.bundled_pack()
+    pack = fp.load_pack(LEGACY_DIR)
     labor = pack.schema["$defs"]["labor_block"]["properties"]["crew"]["items"]["properties"]["trade"]["enum"]
     assert labor == _crew_member_trade(pack.schema)["enum"] == pack.vocabulary["trades"]
     assert set(pack.seed["rate_table_trades"]) <= set(pack.vocabulary["trades"])
@@ -52,7 +52,7 @@ def test_x_properties_pass_and_typos_still_fail():
 
 
 def test_the_recipe_enum_is_derived_from_recipes():
-    pack = fp.bundled_pack()
+    pack = fp.load_pack(LEGACY_DIR)
     names = sorted(k for k in pack.recipes["recipes"] if k != "cover")
     assert sorted(pack.schema["$defs"]["item"]["properties"]["recipe"]["enum"]) == names
 
@@ -60,7 +60,7 @@ def test_the_recipe_enum_is_derived_from_recipes():
 def test_a_pack_naming_a_schema_file_is_refused(tmp_path):
     import shutil
     root = tmp_path / "p"
-    shutil.copytree(DEMO_DIR, root, ignore=shutil.ignore_patterns("*.py", "__pycache__", "tests", "examples", "packs"))
+    shutil.copytree(LEGACY_DIR, root, ignore=shutil.ignore_patterns("*.py", "__pycache__", "tests", "examples", "packs"))
     manifest = root / "format.yaml"
     # Insert inside the `files:` block itself — appending at end-of-file would
     # instead land inside whatever mapping happens to be last (e.g. `labor:`),

@@ -99,14 +99,15 @@ def test_every_item_recap_equals_its_detail_rows(built):
 
 
 def test_every_check_passes(built):
-    # 22, not 20: check 6 (Bid Form = Cost Summary) moved from one pooled
-    # row to one row per item (review fix), so the denominator grew by 2.
+    # 25: seven per-item rules and check 9 (the org code list) x 3 items,
+    # plus the pooled check 4. (22 before phase 3b added check 9; check 6
+    # moved from one pooled row to one row per item in 3a's review.)
     wb, ev = built
     statuses = _statuses(wb, ev)
-    assert len(statuses) == 22
+    assert len(statuses) == 25
     assert set(statuses.values()) == {"✓"}
-    assert (ev["Checks!B2"], ev["Checks!D2"]) == (22, 22)
-    assert (ev["Bid Form!B11"], ev["Bid Form!D11"]) == (22, 22)
+    assert (ev["Checks!B2"], ev["Checks!D2"]) == (25, 25)
+    assert (ev["Bid Form!B11"], ev["Bid Form!D11"]) == (25, 25)
 
 
 # ---------------------------------------------------------------- tampering
@@ -259,3 +260,21 @@ def test_a_task_header_left_without_a_code_fails_check_7(tmp_path):
     ev = evaluate(wb, tmp_path)
     assert ev[f"Checks!F{_check_row(wb, 7, 2)}"] == "✗"
     assert ev[f"Checks!F{_check_row(wb, 7, 3)}"] == "✓"
+
+
+def test_a_task_code_off_the_org_list_fails_check_9(tmp_path):
+    spec = example_spec()
+    spec["items"][2]["labor"][0]["cost_code"] = "02-999"
+    assert _failing(spec, tmp_path) == {(9, 3)}
+
+
+def test_a_code_picked_off_the_list_in_excel_fails_check_9(tmp_path):
+    # The estimator types a new code below the list on the (hidden) Codes
+    # sheet -- the whole-column dropdown offers it at once -- and picks it in
+    # a task header: it is not on the org's list, so check 9 says so.
+    wb = build()
+    wb["Codes"]["A7"] = "02-999"
+    (head,) = task_block(wb[ITEM2], "02-200")["TASK"]
+    wb[ITEM2][f"A{head}"] = "02-999"
+    ev = evaluate(wb, tmp_path)
+    assert {k for k, s in _statuses(wb, ev).items() if s != "✓"} == {(9, 2)}

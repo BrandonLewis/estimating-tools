@@ -197,3 +197,50 @@ def test_validate_rejects_a_recipe_level_position_key():
                                   "units": [{"unit": "item_header"}]}}}
     with pytest.raises(R.RecipeError, match="position"):
         R.validate_recipes(doc, UNITS)
+
+
+# ---- concat / unique (fieldbook phase 3b: the org-wide code list) ----------
+
+def test_concat_splices_each_part_in_order():
+    v = {"concat": [{"for_each": "item.labor", "as": "{it.slot}"}, ["C"], "D"]}
+    assert R.resolve_value(v, scopes()) == ["A", "B", "C", "D"]
+
+
+def test_concat_flattens_a_for_each_of_lists_one_level():
+    cfg = {"items": [{"labor": [{"c": "1"}, {"c": "2"}]}, {"labor": [{"c": "3"}]}, {}]}
+    v = {"concat": {"for_each": "config.items",
+                    "as": {"for_each": "it.labor", "as": "{it.c}"}}}
+    assert R.resolve_value(v, scopes(config=cfg)) == ["1", "2", "3"]
+
+
+def test_unique_keeps_the_first_element_per_field_value_compared_as_text():
+    cfg = {"org": [{"code": "02-100", "d": "org"}, {"code": 31, "d": "org"}],
+           "tasks": [{"code": "02-100", "d": "task"}, {"code": "31", "d": "task"},
+                     {"code": "02-900", "d": "task"}, {"d": "no code"}, {"d": "no code"}]}
+    v = {"concat": [{"for_each": "config.org", "as": "{it}"},
+                    {"for_each": "config.tasks", "as": "{it}"}],
+         "unique": "code"}
+    assert R.resolve_value(v, scopes(config=cfg)) == [
+        {"code": "02-100", "d": "org"}, {"code": 31, "d": "org"},
+        {"code": "02-900", "d": "task"}, {"d": "no code"}, {"d": "no code"}]
+
+
+def test_unique_on_scalars_compares_the_element_itself():
+    v = {"concat": [["a", "b"], ["b", "c", "a"]], "unique": True}
+    assert R.resolve_value(v, scopes()) == ["a", "b", "c"]
+
+
+def test_concat_of_missing_lists_is_empty():
+    v = {"concat": [{"for_each": "config.absent", "as": "{it}"}], "unique": "code"}
+    assert R.resolve_value(v, scopes()) == []
+
+
+@pytest.mark.parametrize("bad, match", [
+    ({"concat": "plain text"}, "concat"),
+    ({"concat": [], "unique": ""}, "unique"),
+    ({"concat": [], "unique": 3}, "unique"),
+    ({"concat": [], "sort": "code"}, "sort"),
+])
+def test_a_malformed_concat_is_a_recipe_error(bad, match):
+    with pytest.raises(R.RecipeError, match=match):
+        R.resolve_value(bad, scopes())

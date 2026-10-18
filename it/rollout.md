@@ -43,10 +43,10 @@ committed file.
 Follow `cowork-connector.md` to register each server as an org Custom Connector;
 members click Connect and sign in.
 
-## Other clients (Codex / Gemini CLI / Cursor)
+## Other clients (Codex / Gemini CLI / Cursor / OpenCode)
 
 The same two MCP servers work in other agent clients. Generate each client's config from the
-manifest — `python manifest/generate.py --client {gemini,cursor,codex}` writes the snippet
+manifest — `python manifest/generate.py --client {gemini,cursor,codex,opencode}` writes the snippet
 under `it/` — then apply it:
 
 - **Gemini CLI** — merge `it/gemini-settings.snippet.json` into `~/.gemini/settings.json`.
@@ -59,8 +59,12 @@ under `it/` — then apply it:
   uses `bearer_token_env_var`; set that env var to a token (see Headless below). Codex's native
   OAuth (`codex mcp login`) currently has tool-import / bearer-auth issues (openai/codex
   #20009, #26760), so the Bearer-token path is recommended.
+- **OpenCode** — merge `it/opencode.json`'s `mcp` block into `opencode.json` (project root) or
+  `~/.config/opencode/opencode.json` (global). Interactive: the remote entries are url-only, so
+  OpenCode runs each server's OAuth flow on first connect (`opencode mcp auth bidmanager` signs
+  in ahead of time).
 
-**Headless / CI (all three):** mint a short-lived token with `m2m-token` and supply it as a
+**Headless / CI (all four):** mint a short-lived token with `m2m-token` and supply it as a
 Bearer — never commit it:
 
     export BIDMANAGER_BEARER="$(m2m-token --server bidmanager)"
@@ -69,10 +73,23 @@ Bearer — never commit it:
 - **Codex** reads these via the snippet's `bearer_token_env_var` (already set).
 - **Cursor/Gemini:** replace the server's `oauth`/url-only auth with a header — Cursor resolves
   `"headers": {"Authorization": "Bearer ${env:BIDMANAGER_BEARER}"}`; for Gemini, set the resolved
-  `Authorization` header value.
+  `Authorization` header value; OpenCode expands `{env:...}` in a header:
+  `"headers": {"Authorization": "Bearer {env:BIDMANAGER_BEARER}"}`.
 
 To point at a different endpoint, edit the URL in the snippet (env-substitution syntax differs
 per client, so the snippets ship concrete URLs).
+
+**The CLIs and skills.** Outside the Claude plugin nothing installs the `est-*` tools or the
+skills for you. Install the two wheels from the GitHub release into a tool environment, then
+copy the harness-neutral skills (the OpenWorker port, which calls the installed CLIs instead of
+the plugin's `${CLAUDE_PLUGIN_ROOT}` shims):
+
+    gh release download vX.Y.Z -R BrandonLewis/estimating-plugin -p "*.whl" -D ~/est-wheels
+    uv tool install --find-links ~/est-wheels "estimating_tools[all]==X.Y.Z"
+    cp -r openworker/skills/* <the client's skill directory>   # OpenCode: ~/.config/opencode/skill/
+
+The artifact editor is a local stdio server once the package is installed; OpenCode, for one,
+takes it as `"artifact-editor": {"type": "local", "command": ["est-artifact-app"]}`.
 
 ## Adding your own plugins
 

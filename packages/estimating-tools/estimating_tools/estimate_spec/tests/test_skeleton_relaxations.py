@@ -18,7 +18,7 @@ import pytest
 from estimating_tools.estimate_spec import format_pack as fp
 
 ES = Path(fp.__file__).resolve().parent
-DEMO_DIR = ES / "packs" / "demo"
+LEGACY_DIR = ES / "tests" / "fixtures" / "packs" / "legacy_demo"
 ALT_DIR = Path(__file__).resolve().parent / "fixtures" / "packs" / "alt"
 
 
@@ -49,7 +49,7 @@ def _base_doc(pack, **extra):
 # --------------------------------------------------------------------------
 
 def test_relaxation_1_labor_block_cost_code():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     item = _base_item(labor=[{
         "slot": "01", "description": "d", "cost_code": "02-110",
         "crew": [{"trade": "SUPR", "days": 1}],
@@ -62,7 +62,7 @@ def test_relaxation_1_labor_block_cost_code():
 # --------------------------------------------------------------------------
 
 def test_relaxation_2_cost_detail_cost_code():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     item = _base_item(cost_details=[{
         "name": "MATL", "cost_code": "02-110",
         "lines": [{"name": "x", "qty": 1, "unit_price": 1}],
@@ -75,7 +75,7 @@ def test_relaxation_2_cost_detail_cost_code():
 # --------------------------------------------------------------------------
 
 def test_relaxation_3_half_crew_count():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     item = _base_item(labor=[{
         "slot": "01", "description": "d",
         "crew": [{"trade": "SUPR", "count": 0.5, "days": 1}],
@@ -88,7 +88,7 @@ def test_relaxation_3_half_crew_count():
 # --------------------------------------------------------------------------
 
 def test_relaxation_4_crew_days_optional():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     item = _base_item(labor=[{
         "slot": "01", "description": "d",
         "crew": [{"trade": "SUPR"}],
@@ -101,7 +101,7 @@ def test_relaxation_4_crew_days_optional():
 # --------------------------------------------------------------------------
 
 def test_relaxation_5_item_optional_flag():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     item = _base_item(optional=True)
     jsonschema.validate(item, _item_schema(pack))
 
@@ -111,7 +111,7 @@ def test_relaxation_5_item_optional_flag():
 # --------------------------------------------------------------------------
 
 def test_relaxation_6_item_with_no_labor_block():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     item = _base_item()  # no "labor" key at all
     assert "labor" not in item
     jsonschema.validate(item, _item_schema(pack))
@@ -122,14 +122,14 @@ def test_relaxation_6_root_cost_code_system_and_schedule():
     # edition/source optional); schedule is object-shaped too, but a pack
     # that supplies no defs.schedule only guarantees a plain object -- see
     # the dedicated schedule tests below for the two halves of that split.
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     doc = _base_doc(pack, cost_code_system={"name": "AIA-16", "edition": "2018"},
                      schedule={"note": "generic, no pack-supplied shape here"})
     jsonschema.validate(doc, pack.schema)
 
 
 def test_cost_code_system_is_still_type_checked():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     # additionalProperties false and name required -- a typo/omission still fails.
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(_base_doc(pack, cost_code_system={"nam": "typo"}), pack.schema)
@@ -145,14 +145,14 @@ def test_cost_code_system_is_still_type_checked():
 # --------------------------------------------------------------------------
 
 def test_schedule_with_no_pack_def_accepts_a_plain_object():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     assert "schedule" not in (pack.vocabulary.get("defs") or {})
     doc = _base_doc(pack, schedule={"anything": "goes", "here": 1})
     jsonschema.validate(doc, pack.schema)
 
 
 def test_schedule_with_no_pack_def_still_requires_an_object():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(_base_doc(pack, schedule="not an object"), pack.schema)
 
@@ -161,7 +161,7 @@ def test_a_pack_supplied_schedule_def_is_genuinely_enforced():
     """Proves the {"$vocab": "schedule"} marker really wires a pack's def in
     -- not silently ignored -- by composing with a synthetic vocabulary that
     defines a strict defs.schedule (mirroring how a real org's pack would)."""
-    demo_vocab = fp.load_pack(DEMO_DIR).vocabulary
+    demo_vocab = fp.load_pack(LEGACY_DIR).vocabulary
     strict_vocab = {**demo_vocab, "defs": {
         **demo_vocab["defs"],
         "schedule": {
@@ -186,7 +186,7 @@ def test_a_pack_supplied_schedule_def_is_genuinely_enforced():
 # --------------------------------------------------------------------------
 
 def test_still_rejects_malformed_shapes():
-    pack = fp.load_pack(DEMO_DIR)
+    pack = fp.load_pack(LEGACY_DIR)
     item_schema = _item_schema(pack)
 
     # optional is type-checked, not merely present -- a string is not a bool.
@@ -229,10 +229,10 @@ def test_the_skeleton_names_no_org_vocabulary():
 
 # Each shipped pack's own first-item recipe, one that item_rules does not
 # require a takeoff for -- keeps the fragment isolated to rebar_spread alone.
-_NO_TAKEOFF_RECIPE = {DEMO_DIR: "setup", ALT_DIR: "preamble"}
+_NO_TAKEOFF_RECIPE = {LEGACY_DIR: "setup", ALT_DIR: "preamble"}
 
 
-@pytest.mark.parametrize("pack_dir", [DEMO_DIR, ALT_DIR])
+@pytest.mark.parametrize("pack_dir", [LEGACY_DIR, ALT_DIR])
 def test_rebar_spread_not_permitted_by_any_shipped_pack(pack_dir):
     pack = fp.load_pack(pack_dir)
     assert "rebar_spread" not in (pack.vocabulary.get("defs") or {})
@@ -241,3 +241,28 @@ def test_rebar_spread_not_permitted_by_any_shipped_pack(pack_dir):
                        rebar_spread={"lines": []})
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(item, item_schema)
+
+
+# --------------------------------------------------------------------------
+# cost_codes: the org's code list (fieldbook phase 3b). Generic and optional;
+# a pack that lays it out (fieldbook's Codes sheet) reads it, others ignore it.
+# --------------------------------------------------------------------------
+
+def test_a_root_cost_codes_list_validates():
+    pack = fp.load_pack(LEGACY_DIR)
+    doc = _base_doc(pack, cost_codes=[{"code": "02-100", "description": "Trench"},
+                                      {"code": "02-200"}])
+    jsonschema.validate(doc, pack.schema)
+
+
+@pytest.mark.parametrize("bad", [
+    "02-100",                                   # not a list
+    [{"description": "no code"}],               # code required
+    [{"code": ""}],                             # code non-empty
+    [{"code": 2100}],                           # code is text, like every cost_code
+    [{"code": "02-100", "desc": "typo"}],       # no other keys
+])
+def test_a_malformed_cost_codes_list_is_refused(bad):
+    pack = fp.load_pack(LEGACY_DIR)
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(_base_doc(pack, cost_codes=bad), pack.schema)

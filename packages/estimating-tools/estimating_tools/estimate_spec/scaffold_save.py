@@ -8,7 +8,7 @@ save-scaffolds skill proposes them. Pure logic, no MCP (house pattern).
 """
 from __future__ import annotations
 
-from estimating_tools.estimate_spec.format_pack import bundled_pack
+from estimating_tools.estimate_spec.format_pack import bundled_pack, is_rate_host
 
 RATE_HOST_SKIP_REASON = "rate-host item (no scaffold value)"
 
@@ -54,18 +54,26 @@ def extract_scaffold_saves(spec: dict, *, agency: str = "",
     `source_item_no` on each save is preview provenance for the skill —
     not a create_bid_item_scaffold kwarg; drop it before the MCP call.
 
-    The pack's rate-host item (`seed.scaffold.rate_host_recipe` — the
-    injected rate-table host, e.g. the bundled demo pack's `setup`) carries
-    no reusable scaffold value and is always skipped.
+    The pack's rate-table host carries no reusable scaffold value and is
+    always skipped (`format_pack.is_rate_host`): every item of
+    `seed.scaffold.rate_host_recipe` by default (e.g. the legacy_demo
+    fixture's `setup`, whose sheet holds the rate table), or -- for a pack
+    whose host recipe is also a bid-item recipe
+    (`seed.scaffold.rate_host_is_bid_recipe: true`, as fieldbook's `lump_sum`
+    is) -- only the scaffold-injected host (item_no RATES), so the pack's
+    real lump-sum bid items, mobilization among them, are saved.
     """
     pack = pack or bundled_pack()
-    rate_host_recipe = pack.seed["scaffold"]["rate_host_recipe"]
     code_map = code_map or {}
-    ref = project_ref or (spec.get("project") or {}).get("name", "")
+    # The schema's `project` is plain text; a `{name: ...}` mapping is
+    # accepted too.
+    project = spec.get("project")
+    ref = project_ref or (project.get("name", "") if isinstance(project, dict)
+                          else str(project or ""))
     saves, skipped = [], []
     for item in spec.get("items") or []:
         item_no = str(item.get("item_no", ""))
-        if item.get("recipe") == rate_host_recipe:
+        if is_rate_host(item, pack):
             skipped.append({"item_no": item_no, "reason": RATE_HOST_SKIP_REASON})
             continue
         schedule = (item.get("scaffold_meta") or {}).get("schedule", "")

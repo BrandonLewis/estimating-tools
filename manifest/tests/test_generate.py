@@ -61,6 +61,7 @@ def test_renderers_honour_url_env(monkeypatch):
     assert "https://alt.example/mcp/" in gen.render_gemini()
     assert "https://alt.example/mcp/" in gen.render_cursor()
     assert "https://alt.example/mcp/" in gen.render_codex()
+    assert "https://alt.example/mcp/" in gen.render_opencode()
 
 
 def test_claude_mcp_json_is_oauth_primary_for_both_servers():
@@ -103,7 +104,8 @@ def test_remote_client_renders_skip_plugin_local_stdio_servers():
     for client, path in (("cowork", "it/cowork-connector.md"),
                          ("gemini", "it/gemini-settings.snippet.json"),
                          ("cursor", "it/cursor-mcp.json"),
-                         ("codex", "it/codex-config.toml.snippet")):
+                         ("codex", "it/codex-config.toml.snippet"),
+                         ("opencode", "it/opencode.json")):
         generate("--client", client)
         assert "artifact-editor" not in (ROOT / path).read_text(), client
 
@@ -117,7 +119,7 @@ def test_cowork_doc_mentions_oauth_and_both_urls():
 
 
 def test_check_passes_when_committed_matches_then_fails_on_drift():
-    for client in ("claude", "cowork", "gemini", "cursor", "codex"):
+    for client in ("claude", "cowork", "gemini", "cursor", "codex", "opencode"):
         generate("--client", client)
     assert run("--check").returncode == 0
     mcp = ROOT / "plugins/estimating-core/.mcp.json"
@@ -166,3 +168,18 @@ def test_codex_config_snippet_bearer_token_env_var():
     assert 'bearer_token_env_var = "CONFORMED_BEARER"' in raw
     # only the env var NAME, never a token value
     assert "secret" not in raw.lower()
+
+
+def test_opencode_json_is_remote_oauth_primary():
+    generate("--client", "opencode")
+    raw = (ROOT / "it/opencode.json").read_text()
+    cfg = json.loads(raw)
+    assert cfg["$schema"] == "https://opencode.ai/config.json"
+    servers = cfg["mcp"]
+    assert set(servers) == {"bidmanager", "conformed"}
+    for name, url in (("bidmanager", "https://www.bidsheet.ai/mcp/"),
+                      ("conformed", "https://conformed-production.up.railway.app/mcp/")):
+        s = servers[name]
+        assert s == {"type": "remote", "url": url, "enabled": True}
+    # OAuth-primary like Cursor: no header, no token material committed
+    assert "Authorization" not in raw and "Bearer" not in raw and "secret" not in raw.lower()

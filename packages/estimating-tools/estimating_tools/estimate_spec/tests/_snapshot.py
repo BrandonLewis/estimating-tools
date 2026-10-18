@@ -4,7 +4,8 @@ Captures everything a format pack controls: sheet order, every valued or
 styled cell's value and full style (font incl. underline/strike/vertAlign,
 fill incl. bgColor, border incl. per-side color, alignment incl.
 wrap/indent/shrink/rotation, cell protection locked+hidden), merges, column
-widths, hidden columns, row heights, freeze panes, sheet visibility state, sheet protection
+widths, hidden columns, row heights, freeze panes, print setup (orientation,
+fit-to-page width/height, repeated title rows), sheet visibility state, sheet protection
 (as a dict of its settings), data validations, conditional formats (rule
 type/operator/formula/priority/stopIfTrue plus a dxf summary of
 font/fill/numFmt), and workbook-level defined names -- as plain JSON, so an
@@ -88,6 +89,17 @@ def _data_validations(ws):
     )
 
 
+def _print(ws):
+    ps, pr = ws.page_setup, ws.sheet_properties.pageSetUpPr
+    return {
+        "orientation": ps.orientation,
+        "fit_to_page": bool(pr is not None and pr.fitToPage),
+        "fit_to_width": ps.fitToWidth,
+        "fit_to_height": ps.fitToHeight,
+        "title_rows": ws.print_title_rows,
+    }
+
+
 def snapshot(wb) -> dict:
     out = {
         "order": list(wb.sheetnames),
@@ -109,6 +121,7 @@ def snapshot(wb) -> dict:
             "protection": _protection(ws.protection),
             "data_validations": _data_validations(ws),
             "freeze_panes": ws.freeze_panes,
+            "print": _print(ws),
             "sheet_state": ws.sheet_state,
         }
     return out

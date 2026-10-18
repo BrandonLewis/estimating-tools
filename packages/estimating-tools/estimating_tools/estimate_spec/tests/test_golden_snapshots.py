@@ -169,6 +169,18 @@ def _change_conditional_rule_fill_mutation(wb):
             rule.dxf.fill = PatternFill(start_color="FF00B050", end_color="FF00B050", fill_type="solid")
 
 
+def _print_orientation_mutation(wb):
+    wb["Rates"].page_setup.orientation = "landscape"
+
+
+def _print_fit_to_width_mutation(wb):
+    wb["Rates"].page_setup.fitToWidth = 1
+
+
+def _print_title_rows_mutation(wb):
+    wb["Rates"].print_title_rows = "1:1"
+
+
 def _noop(wb):
     pass
 
@@ -200,6 +212,9 @@ MUTATIONS = [
     ("freeze-panes", _noop, _freeze_panes_mutation),
     ("hide-a-sheet", _noop, _hide_sheet_mutation),
     ("hide-a-column", _noop, _hide_a_column_mutation),
+    ("print-orientation", _noop, _print_orientation_mutation),
+    ("print-fit-to-width", _noop, _print_fit_to_width_mutation),
+    ("print-title-rows", _noop, _print_title_rows_mutation),
 ]
 
 

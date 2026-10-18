@@ -135,13 +135,24 @@ units:
       names: "$A${row:first}:$A${row:end}"
 
   # -------------------------------------------------------------------- Codes
-  code_rows:                           # one instance per bid item: its tasks' codes
-    params: { tasks: { type: list } }
+  # The cost-code dropdown's source, one row per code: the org's code list
+  # (the spec's cost_codes) first, then each task code not on it, in order
+  # (de-duplicated by the recipe's concat/unique). C is 1 for a code on the
+  # org list, 0 otherwise; a task header's hidden S flag looks its code up
+  # here, and check 9 counts the headers that are not flagged.
+  code_rows:
+    params: { codes: { type: list } }
     rows:
-      - repeat: p.tasks
+      - repeat: p.codes
         cells:
-          A: { value: "{it.cost_code}",   style: label }
+          A: { value: "{it.code}",        style: label }
           B: { value: "{it.description}", style: label }
+          C: { value: "{it.listed}",      style: label }
+        mark_first: first
+        mark_last:  last
+    exports:
+      codes:  "$A${row:first}:$A${row:last}"
+      listed: "$C${row:first}:$C${row:last}"
 
   code_list:                           # publishes the dropdown source; lays out no rows
     rows: []
@@ -255,7 +266,8 @@ units:
   # recognized Kind off Rates -- Labor or Equipment, so a resource whose Kind
   # was cleared, or the Rates insert-above marker itself picked as if it were
   # a resource, does not pass just because VLOOKUP happened to return a
-  # number; LINE: a qty, a price, AND a recognized Type), T = flag (CREW:
+  # number; LINE: a qty, a price, AND a recognized Type; TASK: its code is
+  # on the org's code list -- the Codes sheet's C column), T = flag (CREW:
   # machine includes its operator; LINE: no cost code; SUBTOTAL: crew pairs
   # such a machine with an operator row).
   task:
@@ -278,6 +290,7 @@ units:
           B: { value: "{p.description}", style: input_text }
           Q: { value: TASK, style: tag }
           R: { formula: '=A{r}&""', style: tag }
+          S: { formula: "=IFERROR(INDEX({code_listed},MATCH(A{r},{code_range},0)),0)", style: tag }
         merge: "B:J"
         fill_row: task
         mark: head
@@ -766,6 +779,19 @@ units:
           - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
           - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
 
+  check_code_list:                     # laid out only when the spec carries an org code list
+    params: { item_no: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 9, style: calc_text }
+          B: { value: "Every task's cost code is on the org's code list", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: '=COUNTIF({ref:{p.sheet}!item_header.kind_col},"TASK")', style: calc_hours }
+          E: { formula: '=SUMIF({ref:{p.sheet}!item_header.kind_col},"TASK",{ref:{p.sheet}!item_header.ok_col})', style: calc_hours }
+          F: { formula: '=IFERROR(IF(D{r}=E{r},"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
   # ------------------------------------------------------ Bid Form status strip
   # The agency-facing Bid Form carries no internal cost figure -- not even a
   # plug total (design decision: the Bid Form carries no internal cost) --

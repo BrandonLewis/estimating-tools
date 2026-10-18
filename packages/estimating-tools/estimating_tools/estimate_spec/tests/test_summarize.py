@@ -4,8 +4,8 @@ The pinned constants below are hand-derived from the alt pack's own example
 (tests/fixtures/packs/alt/examples/sample.estimate.yaml — authored for this
 test suite; the arithmetic is shown line by line in comments) so the module
 is checked against the spec's own semantics, not against itself. summarize()
-requires `supports: summarize` (the alt pack declares it; the demo pack does
-not — see test_two_packs.py for the refusal side), so every call here passes
+requires `supports: summarize` (the alt pack declares it; the legacy_demo
+fixture does not — see test_two_packs.py for the refusal side), so every call here passes
 `pack=alt` explicitly rather than relying on whichever pack happens to be
 bundled by default.
 """

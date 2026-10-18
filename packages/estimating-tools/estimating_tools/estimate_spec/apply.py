@@ -25,7 +25,7 @@ import copy
 from dataclasses import dataclass, field
 from datetime import date as _date
 
-from estimating_tools.estimate_spec.format_pack import bundled_pack
+from estimating_tools.estimate_spec.format_pack import RATE_HOST_SOURCE, bundled_pack, is_rate_host
 from estimating_tools.estimate_spec.scaffold import content_hash, is_hand_edited
 
 
@@ -221,10 +221,14 @@ def apply_takeoff(spec: dict, takeoff, *, pack=None, force: bool = False,
         result.matched.append(entry)
 
     for item in items:
-        if id(item) in hit or item.get("recipe") == rate_host_recipe:
+        # The rate host is never a takeoff target (format_pack.is_rate_host:
+        # every rate-host-recipe item, or only the injected host for a pack
+        # whose host recipe is also a bid-item recipe, e.g. fieldbook's
+        # lump_sum -- its real lump-sum items are listed when unmatched).
+        if id(item) in hit or is_rate_host(item, pack):
             continue
         meta = item.get("scaffold_meta") or {}
-        if meta.get("source") == "scaffold:rate_host":
+        if meta.get("source") == RATE_HOST_SOURCE:
             continue
         result.unmatched_items.append({"item_no": item.get("item_no"),
                                        "description": item.get("description", "")})

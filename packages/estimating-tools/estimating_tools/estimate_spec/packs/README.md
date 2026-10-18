@@ -6,13 +6,15 @@ supplies the shape, the styling and the vocabulary. Packs are **data, never
 code**: every document is read with `yaml.safe_load` / `json.loads`, and nothing
 a pack names is imported or executed.
 
-Two packs ship with the tool. `packs/demo/` is the default and the shortest
-complete pack there is — read it alongside this page. `packs/fieldbook/` is a
-full estimate format built on every feature below; see "The fieldbook pack" at
-the end. Name it with `--format` (it becomes the default in a later release).
+One pack ships with the tool: `packs/fieldbook/`, the default — a full
+estimate format built on every feature below (see "The fieldbook pack" at the
+end). Read it alongside this page, or copy it as the start of your own. The demo
+pack it replaced is retired; its frozen copy is the engine's regression fixture,
+`tests/fixtures/packs/legacy_demo/` in the source repository, and still the
+shortest complete pack there is.
 
 A pack is resolved, in order, from `--format <dir>`, then the org profile's
-`estimating.format`, then the bundled demo pack. **A pack that is named but
+`estimating.format`, then the bundled fieldbook pack. **A pack that is named but
 missing or invalid is an error** — never a silent fall back to another format.
 
 ---
@@ -100,7 +102,7 @@ code, its ban on item-level `cost_details`) should.
 
 ## Workbook-level sheets, protection and conditional formats
 
-Six more engine features, all pack-opted and all inert unless a pack (or the
+More engine features, all pack-opted and all inert unless a pack (or the
 estimate config) actually uses them — a pack that touches none of them
 renders exactly as it did before these existed.
 
@@ -129,7 +131,7 @@ book:
 ```
 
 Each book sheet mapping carries `sheet_name`, `position`, `column_widths`,
-`units`, `hidden`, `hidden_columns` — the same shape a recipe has, except a
+`units`, `hidden`, `hidden_columns`, `freeze`, `print` — the same shape a recipe has, except a
 book sheet's own units may not set `sheet:` (they always write to that
 sheet).
 
@@ -281,6 +283,53 @@ columns on an item recipe's sheets, or on one book sheet. `hidden: true`
 hides a book sheet entirely (its `sheet_state` becomes `"hidden"`) — there
 is no item-recipe equivalent, since every item sheet is meant to be seen.
 
+### `freeze:` and `print:` — panes and page setup
+
+```yaml
+recipes:
+  line_item:
+    freeze: A2                 # rows above A2 stay in view while the sheet scrolls
+    print: { orientation: landscape, fit_to_width: 1, repeat_rows: "1:1" }
+    units: [...]
+
+book:
+  - sheet_name: Bid Form
+    freeze: A4
+    print: { orientation: portrait, fit_to_width: 1, repeat_rows: "1:3" }
+```
+
+`freeze:` is Excel's freeze-panes cell: the rows above it and the columns left
+of it stay in view (`A4` keeps rows 1–3; `C3` keeps rows 1–2 and columns A–B).
+`print:` sets the page: `orientation` (`portrait` | `landscape`),
+`fit_to_width` (print that many pages wide, and as many pages tall as it
+takes) and `repeat_rows` (`"FIRST:LAST"`, printed at the top of every page);
+any subset of the three. Both go on an item recipe or a book sheet, are
+checked at load (a cell reference; known keys and values, by name) and change
+nothing on a sheet that does not set them.
+
+### `concat:` — one list from several, de-duplicated
+
+A unit param may be built from several lists at once:
+
+```yaml
+params:
+  codes:
+    unique: code                        # keep the first element per code
+    concat:
+      - for_each: config.cost_codes     # the org's list first...
+        as: { code: "{it.code}", listed: 1 }
+      - concat:                         # ...then every item's task codes
+          for_each: config.items
+          as: { for_each: it.labor, as: { code: "{it.cost_code}", listed: 0 } }
+```
+
+`{concat: V}` resolves `V` to a list and splices each element that is itself a
+list into one flat list, one level deep, in order — so a `for_each` whose `as:`
+is another `for_each` (a list of lists) comes out flat. `unique: FIELD` then
+keeps only the first element per value of that field, compared as text (`31`
+and `"31"` are one value); an element without the field is always kept, and
+`unique: true` compares whole (scalar) elements. Any other key is refused.
+
 ### `validation:` — Excel dropdowns
 
 ```yaml
@@ -407,6 +456,12 @@ a pack's `vocabulary.yaml`:
   validating first. Fieldbook sets `required`: it lays out its own Markup
   sheet and nothing else makes sense there.
 
+- **`cost_codes`** (top-level, `[{code, description}]`): the org's cost-code
+  list. `scaffold` copies it from the pack seed's `cost_codes`. A pack that
+  lays it out reads it — fieldbook's Codes sheet makes it the task headers'
+  code dropdown (plus any task code not on it) and its check 9 flags a task
+  whose code is not on it; every other pack ignores it.
+
 - **`items[].unbalance`**: dollars moved **onto** this item's bid (negative:
   off it). There is no engine-level check that an estimate's unbalances net
   to zero — a pack's own Checks sheet is where that belongs.
@@ -466,6 +521,7 @@ than failing partway through someone's scaffold.
 | `first_slot`          | the labor slot a skeleton block starts at (must match `slot_pattern`) |
 | `placeholder_takeoff` | *optional*: `{kind, fields}` for a zeroed takeoff block, when the default item recipe needs one. `kind` must be in `defs.takeoff`'s `kind` enum. Omit it when the recipe carries its own takeoff shape. |
 | `first_cost_code`     | *optional*: the `cost_code` scaffold gives its skeleton task. Set it when the vocabulary requires a cost code on every labor block (fieldbook does); without it a scaffolded spec fails the pack's own schema. |
+| `rate_host_is_bid_recipe` | *optional*, `true`/`false` (default `false`): set it when `rate_host_recipe` is also an ordinary bid-item recipe because the rate table lives elsewhere (fieldbook: `lump_sum`, rates on its Rates book sheet). Then only the scaffold-injected host (item_no `RATES`) is the rate host, so `scaffold-save` saves the pack's lump-sum bid items (mobilization among them) and `apply-takeoff` lists them when no takeoff row matches. Unset, every item of `rate_host_recipe` is the rate host and is skipped by both. Checked at load. |
 | `default_markup`      | *optional*: the `markup` value a fresh scaffold starts with, in place of the plain `0` every other pack keeps. Set it when the vocabulary requires markup by cost type (`markup_by_type: required`, fieldbook does) — a non-empty object such as `{bond_pct: 0}` is enough, since every other percentage defaults to 0. |
 
 ### `seed.takeoff_mapping`
@@ -478,7 +534,17 @@ than failing partway through someone's scaffold.
 
 ### Other seed keys (optional, read by scaffold)
 
-`rate_table_trades`, `default_crew`, `crews`, `cost_codes`.
+| key                 | what it is |
+|---------------------|------------|
+| `rate_table_trades` | the scaffold's rate table, every row at rate 0: a resource name (a labor rate row) or `{trade: NAME, kind: equipment}` (an equipment rate row; `kind: labor` is the default). Checked at load. |
+| `cost_codes`        | `[{code, description}]`, the org's cost-code list; scaffold copies it into the spec's own `cost_codes`. Checked at load. |
+| `default_crew`      | the skeleton task's crew |
+| `crews`             | the spec's crew table |
+
+`compact`'s new-row stub carries the same skeleton task (`first_slot`,
+`first_cost_code`, `default_crew`) when the vocabulary requires every item to
+carry `labor` (an unconditional `item_rules` entry with `required: [labor]`, as
+fieldbook's is); otherwise its `labor` is empty.
 
 ## Referring to another sheet
 
@@ -521,11 +587,11 @@ wanting one particular other sheet → a cross-sheet ref.
 (spec: `docs/superpowers/specs/2026-10-16-fieldbook-format-design.md`). Every
 dollar is classified Labor / Equipment / Material / Subcontract from the crew
 row up to the bid; cost codes are the unit of work; the Bid Form matches the
-agency's arithmetic; live checks say what is wrong. Build its example with:
+agency's arithmetic; live checks say what is wrong. It is the bundled default,
+so its example builds with no `--format`:
 
 ```bash
-est-estimate build packs/fieldbook/examples/demo-pipeline.estimate.yaml \
-    -o demo.xlsx --format packs/fieldbook
+est-estimate build packs/fieldbook/examples/demo-pipeline.estimate.yaml -o demo.xlsx
 ```
 
 **Sheets**, in order: Bid Form (unit price = `ROUND(bid / qty, 2)`, amount =
@@ -535,7 +601,8 @@ cost types, direct, plugs, markup, unbalance, bid; its totals also carry the
 plug $ and plug % of direct that the Bid Form carries none of) · Markup
 (overhead / insurance / profit by cost type, the bond, per-item unbalance) ·
 Checks · Rates (one table, labor and equipment by full name) · Codes (hidden:
-the codes the estimate uses) · one sheet per bid item.
+the org's code list — the spec's `cost_codes` — then each task code not on it,
+every code once; the task headers' code dropdown) · one sheet per bid item.
 
 **An item sheet** is a header band, scope notes, the takeoff (with a plan
 reference per row and a ✓ tie to bid qty), a recap of each task, and one task
@@ -568,7 +635,15 @@ line has a qty and a unit price · 4 unbalance nets to zero (all items at
 once) · 5 the recap ties to the detail rows (a `SUMIF` over the item's kind
 tags) · 6 per item, Bid Form amount = Cost Summary bid (within the
 unit-price rounding) · 7 no cost line without a code · 8 no crew pairs an
-operator-included machine with an Equipment Operator row.
+operator-included machine with an Equipment Operator row · 9 every task's
+cost code is on the org's code list (laid out only when the spec carries
+`cost_codes`).
+
+**Panes and printing:** an item sheet keeps its header band in view
+(`freeze: A2`) and prints landscape, one page wide, with the band on every
+page; the Bid Form prints portrait, one page wide, its heading and column
+heads repeated; Cost Summary, Checks and Rates keep their column heads in
+view.
 
 **What it asks of a spec:** every item has at least one task and every task a
 `cost_code`; a `line_item` has a takeoff (`linear`, `count`, or the
@@ -582,10 +657,98 @@ insurance, profit — and refuses to build a spec whose markup names another
 (fieldbook lays out markup rows overhead, insurance and profit only); unlike
 the Rates table, those three rows are fixed by design — inserting a row on
 the Markup sheet does not add a markup row, there is no insert-above marker
-there, and there is no plan to add one; the Codes sheet lists the codes the
-estimate's own items use, duplicates possible when more than one task shares
-a code (de-duplicating it, and the dropdown it backs, is a later item); no
-`supports:` — `summarize` would price a different bid.
+there, and there is no plan to add one; read-back does not read the Codes
+sheet — a code typed onto it in Excel is offered by the dropdown, but reaches
+the spec only as the code of the task that uses it (add it to `cost_codes` to
+put it on the org's list); every
+task needs at least one crew row, so a subcontract-only task (cost lines, no
+crew) cannot be expressed — read-back reports deleting a task's last crew row
+as a problem; no `supports:` — `summarize` would price a different bid.
+
+**Round trip: reading Excel edits back.** Estimators edit the workbook, not the
+YAML; `est-estimate read-back` turns their edits back into the spec, which stays
+the source of truth for rebuilds and `bm-sync`:
+
+```bash
+est-estimate read-back bid.estimate.yaml bid.xlsx                 # report only
+est-estimate read-back bid.estimate.yaml bid.xlsx --write         # then write the spec
+```
+
+It prints a Markdown report (`--report FILE` saves it too) and writes nothing
+unless `--write`, which first saves `bid.estimate.yaml.bak-YYYYmmdd-HHMMSS` and
+then edits the spec in place with ruamel.yaml's round-trip mode: comments, key
+order, quoting and line endings survive; whitespace ruamel re-emits its own way
+does not — padding and alignment inside and before a one-line `{ ... }` or
+`[ ... ]`, and blank lines between list rows where rows were added or deleted;
+with nothing to change, nothing is written. It reads and writes the spec exactly
+as `build` (PyYAML, YAML 1.1) reads it: a plain `includes_operator: no` is
+`false`, and a value typed in Excel that YAML 1.1 would misread written plain
+(`Yes`, `Off`, `1:30`) is written double-quoted; a write that would not read back
+as the merged spec is refused. It refuses (exit 2) a file that is not a workbook,
+a workbook without fieldbook's `estimate_format` stamp or from another fieldbook
+version, one whose item sheets are not the spec's items, and a spec that does
+not itself build or that YAML 1.1 reads in a way that cannot be reconciled (a
+mapping key `yes:`). `build` also stamps the workbook with the spec's
+fingerprint (`estimate_spec_sha`); a workbook built from an older version of the
+spec — another read-back, a hand edit or a `bm-sync` fetch since — would
+silently undo those newer edits, so that is a problem unless `--force` (then a
+notice). A YAML anchor shared by two places (`crew: &c` … `crew: *c`) is
+expanded, with a notice, so an edit to one place does not land in both. It walks each item sheet by the kind tag — a
+`TASK` row opens a block, `END` closes it — never by the code formulas, so
+nothing needs recalculating. A pasted block whose header shows a new code is a
+new task; a code retyped in a block's header (exactly one code gone and one new
+code at the same position in the item) is a rename — "task 02-100 renamed to
+02-150" — that keeps the task's slot and the fields the workbook does not show;
+a whole-block reorder (nothing else edited) is reported and applied, never
+silently dropped; crew rows, cost lines, takeoff rows and rates
+are matched to the spec by name, in order — a task's crew rows or cost lines
+that only changed places read as "crew reordered" / "lines reordered" — (number-like text matches the way the
+builder's own conversion reads it back, so a cost code `"31.20"` still matches
+the cell `31.2`), so a new, deleted or retyped row reads as exactly that, and a
+tagged crew or cost-line row cleared down to all-blank cells reads as removed
+(one notice) rather than a pile of blank-field problems; an input is unchanged
+while it holds what the build wrote, so an untouched workbook reads back to the
+same spec. Fields the workbook does not show (a task's `slot`, an item's
+recipe) carry over unchanged. The report lists:
+
+- **changes** — new, removed and reordered tasks, crew rows, cost lines,
+  takeoff rows and rates, and every changed input (bid qty, takeoff rows, task
+  description and notes, count, days, qty, unit, unit price, Type, Source,
+  vendor, unbalance, markup %, bond, rates with their Kind and breakdown, hours
+  per crew-day, bid date — clearing the bid date removes it from the spec
+  rather than leaving a blank string);
+- **needs you** — crew resources with no rate row (matched case-insensitively,
+  the way Excel's own `VLOOKUP` does): applied as typed, and check 2 stays ✗
+  until a rate is added above the Rates marker row;
+- **formula cells typed over** — ignored, the rebuild restores them (item
+  sheets by row kind; Bid Form, Cost Summary, Markup and Checks against a fresh
+  build of the spec); a plainly inserted Rates row's blank $/hr is not reported
+  as "cleared" — nothing was there to clear;
+- **untagged rows** — pasted from outside the workbook: listed, never read;
+- **notices** (non-blocking) — text that looks editable but is not read back
+  (the item description and unit on an item sheet, the project name on the Bid
+  Form: change those in the spec / bid schedule); a resource typed in another case; a flat rate
+  or "includes operator" typed where it is ignored (a breakdown rate's flat
+  rate column, a labor rate's operator column); a row below the Rates marker,
+  outside the rate table; a missing "Bid date" row or Markup Total row (the
+  rest of each sheet is still read correctly); an expanded YAML anchor; a stale
+  workbook applied with `--force`;
+- **problems**, any of which blocks `--write` (exit 1): a blank or non-numeric
+  required input (a blank markup %, bond or unbalance simply means 0; a blank
+  Source on a cost line is a problem, never a silent plug), free
+  text in the bid date that is not a date, an input
+  formula that refers to cells, a Type/Source/Kind not on its
+  dropdown, two blocks showing one code, a resource the pack does not name, a
+  Markup grid row other than Overhead/Insurance/Profit (Excel still prices it,
+  so it must be folded in or deleted, never silently dropped), a workbook built
+  from an older version of the spec (unless `--force`), or an updated spec the
+  pack would refuse to build (explained where the refusal is a known one — "task
+  02-510 has no crew rows left" — with the schema message under it).
+
+A resource typed in another case (`pipelayer`) reads as the rate row's name —
+Excel's dropdown and `VLOOKUP` ignore case — with a notice. The reader's map of
+the grid lives in `readback/layout.py`; a test reads `units.yaml` and fails if
+the two drift apart.
 
 Its tests evaluate the built workbook with `pycel` (the `test` extra) and
 fail, not skip, without it under `CI=true`.

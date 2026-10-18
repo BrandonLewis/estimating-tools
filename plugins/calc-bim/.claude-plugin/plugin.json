@@ -1,7 +1,7 @@
 {
   "name": "calc-bim",
   "displayName": "DXF → BIM → Takeoff",
-  "version": "0.1.89",
+  "version": "0.1.90",
   "description": "Author IFC BIM from 2D DXF plans and roll it up into a BidSheet.ai-ready CanonicalTakeoff.",
   "keywords": ["construction", "bim", "ifc", "dxf", "takeoff", "estimating"],
   "repository": "https://github.com/BrandonLewis/estimating-tools",

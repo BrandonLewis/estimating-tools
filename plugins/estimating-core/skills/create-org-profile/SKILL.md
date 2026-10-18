@@ -48,13 +48,18 @@ This is **local file scaffolding** — no BidSheet.ai / MCP.
      `estimating.format`, which every `est-estimate` verb resolves the pack from.
 
      Ask for it, and say what is lost without it: with no pack named, `est-estimate`
-     falls to the **bundled demo pack**, which is generic, declares no `supports:` (so
-     `summarize` and the inline item editor refuse it) and prices nothing real — the
-     profile will not produce the org's workbook. A format pack is data: `format.yaml`
+     falls to the **bundled fieldbook pack** — a complete, generic format (costs by type,
+     cost codes, live checks, an Excel round trip) but not the org's own: generic trade
+     names and cost codes, and no `supports:` (so `summarize` and the inline item editor
+     refuse it) — and `scaffold`, which writes a file, refuses a pack nothing named. An org
+     that is happy with fieldbook names it here anyway (`<estimate_spec>/packs/fieldbook`),
+     or better, a copy of it with the org's own trades in `vocabulary.yaml` and its
+     rate-table trades and cost-code list in `seed.yaml` — every scaffold then starts from
+     the org's codes. A format pack is data: `format.yaml`
      plus `units.yaml`, `tokens.yaml`, `recipes.yaml`, `vocabulary.yaml` and `seed.yaml`.
      If the org has no pack yet, leave the field blank, say the estimate workbook is not
      wired up, and point them at `build-estimate-workbook`'s `## Inputs` section and
-     `packs/README.md` (shipped beside the demo pack) for what a pack must contain.
+     `packs/README.md` (shipped beside the fieldbook pack) for what a pack must contain.
 2. **Confirm** the proposed values — especially the folder tree and the letterhead.
 3. **Scaffold** the directory:
    `estimating_tools.profiles.build_profile_dir(ProfileInputs(name=…, company_name=…,

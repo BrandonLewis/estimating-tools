@@ -2,8 +2,8 @@
 
 `resolve_pack`'s last step — the bundled pack — is the only one no human asked
 for. On a machine with no ESTIMATING_PROFILES, `scaffold` and `scaffold-save`
-would take their recipe names, sheet prefixes and takeoff routing from the demo
-pack and write a real file; nothing downstream would object until the spec
+would take their recipe names, sheet prefixes and takeoff routing from the
+bundled pack and write a real file; nothing downstream would object until the spec
 failed to build, days later. `apply-takeoff` would die instead, but as
 "produced an invalid spec (bug)" — the tool blaming itself for the operator's
 missing environment variable.
@@ -25,7 +25,7 @@ import pytest
 from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.estimate_spec.cli import main
 
-DEMO_DIR = fp.ENGINE_DIR / "packs" / "demo"
+LEGACY_DIR = fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
 
 #: Every gated verb, invoked with inputs that do not exist. The gate runs
 #: before any input is read, so an ungated run of these exits 1 ("no such
@@ -52,7 +52,7 @@ def no_profile(monkeypatch):
 def test_the_write_verbs_refuse_a_pack_nothing_named(verb, tmp_path, capsys):
     assert main(GATED[verb](tmp_path)) == 2
     err = capsys.readouterr().err
-    assert f"{verb} would use the bundled 'demo' pack" in err
+    assert f"{verb} would use the bundled 'fieldbook' pack" in err
     assert "ESTIMATING_PROFILES" in err and "--format" in err
 
 
@@ -61,7 +61,7 @@ def test_the_gate_runs_before_any_input_is_read(verb, tmp_path):
     """Named pack, same missing inputs: exit 1, the ordinary "no such file".
     The only thing the gate changed is refusing an unchosen pack — it did not
     start rejecting the inputs."""
-    assert main(GATED[verb](tmp_path) + ["--format", str(DEMO_DIR)]) == 1
+    assert main(GATED[verb](tmp_path) + ["--format", str(LEGACY_DIR)]) == 1
 
 
 @pytest.mark.parametrize("verb", sorted(GATED))
@@ -73,8 +73,8 @@ def test_nothing_is_written_when_the_gate_refuses(verb, tmp_path):
 def test_naming_the_bundled_pack_is_a_choice_the_gate_honours(tmp_path):
     """The message offers `--format PATH` as the escape hatch and says the
     bundled pack's own path works. It has to."""
-    assert fp.resolve_pack(str(DEMO_DIR), None).chosen is True
-    fp.require_chosen(fp.resolve_pack(str(DEMO_DIR), None), "scaffold")
+    assert fp.resolve_pack(str(fp.BUNDLED), None).chosen is True
+    fp.require_chosen(fp.resolve_pack(str(fp.BUNDLED), None), "scaffold")
 
 
 def test_build_is_not_gated(tmp_path, capsys):
