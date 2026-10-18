@@ -12,6 +12,6 @@ Cowork connects from Anthropic's cloud and supports **remote + OAuth only**
 
 ## conformed
 
-- **URL:** https://conformed-production.up.railway.app/mcp/
+- **URL:** https://conformed.ai/mcp/
 - **Auth:** OAuth 2.1 (per-user SSO)
 - **Description:** conformed.ai document-conformance (plans/specs, conformance checks).

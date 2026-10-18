@@ -2,7 +2,7 @@
 
 Construction estimating for agents and the people who work with them: an open
 data model, deterministic tools, and the workflow knowledge to use them, packaged
-so that Claude Code, Cowork, OpenWorker, Codex, Gemini CLI and Cursor can all drive
+so that Claude Code, Cowork, OpenWorker, OpenCode, Codex, Gemini CLI and Cursor can all drive
 the same estimating stack.
 
 - **`estimating_tools`** (Python, PyPI): the open canonical models for estimates,
@@ -66,6 +66,10 @@ once in `it/cowork-connector.md`.
 **OpenWorker**: `python openworker/install.py` copies the ported skills, merges the MCP
 servers, installs the personas and pip-installs the wheel. See `openworker/README.md`.
 
+**OpenCode**: `python opencode/install.py` builds the same `~/.estimating` runtime the Claude
+Code plugin uses, installs the skills with OpenCode's tool names and merges the MCP servers into
+`opencode.json` (`--project DIR`, `--dry-run`; re-run to upgrade). See `opencode/README.md`.
+
 **Codex CLI, Gemini CLI, Cursor**: generate the client's MCP configuration from the one
 manifest and apply it:
 
@@ -89,6 +93,7 @@ packages/estimating-tools/   the Python package and its tests
 plugins/estimating-core/     skills, estimator agent, hooks, bundled wheels, artifact-editor MCP server
 plugins/calc-bim/            DXF → BIM → takeoff skills over bimforge, bundled wheel
 openworker/                  the OpenWorker port (generated from plugins/, drift-guarded)
+opencode/                    the OpenCode installer (runtime, ported skills, MCP config)
 manifest/                    servers.manifest.yaml and the per-client config generator
 it/                          managed-settings templates and the rollout runbook
 templates/                   starting points: an org profile, a calculator plugin, an importer

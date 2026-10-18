@@ -83,6 +83,14 @@ This is **local file scaffolding** — no BidSheet.ai / MCP.
 
 ## Rendered letterhead (`letterhead.template`)
 
+Rendering needs docxtpl, the `docgen` extra, which the base install omits.
+Install it into whichever interpreter runs `est-letterhead`, before the first
+render (including a test render of a new template):
+- **Under the plugins**, it is the interpreter they keep under
+  `~/.estimating/`, reached only by `~/.estimating/bin/ensure-extra docgen`;
+  a bare `pip install` would land somewhere else and change nothing here.
+- **Installed by pip instead**, it is `pip install "estimating_tools[docgen]"`.
+
 Setting `letterhead.template` to a `.docx` file in the profile directory
 enables rendered letterhead documents: `~/.estimating/bin/est-letterhead <draft.md>` (and the
 `draft-an-rfi` skill's step 7) render markdown drafts onto that template,

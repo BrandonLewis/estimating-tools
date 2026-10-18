@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 IT = ROOT / "it"
 
@@ -11,8 +13,11 @@ def _load(name):
 
 def test_managed_mcp_references_manifest_server_url():
     mcp = _load("managed-mcp.json.tmpl")
-    s = mcp["mcpServers"]["bidmanager"]
-    assert s["type"] == "http" and "bidsheet.ai" in s["url"]
+    manifest = yaml.safe_load((ROOT / "manifest/servers.manifest.yaml").read_text())
+    expected = {s["id"]: {"type": s["transport"], "url": s["url_default"]}
+                for s in manifest["servers"]
+                if s["transport"] == "http" and "claude" in s.get("clients", ["claude"])}
+    assert mcp["mcpServers"] == expected
 
 
 def test_managed_settings_enables_our_plugins_and_marketplace():

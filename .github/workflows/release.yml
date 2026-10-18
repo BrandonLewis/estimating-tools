@@ -47,7 +47,7 @@ jobs:
       - name: Test gate
         run: |
           pip install -e 'packages/estimating-tools[all,test]'
-          python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests -q
+          python -m pytest packages/estimating-tools/estimating_tools manifest tests openworker/tests opencode/tests -q
       - name: Build estimating_tools sdist + wheel
         run: |
           pip install build
