@@ -36,7 +36,7 @@ from pathlib import Path
 import yaml
 
 _SUBCOMMANDS = ("build", "scaffold", "apply-takeoff", "scaffold-save",
-                "cip-buildup", "summarize", "read-back")
+                "cip-buildup", "summarize", "read-back", "packages")
 
 
 def cmd_build(args) -> int:
@@ -487,8 +487,11 @@ def cmd_read_back(args) -> int:
     pack = _resolve_pack_or_report(args)
     if pack is None:
         return 2
+    quotes_dir = (spec_path.parent / (spec.get("work_packages_quotes_dir") or "quotes")
+                  if spec.get("work_packages") else None)
     try:
-        result = read_back(spec, load_workbook(args.workbook), pack=pack, force=args.force)
+        result = read_back(spec, load_workbook(args.workbook), pack=pack, force=args.force,
+                           quotes_dir=quotes_dir)
     except ReadBackRefused as exc:
         _emit(f"read-back refused: {exc}", file=sys.stderr)
         return 2
@@ -501,17 +504,128 @@ def cmd_read_back(args) -> int:
     if problems:
         _emit(f"blocked: {len(problems)} problem(s) -- nothing written", file=sys.stderr)
         return 1
-    if not result.changed:
+    if not result.changed and not result.quote_writes:
         _emit("nothing to write: the workbook matches the spec")
         return 0
-    changes = len(result.findings.changes)
+    # Edits to existing quote files are not spec changes (the spec stays as it
+    # is); new quotes already appear among the changes.
+    changes = len(result.findings.changes) + len(result.findings.quote_edits)
     if not args.write:
         _emit(f"dry run: {changes} change(s) -- run again with --write to apply them")
         return 0
     # Round-trip YAML: the spec's comments, key order and quoting survive,
-    # and so do its line endings.
+    # and so do its line endings. A read-back that only edits quote files
+    # leaves the spec alone.
+    if result.changed:
+        try:
+            text = doc.dumps(result.spec)
+        except SpecYamlError as exc:
+            _emit(f"blocked: {exc}", file=sys.stderr)
+            return 1
+        backup = _backup_path(spec_path)
+        shutil.copy2(spec_path, backup)
+        spec_path.write_text(text, encoding="utf-8", newline="\r\n" if "\r\n" in raw else "\n")
+        _emit(f"wrote {changes} change(s) to {spec_path} (backup: {backup.name})")
+    if result.quote_writes:
+        from estimating_tools.quotes import files as quote_files
+        for w in result.quote_writes:
+            path = quotes_dir / w.file_name
+            qbackup = None
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                if path.exists():
+                    # An existing quote file is the vendor's record: kept as
+                    # <name>.bak-<timestamp> (never *.json, so never loaded).
+                    qbackup = _backup_path(path)
+                    shutil.copy2(path, qbackup)
+                quote_files.write_quote_file(path, w.quote)
+            except OSError as exc:
+                _emit(f"could not write {path}: {exc} "
+                      f"({'spec written; ' if result.changed else ''}quote file failed)",
+                      file=sys.stderr)
+                return 1
+            _emit((f"quote updated -> {path}" if w.reason.startswith("edited")
+                   else f"quote -> {path}")
+                  + (f" (backup: {qbackup.name})" if qbackup else ""))
+    return 0
+
+
+def cmd_packages(args) -> int:
+    """`packages init | sync | coverage`: work packages in the spec.
+
+    Exit 0 ok, 1 a ValueError (nothing written), 2 a file cannot be read.
+    """
     try:
-        text = doc.dumps(result.spec)
+        from ruamel.yaml import YAMLError
+
+        from estimating_tools.estimate_spec.readback.spec_io import SpecYaml, SpecYamlError
+    except ImportError:
+        _emit("packages needs ruamel.yaml: pip install 'estimating_tools[estimate_spec]'",
+              file=sys.stderr)
+        return 2
+    from estimating_tools.estimate_spec import packages as pk
+    from estimating_tools.estimate_spec.validate import validate_cross_references
+
+    spec_path = Path(args.spec)
+    try:
+        raw = spec_path.read_bytes().decode("utf-8")
+        doc = SpecYaml(raw.replace("\r\n", "\n"))
+    except FileNotFoundError:
+        _emit(f"no such file: {spec_path}", file=sys.stderr)
+        return 2
+    except (UnicodeDecodeError, YAMLError, SpecYamlError) as exc:
+        _emit(f"invalid YAML in {spec_path}: {exc}", file=sys.stderr)
+        return 2
+    spec = doc.spec
+    if not isinstance(spec, dict):
+        _emit(f"invalid spec {spec_path}: expected a mapping", file=sys.stderr)
+        return 2
+
+    if args.packages_command == "coverage":
+        from estimating_tools.quotes.files import QuoteFileError, load_quotes
+        qdir = spec_path.parent / (spec.get("work_packages_quotes_dir") or "quotes")
+        try:
+            lines = pk.package_coverage(spec, load_quotes(qdir))
+        except QuoteFileError as exc:
+            _emit(f"quote file problem: {exc}", file=sys.stderr)
+            return 2
+        for line in lines:
+            _emit(line)
+        _emit(f"{len(lines)} coverage gap(s)")
+        return 0
+
+    try:
+        if args.packages_command == "init":
+            try:
+                src = yaml.safe_load(Path(args.source).read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                _emit(f"no such file: {args.source}", file=sys.stderr)
+                return 2
+            except (UnicodeDecodeError, yaml.YAMLError) as exc:
+                _emit(f"invalid YAML in {args.source}: {exc}", file=sys.stderr)
+                return 2
+            if not isinstance(src, dict):
+                _emit(f"invalid {args.source}: expected a mapping", file=sys.stderr)
+                return 2
+            report = pk.init_packages(spec, src)
+            changes = len(report)
+        else:
+            result = pk.sync_package_lines(spec)
+            report, changes = result.lines(), result.changes
+        validate_cross_references(spec)
+    except ValueError as exc:
+        _emit(f"packages {args.packages_command}: {exc}", file=sys.stderr)
+        return 1
+    for line in report:
+        _emit(line)
+    if not changes:
+        _emit("nothing to write")
+        return 0
+    if not args.write:
+        _emit(f"dry run: {changes} change(s) -- run again with --write to apply them")
+        return 0
+    try:
+        text = doc.dumps(spec)
     except SpecYamlError as exc:
         _emit(f"blocked: {exc}", file=sys.stderr)
         return 1
@@ -626,12 +740,28 @@ def _parser() -> argparse.ArgumentParser:
                    help="the format pack that built the workbook (default: the org "
                         "profile's estimating.format, else the bundled pack) -- "
                         "fieldbook, or a pack whose format.yaml declares "
-                        "derived_from: fieldbook")
+                        "derived_from: fieldbook or extends: fieldbook")
     p.add_argument("--force", action="store_true",
                    help="apply a workbook built from an older version of the spec (its "
                         "estimate_spec_sha stamp differs) over the current spec -- a notice, "
                         "not a problem; it undoes every spec edit made since it was built")
     p.set_defaults(func=cmd_read_back)
+
+    p = sub.add_parser("packages",
+                       help="Work packages in the spec: init from work-packages.yaml, "
+                            "sync the lines they price, report quote coverage.")
+    psub = p.add_subparsers(dest="packages_command", required=True)
+    q = psub.add_parser("init", help="Copy a work-packages.yaml into the spec.")
+    q.add_argument("spec", help="*.estimate.yaml")
+    q.add_argument("--from", dest="source", required=True, help="work-packages.yaml")
+    q = psub.add_parser("sync", help="Tag (or add) the lines each package prices.")
+    q.add_argument("spec", help="*.estimate.yaml")
+    for q in tuple(psub.choices.values()):
+        q.add_argument("--write", action="store_true",
+                       help="write the spec (after saving SPEC.bak-YYYYmmdd-HHMMSS)")
+    q = psub.add_parser("coverage", help="Report what the quotes leave unpriced.")
+    q.add_argument("spec", help="*.estimate.yaml")
+    p.set_defaults(func=cmd_packages)
     return parser
 
 

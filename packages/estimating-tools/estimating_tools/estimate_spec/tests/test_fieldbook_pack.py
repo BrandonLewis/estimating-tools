@@ -32,7 +32,7 @@ def wb():
 
 def test_the_pack_loads_and_promises_only_what_it_backs():
     pack = fieldbook_pack()
-    assert (pack.name, pack.version) == ("fieldbook", "1")
+    assert (pack.name, pack.version) == ("fieldbook", "2")
     assert pack.supports == frozenset()       # never summarize, never artifact
     assert pack.protect == {}                 # copy-and-paste editing: no protection
     assert pack.vocabulary["markup_by_type"] == "required"   # a plain number markup is refused
@@ -237,15 +237,18 @@ def test_takeoff_rows_carry_their_plan_reference_and_tie_to_bid_qty(wb):
     assert [valves[f"C{r}"].value for r in rows_of_kind(valves, "TAKEOFF")] == ["C-5"]
 
 
-def test_a_measured_takeoff_sums_its_cy_columns():
+def test_a_measured_takeoff_prices_its_qty_by_the_unit_dropdown():
     spec = example_spec()
     spec["items"][1]["takeoff"] = {"kind": "measured", "lines": [
         {"label": "S-FTG-A1", "length": 20, "height": 3, "footing_cy": 14.8, "footing_cf": 400,
          "wall_cy": 0, "wall_cf": 0, "deck_cy": 0, "deck_cf": 0}]}
     ws = build(spec)[ITEM2]
     (r,) = rows_of_kind(ws, "TAKEOFF")
-    assert (ws[f"A{r}"].value, ws[f"B{r}"].value, ws[f"F{r}"].value) == (
-        "S-FTG-A1", f"=SUM(F{r}:I{r})", 14.8)
+    assert (ws[f"A{r}"].value, ws[f"H{r}"].value) == ("S-FTG-A1", 14.8)
+    qty = ws[f"B{r}"].value                          # live on the Unit, Count, L/W/H and CY columns
+    eff = f'IF($C{r}="",$H$1,$C{r})'                # a blank Unit is the item's pay unit
+    assert qty.startswith(f'=N{r}+IF(OR({eff}="CY",{eff}="CUYD"),SUM(H{r}:K{r}),')
+    assert f"D{r}*E{r}*F{r}/9" in qty and f"L{r}/2000" in qty
 
 
 def test_a_partial_measured_line_renders_blank_for_the_missing_measurements():
@@ -258,10 +261,10 @@ def test_a_partial_measured_line_renders_blank_for_the_missing_measurements():
         {"label": "Footing", "footing_cy": 14.8}]}
     ws = build(spec)[ITEM2]
     (r,) = rows_of_kind(ws, "TAKEOFF")
-    assert (ws[f"A{r}"].value, ws[f"F{r}"].value) == ("Footing", 14.8)
-    for col in "DEGHI":                  # length, height, wall_cy, deck_cy, other_cy: not given
+    assert (ws[f"A{r}"].value, ws[f"H{r}"].value) == ("Footing", 14.8)
+    for col in "CDEFGIJKLMN":            # unit, count, L/W/H, wall/deck/other CY, weight, model, adjust
         assert ws[f"{col}{r}"].value is None
-    assert ws[f"B{r}"].value == f"=SUM(F{r}:I{r})"
+    assert ws[f"B{r}"].value.startswith(f"=N{r}+IF(")
 
 
 # ---------------------------------------------------------------- task blocks
@@ -368,7 +371,7 @@ def test_cost_lines_carry_type_source_and_vendor_as_inputs(wb):
     assert ws[f"{OK}{r}"].value == (
         f'=IF(AND(ISNUMBER(B{r}),ISNUMBER(G{r}),'
         f'OR(H{r}="Material",H{r}="Subcontract",H{r}="Equipment",H{r}="Other")),'
-        f"IF(AND(B{r}<>0,G{r}<>0),1,0),0)")
+        f"IF(OR(AND(B{r}<>0,G{r}<>0),AND(U{r}=\"SP\",B{r}=0,V{r}<>0)),1,0),0)")
     assert ws[f"{FLAG}{r}"].value == f'=IF({CODE}{r}="",1,0)'     # no cost code
 
 

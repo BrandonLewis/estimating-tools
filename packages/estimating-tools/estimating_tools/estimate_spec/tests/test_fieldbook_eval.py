@@ -278,3 +278,22 @@ def test_a_code_picked_off_the_list_in_excel_fails_check_9(tmp_path):
     wb[ITEM2][f"A{head}"] = "02-999"
     ev = evaluate(wb, tmp_path)
     assert {k for k, s in _statuses(wb, ev).items() if s != "✓"} == {(9, 2)}
+
+
+def test_a_measured_line_without_a_unit_totals_in_the_items_pay_unit(tmp_path):
+    spec = copy.deepcopy(example_spec())
+    item = spec["items"][1]
+    item["uom"] = "CY"
+    item["qty"] = 15
+    item["takeoff"] = {"kind": "measured", "lines": [
+        {"label": "Footing", "footing_cy": 10}, {"label": "Wall", "wall_cy": 5},
+        {"label": "Rail", "unit": "TON", "weight_lb": 4000}]}
+    wb = build(spec)
+    ws = wb[ITEM2]
+    ev = evaluate(wb, tmp_path)
+    first, _, rail = rows_of_kind(ws, "TAKEOFF")
+    (tot,) = [r for r in rows_of_kind(ws, "TOTAL") if ws[f"A{r}"].value == "Takeoff total"]
+    assert ev[f"{ITEM2}!B{first}"] == 10 and ev[f"{ITEM2}!B{rail}"] == 2
+    assert ev[f"{ITEM2}!B{tot}"] == 15               # the TON line is not added
+    assert ev[f"{ITEM2}!G{tot}"] == "✓"
+    assert ev[f"{ITEM2}!H{tot}"] == "1 line(s) in other units, not totalled"

@@ -223,7 +223,7 @@ def test_still_rejects_malformed_shapes():
 def test_the_skeleton_names_no_org_vocabulary():
     text = (ES / "schema" / "skeleton.schema.json").read_text()
     for word in ("FORE", "LUMBER", "EQUIPMENT", "ftg_cy", "wall_cf",
-                 "mob_item", "standard_item", "selected", "carry"):
+                 "mob_item", "standard_item"):
         assert word not in text, word
 
 

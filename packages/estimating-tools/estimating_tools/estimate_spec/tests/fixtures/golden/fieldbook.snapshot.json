@@ -15,7 +15,7 @@
   "est.index.descr": "'Cost Summary'!$B$4:$B$6",
   "est.index.item_no": "'Cost Summary'!$A$4:$A$6",
   "est.index.link": "'Cost Summary'!$C$4:$C$6",
-  "est.layout": "'_templates'!$V$1",
+  "est.layout": "'_templates'!$X$1",
   "est.tpl.crew": "'_templates'!$12:$12",
   "est.tpl.line": "'_templates'!$13:$13",
   "est.tpl.task": "'_templates'!$11:$15"
@@ -4054,6 +4054,84 @@
      "locked": true,
      "nf": "General",
      "v": null
+    },
+    "V13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D13*E13*'Rates'!$B$2*G13"
+    },
+    "V14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D14*E14*'Rates'!$B$2*G14"
+    },
+    "V16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=SUMIF(U11:U15,\"SP\",V11:V15)"
     }
    },
    "conditional": [
@@ -4127,7 +4205,9 @@
     "Q",
     "R",
     "S",
-    "T"
+    "T",
+    "U",
+    "V"
    ],
    "merges": [
     "A12:J12",
@@ -4177,7 +4257,9 @@
     "Q": 10.0,
     "R": 10.0,
     "S": 6.0,
-    "T": 6.0
+    "T": 6.0,
+    "U": 13.0,
+    "V": 13.0
    }
   },
   "2 - 8IN MAIN": {
@@ -13518,7 +13600,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(ISNUMBER(B25),ISNUMBER(G25),OR(H25=\"Material\",H25=\"Subcontract\",H25=\"Equipment\",H25=\"Other\")),IF(AND(B25<>0,G25<>0),1,0),0)"
+     "v": "=IF(AND(ISNUMBER(B25),ISNUMBER(G25),OR(H25=\"Material\",H25=\"Subcontract\",H25=\"Equipment\",H25=\"Other\")),IF(OR(AND(B25<>0,G25<>0),AND(U25=\"SP\",B25=0,V25<>0)),1,0),0)"
     },
     "S26": {
      "align": [
@@ -13544,7 +13626,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(ISNUMBER(B26),ISNUMBER(G26),OR(H26=\"Material\",H26=\"Subcontract\",H26=\"Equipment\",H26=\"Other\")),IF(AND(B26<>0,G26<>0),1,0),0)"
+     "v": "=IF(AND(ISNUMBER(B26),ISNUMBER(G26),OR(H26=\"Material\",H26=\"Subcontract\",H26=\"Equipment\",H26=\"Other\")),IF(OR(AND(B26<>0,G26<>0),AND(U26=\"SP\",B26=0,V26<>0)),1,0),0)"
     },
     "S27": {
      "align": [
@@ -13570,7 +13652,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(ISNUMBER(B27),ISNUMBER(G27),OR(H27=\"Material\",H27=\"Subcontract\",H27=\"Equipment\",H27=\"Other\")),IF(AND(B27<>0,G27<>0),1,0),0)"
+     "v": "=IF(AND(ISNUMBER(B27),ISNUMBER(G27),OR(H27=\"Material\",H27=\"Subcontract\",H27=\"Equipment\",H27=\"Other\")),IF(OR(AND(B27<>0,G27<>0),AND(U27=\"SP\",B27=0,V27<>0)),1,0),0)"
     },
     "S30": {
      "align": [
@@ -13730,7 +13812,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(ISNUMBER(B36),ISNUMBER(G36),OR(H36=\"Material\",H36=\"Subcontract\",H36=\"Equipment\",H36=\"Other\")),IF(AND(B36<>0,G36<>0),1,0),0)"
+     "v": "=IF(AND(ISNUMBER(B36),ISNUMBER(G36),OR(H36=\"Material\",H36=\"Subcontract\",H36=\"Equipment\",H36=\"Other\")),IF(OR(AND(B36<>0,G36<>0),AND(U36=\"SP\",B36=0,V36<>0)),1,0),0)"
     },
     "T1": {
      "align": [
@@ -14241,6 +14323,396 @@
      "locked": true,
      "nf": "General",
      "v": "=IF(AND(SUMIF(Q30:Q37,\"CREW\",T30:T37)>0,COUNTIF(A30:A37,\"Equipment Operator\")>0),1,0)"
+    },
+    "V20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D20*E20*'Rates'!$B$2*G20"
+    },
+    "V21": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D21*E21*'Rates'!$B$2*G21"
+    },
+    "V22": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D22*E22*'Rates'!$B$2*G22"
+    },
+    "V23": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D23*E23*'Rates'!$B$2*G23"
+    },
+    "V24": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D24*E24*'Rates'!$B$2*G24"
+    },
+    "V25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=B25*G25"
+    },
+    "V26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=B26*G26"
+    },
+    "V27": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=B27*G27"
+    },
+    "V29": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=SUMIF(U18:U28,\"SP\",V18:V28)"
+    },
+    "V32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D32*E32*'Rates'!$B$2*G32"
+    },
+    "V33": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D33*E33*'Rates'!$B$2*G33"
+    },
+    "V34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D34*E34*'Rates'!$B$2*G34"
+    },
+    "V35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D35*E35*'Rates'!$B$2*G35"
+    },
+    "V36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=B36*G36"
+    },
+    "V38": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=SUMIF(U30:U37,\"SP\",V30:V37)"
     }
    },
    "conditional": [
@@ -14741,7 +15213,9 @@
     "Q",
     "R",
     "S",
-    "T"
+    "T",
+    "U",
+    "V"
    ],
    "merges": [
     "A19:J19",
@@ -14795,7 +15269,9 @@
     "Q": 10.0,
     "R": 10.0,
     "S": 6.0,
-    "T": 6.0
+    "T": 6.0,
+    "U": 13.0,
+    "V": 13.0
    }
   },
   "3 - VALVES": {
@@ -19370,7 +19846,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(ISNUMBER(B18),ISNUMBER(G18),OR(H18=\"Material\",H18=\"Subcontract\",H18=\"Equipment\",H18=\"Other\")),IF(AND(B18<>0,G18<>0),1,0),0)"
+     "v": "=IF(AND(ISNUMBER(B18),ISNUMBER(G18),OR(H18=\"Material\",H18=\"Subcontract\",H18=\"Equipment\",H18=\"Other\")),IF(OR(AND(B18<>0,G18<>0),AND(U18=\"SP\",B18=0,V18<>0)),1,0),0)"
     },
     "T1": {
      "align": [
@@ -19565,6 +20041,110 @@
      "locked": true,
      "nf": "General",
      "v": "=IF(AND(SUMIF(Q15:Q19,\"CREW\",T15:T19)>0,COUNTIF(A15:A19,\"Equipment Operator\")>0),1,0)"
+    },
+    "V16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D16*E16*'Rates'!$B$2*G16"
+    },
+    "V17": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D17*E17*'Rates'!$B$2*G17"
+    },
+    "V18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=B18*G18"
+    },
+    "V20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=SUMIF(U15:U19,\"SP\",V15:V19)"
     }
    },
    "conditional": [
@@ -19742,7 +20322,9 @@
     "Q",
     "R",
     "S",
-    "T"
+    "T",
+    "U",
+    "V"
    ],
    "merges": [
     "B15:J15",
@@ -19791,7 +20373,9 @@
     "Q": 10.0,
     "R": 10.0,
     "S": 6.0,
-    "T": 6.0
+    "T": 6.0,
+    "U": 13.0,
+    "V": 13.0
    }
   },
   "Bid Form": {
@@ -25046,7 +25630,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IFERROR(IF(ISNUMBER(D5),IF(ABS(D5-E5)<0.005,\"\u2713\",\"\u2717\"),IF(ISTEXT(D5),IF(D5=\"n/a\",\"\u2713\",\"\u2717\"),\"\u2717\")),\"\u2717\")"
+     "v": "=IFERROR(IF(ISNUMBER(D5),IF(ABS(D5-E5)<=MAX(0.05,0.005*ABS(E5)),\"\u2713\",\"\u2717\"),IF(ISTEXT(D5),IF(D5=\"n/a\",\"\u2713\",\"\u2717\"),\"\u2717\")),\"\u2717\")"
     },
     "F6": {
      "align": [
@@ -25072,7 +25656,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IFERROR(IF(ISNUMBER(D6),IF(ABS(D6-E6)<0.005,\"\u2713\",\"\u2717\"),IF(ISTEXT(D6),IF(D6=\"n/a\",\"\u2713\",\"\u2717\"),\"\u2717\")),\"\u2717\")"
+     "v": "=IFERROR(IF(ISNUMBER(D6),IF(ABS(D6-E6)<=MAX(0.05,0.005*ABS(E6)),\"\u2713\",\"\u2717\"),IF(ISTEXT(D6),IF(D6=\"n/a\",\"\u2713\",\"\u2717\"),\"\u2717\")),\"\u2717\")"
     },
     "F7": {
      "align": [
@@ -25098,7 +25682,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IFERROR(IF(ISNUMBER(D7),IF(ABS(D7-E7)<0.005,\"\u2713\",\"\u2717\"),IF(ISTEXT(D7),IF(D7=\"n/a\",\"\u2713\",\"\u2717\"),\"\u2717\")),\"\u2717\")"
+     "v": "=IFERROR(IF(ISNUMBER(D7),IF(ABS(D7-E7)<=MAX(0.05,0.005*ABS(E7)),\"\u2713\",\"\u2717\"),IF(ISTEXT(D7),IF(D7=\"n/a\",\"\u2713\",\"\u2717\"),\"\u2717\")),\"\u2717\")"
     },
     "F9": {
      "align": [
@@ -35399,7 +35983,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(ISNUMBER(B13),ISNUMBER(G13),OR(H13=\"Material\",H13=\"Subcontract\",H13=\"Equipment\",H13=\"Other\")),IF(AND(B13<>0,G13<>0),1,0),0)"
+     "v": "=IF(AND(ISNUMBER(B13),ISNUMBER(G13),OR(H13=\"Material\",H13=\"Subcontract\",H13=\"Equipment\",H13=\"Other\")),IF(OR(AND(B13<>0,G13<>0),AND(U13=\"SP\",B13=0,V13<>0)),1,0),0)"
     },
     "S6": {
      "align": [
@@ -35599,7 +36183,85 @@
      "nf": "General",
      "v": null
     },
-    "V1": {
+    "V12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=D12*E12*'Rates'!$B$2*G12"
+    },
+    "V13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=B13*G13"
+    },
+    "V15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      8.0,
+      false,
+      false,
+      "FF5B6770",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=SUMIF(U11:U14,\"SP\",V11:V14)"
+    },
+    "X1": {
      "align": [
       null,
       null,
@@ -35623,7 +36285,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "{\"blocks\":{\"body\":[\"NOTE\",\"CREW\",\"LINE\"],\"code_col\":\"A\",\"end\":\"END\",\"head\":\"TASK\",\"item\":\"ITEM\",\"sub\":\"SUBTOTAL\"},\"layout_version\":1,\"pack\":\"fieldbook\",\"pack_version\":\"1\",\"tables\":[\"checks\",\"codes\",\"index\"],\"tags\":{\"code_chain\":\"R\",\"kind\":\"Q\"},\"templates\":true}"
+     "v": "{\"blocks\":{\"body\":[\"NOTE\",\"CREW\",\"LINE\"],\"code_col\":\"A\",\"end\":\"END\",\"head\":\"TASK\",\"item\":\"ITEM\",\"sub\":\"SUBTOTAL\"},\"layout_version\":1,\"pack\":\"fieldbook\",\"pack_version\":\"2\",\"tables\":[\"checks\",\"codes\",\"index\"],\"tags\":{\"code_chain\":\"R\",\"kind\":\"Q\"},\"templates\":true}"
     }
    },
    "conditional": [
@@ -35728,7 +36390,9 @@
     "Q",
     "R",
     "S",
-    "T"
+    "T",
+    "U",
+    "V"
    ],
    "merges": [
     "B11:J11",
@@ -35777,7 +36441,9 @@
     "Q": 10.0,
     "R": 10.0,
     "S": 6.0,
-    "T": 6.0
+    "T": 6.0,
+    "U": 13.0,
+    "V": 13.0
    }
   }
  }

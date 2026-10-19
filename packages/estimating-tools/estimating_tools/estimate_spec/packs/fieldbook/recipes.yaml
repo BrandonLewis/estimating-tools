@@ -1,6 +1,9 @@
 # Fieldbook's recipes: two item recipes (line_item, with a takeoff; lump_sum,
 # without) and six book sheets before the items:
 #   Bid Form · Cost Summary · Markup · Checks · Rates · Codes (hidden).
+# A spec with work_packages also gets, after the items, the `Sub Spreads`
+# summary and one `Sub <package>` sheet per package (config._packages, set
+# by package_frames.apply_packages).
 globals:
   shift_hours: { export: rates_shift.shift, scope: workbook, qualify: sheet }
   rate_table:  { export: rates.table,       scope: workbook, qualify: sheet }
@@ -19,7 +22,7 @@ recipes:
     column_widths: &widths
       { A: 34, B: 10, C: 7, D: 11, E: 11, F: 13, G: 10, H: 12, I: 10, J: 24,
         K: 8, L: 12, M: 12, N: 12, O: 12, P: 13, Q: 10, R: 10, S: 6, T: 6 }
-    hidden_columns: &tags [Q, R, S, T]
+    hidden_columns: &tags [Q, R, S, T, U, V]
     freeze: A2                         # the header band (item #, description, bid qty) stays put
     print: &item_print { orientation: landscape, fit_to_width: 1, repeat_rows: "1:1" }
     units:
@@ -50,12 +53,18 @@ recipes:
           cost_code: "{it.cost_code}"
           description: "{it.description}"
           notes: { from: it.notes, default: [] }
+          sp_note: { from: it.sp_note }
+          # u_tag / arr_* / pkg_ref: set by the work-package transform only
+          # (see package_frames.apply_packages); the defaults are an
+          # unpackaged task's own columns.
           crew:
             for_each: it.crew
             as:
               trade: "{it.trade}"
               count: { from: it.count, default: 1 }
               days:  "{it.days}"
+              u_tag: { from: it.u_tag, default: "" }
+              arr_days: { from: it.arr_days, default: "E{r}" }
           lines:
             for_each: it.lines
             as:
@@ -66,6 +75,11 @@ recipes:
               cost_type: "{it.cost_type}"
               source: { from: it.source, default: plug }
               vendor: { from: it.vendor, default: "" }
+              index: { from: it_index }
+              u_tag: { from: it.u_tag, default: "" }
+              arr_qty: { from: it.arr_qty, default: "B{r}" }
+              arr_price: { from: it.arr_price, default: "G{r}" }
+              pkg_ref: { from: it.pkg_ref, default: "" }
 
   lump_sum:
     column_widths: *widths
@@ -181,6 +195,8 @@ book:
       - { unit: check_codes,    for_each: book.items, key: "ck7[{it.item_no}]", params: *check_item }
       - { unit: check_operator, for_each: book.items, key: "ck8[{it.item_no}]", params: *check_item }
       - { unit: check_code_list, when: config.cost_codes, for_each: book.items, key: "ck9[{it.item_no}]", params: *check_item }
+      - { unit: check_packages, when: config._packages, for_each: config._packages, key: "ck10[{it.name}]",
+          params: { name: "{it.name}", sheet: "{it.title}" } }
 
   - sheet_name: Rates
     position: before_items
@@ -220,3 +236,40 @@ book:
                     for_each: it.labor
                     as: { code: "{it.cost_code}", description: "{it.description}", listed: 0 }
       - unit: code_list
+
+  - sheet_name: Sub Spreads
+    position: after_items
+    when: config._packages
+    column_widths: { A: 22, B: 12, C: 12, D: 13, E: 18, F: 13, G: 16, H: 13, I: 13, J: 11 }
+    freeze: A3
+    units:
+      - unit: package_summary_head
+      - unit: package_summary_row
+        for_each: config._packages
+        key: "sum[{it.name}]"
+        params:
+          name: "{it.name}"
+          kind: "{it.kind}"
+          strategy: "{it.strategy}"
+          sheet: "{it.title}"
+          lump: "{it.lump_flag}"
+
+  - sheet_name: "{sheet.title}"
+    position: after_items
+    for_each: config._packages
+    column_widths: { A: 8, B: 30, C: 9, D: 10, E: 7, F: 11, G: 12, H: 13, I: 10, J: 12 }
+    units:
+      - unit: package_head
+        key: head
+        params:
+          name: "{sheet.name}"
+          kind: "{sheet.kind}"
+          strategy: "{sheet.strategy}"
+          selected: "{sheet.selected}"
+          vendors: "{sheet.vendors}"
+      - { unit: package_lines, key: lines, params: { vendors: "{sheet.vendors}", lines: "{sheet.lines}" } }
+      - { unit: package_items, key: items, params: { vendors: "{sheet.vendors}", items: "{sheet.items}" } }
+      - { unit: package_totals, key: totals, params: { vendors: "{sheet.vendors}" } }
+      - { unit: package_conditions, key: conditions, when: sheet.conditions,
+          params: { vendors: "{sheet.vendors}", conditions: "{sheet.conditions}" } }
+      - { unit: package_detail, key: detail, when: sheet.detail_rows, params: { rows: "{sheet.detail_rows}" } }

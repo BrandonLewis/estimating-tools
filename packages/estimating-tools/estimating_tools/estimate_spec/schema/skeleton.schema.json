@@ -69,6 +69,9 @@
       "minItems": 1,
       "items": { "$ref": "#/$defs/item" }
     },
+    "work_packages": { "type": "array", "items": { "$ref": "#/$defs/work_package" }, "description": "Vendor-quote scopes levelled on bid day; task lines join one through line.package." },
+    "work_packages_quotes_dir": { "type": "string", "default": "quotes", "description": "Directory holding the vendor quote JSON files, relative to the spec." },
+    "work_packages_spare_vendor_columns": { "type": "integer", "minimum": 0, "default": 4, "description": "Empty vendor columns each spread sheet keeps for quotes that arrive late." },
     "crews": {
       "type": "array",
       "description": "Optional crew composition table. Referenced from item.crew_id.",
@@ -171,6 +174,7 @@
         "description": { "type": "string" },
         "note":        { "type": "string", "description": "Optional aside shown on the title row, e.g. \"@ 8 hours / pours\"." },
         "crew_factor": { "type": "number" },
+        "carry":       { "enum": ["support", "self_perform"], "default": "support", "description": "self_perform = a vendor in the package replaces this task when selected; support (default) = an ARR support crew that stays." },
         "driver":      { "$ref": "#/$defs/numOrFormula" },
         "uom":         { "type": "string" },
         "cost_code":   { "type": "string", "description": "Optional cost-code reference for this labor block. Free-form; resolution to a category is a profile / render concern." },
@@ -233,6 +237,28 @@
       }
     },
 
+    "work_package": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": { "description": "Namespaced consumer passthrough: any key prefixed 'x-' is accepted verbatim." }
+      },
+      "required": ["name", "kind", "items"],
+      "properties": {
+        "name":       { "type": "string", "minLength": 1, "description": "Unique package name; task lines reference it from line.package." },
+        "kind":       { "enum": ["subcontract", "supply"], "description": "Whether vendors quote to do the work (subcontract) or to furnish material (supply)." },
+        "strategy":   { "enum": ["self_perform", "sub_out", "hybrid", "undecided"], "description": "The estimator's current plan for the package." },
+        "scope":      { "type": "string", "description": "What the package covers, as the vendor quotes read it." },
+        "items":      { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "item_no of every item the package spans; each must exist in items[]." },
+        "detail":     { "enum": ["rebar", "concrete", "precast"], "description": "Which takeoff detail the spread sheet shows beside the quotes." },
+        "conditions": { "type": "array", "items": { "type": "string" }, "description": "Bid conditions to level quotes against, one line each." },
+        "selected":   { "type": "string", "default": "ARR", "description": "The chosen bidder for the package: ARR, CARRY or a vendor name. A missing value means ARR." },
+        "picks":      { "type": "object", "additionalProperties": { "type": "string" }, "description": "Per-item override of selected, keyed by item_no (an item in the package)." },
+        "carry":      { "type": "object", "additionalProperties": { "type": "number" }, "description": "CARRY $/unit per package line, keyed item_no or item_no/line name." },
+        "surcharge":  { "type": "object", "additionalProperties": { "type": "number" }, "description": "Per-vendor surcharge, keyed by vendor name." }
+      }
+    },
+
     "line_source": { "enum": ["quote", "plug"], "default": "plug", "description": "quote = priced from a vendor's quote (name it in vendor); plug = the estimator's number, still to be chased. Absent means plug." },
 
     "task_line": {
@@ -246,7 +272,8 @@
         "qty":        { "$ref": "#/$defs/numOrFormula" },
         "unit_price": { "$ref": "#/$defs/numOrFormula" },
         "source":     { "$ref": "#/$defs/line_source" },
-        "vendor":     { "type": "string" }
+        "vendor":     { "type": "string" },
+        "package":    { "type": "string", "description": "Name of the work package whose price this line carries; the package must list the line's item." }
       }
     },
 

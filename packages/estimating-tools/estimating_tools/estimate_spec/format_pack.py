@@ -214,6 +214,21 @@ class FormatPack:
     #: own name, trades and seed says `derived_from: fieldbook`. None for a
     #: pack that declares nothing. See `readback_family`.
     derived_from: str | None = None
+    #: The base pack's NAME when the manifest says `extends:`, else None.
+    extends: str | None = None
+    #: Pack names from this pack down to the root: `(name,)` for a root pack,
+    #: `(name,) + base.lineage` for a derived one.
+    lineage: tuple = ()
+    #: `(name, version)` pairs from this pack down to the root, parallel to
+    #: `lineage`.
+    chain: tuple = ()
+
+    @property
+    def stamp(self) -> str:
+        """The `estimate_format` value: `"<name> <version>"` for a root pack,
+        `"<name> <version> / <base> <version>"` (and so on down the chain)
+        for a derived one -- a base pack's grid change shows in the stamp."""
+        return " / ".join(f"{n} {v}" for n, v in (self.chain or ((self.name, self.version),)))
 
     @property
     def key(self) -> tuple[str, str, str]:
@@ -227,6 +242,36 @@ def _read(path: Path, what: str):
         return json.loads(text) if path.suffix == ".json" else yaml.safe_load(text)
     except (json.JSONDecodeError, yaml.YAMLError) as exc:
         raise FormatPackError(f"{path} ({what}): {exc}") from exc
+
+
+#: Per document: the mapping keys whose entries merge by name; any other
+#: top-level key (e.g. `book:`) is replaced whole.
+_MERGE_BY_NAME = {"units": ("units",),
+                  "recipes": ("recipes", "globals", "takeoff_kinds")}
+
+
+def _resolve_base(meta: dict, root: Path) -> "FormatPack | None":
+    """The pack `meta['extends']` names, loaded `chosen=True`; None if absent."""
+    ext = meta.get("extends")
+    if ext is None:
+        return None
+    if not isinstance(ext, str) or not ext:
+        raise FormatPackError(f"{root / MANIFEST}: 'extends' must be a pack name or path")
+    return load_pack(BUNDLED if ext == "fieldbook" else root / ext, chosen=True)
+
+
+def _merge_doc(key: str, base: dict, over: dict) -> dict:
+    """Merge a derived pack's document `over` the base's (see packs/README.md)."""
+    if not isinstance(over, dict):
+        return over                      # not a mapping: the loader's own check refuses it
+    merged = copy.deepcopy(base)
+    by_name = _MERGE_BY_NAME.get(key, ())
+    for k, v in over.items():
+        if k in by_name and isinstance(v, dict) and isinstance(merged.get(k), dict):
+            merged[k].update(copy.deepcopy(v))
+        else:
+            merged[k] = copy.deepcopy(v)
+    return merged
 
 
 def load_pack(root, *, chosen: bool = True) -> FormatPack:
@@ -244,6 +289,15 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
     for required_field in ("name", "version"):
         if meta.get(required_field) in (None, ""):
             raise FormatPackError(f"{manifest}: missing '{required_field}'")
+    explicit_layout_map = "layout_map" in meta
+    base = _resolve_base(meta, root)
+    if base is not None:
+        # strict, layout_map, supports, labor, protect: inherited unless the
+        # derived manifest sets them. (`provenance` is not read by the loader.)
+        for k, v in (("strict", base.strict), ("layout_map", base.layout_map),
+                     ("supports", sorted(base.supports)),
+                     ("labor", base.labor), ("protect", base.protect)):
+            meta.setdefault(k, copy.deepcopy(v))
     supports = meta.get("supports") or []
     if not isinstance(supports, list):
         raise FormatPackError(f"{manifest}: 'supports' must be a list")
@@ -281,6 +335,8 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
             f"{manifest}: protect.password is set but protect.sheets is not "
             "true -- a password only means something once sheets are protected")
     derived_from = meta.get("derived_from")
+    if derived_from is None and base is not None and readback_family(base) in DERIVABLE:
+        derived_from = readback_family(base)
     if derived_from is not None:
         if not isinstance(derived_from, str) or not derived_from.strip():
             raise FormatPackError(
@@ -306,8 +362,15 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
         raise FormatPackError(f"{manifest}: unknown files entries {unknown}")
 
     docs: dict = {}
+    base_docs = ({} if base is None else
+                 {"units": {"units": base.units}, "tokens": base.tokens,
+                  "recipes": base.recipes, "vocabulary": base.vocabulary,
+                  "seed": base.seed})
     for key in _REQUIRED + _OPTIONAL:
         rel = files.get(key)
+        if rel is None and base is not None:
+            docs[key] = copy.deepcopy(base_docs[key])
+            continue
         if rel is None:
             raise FormatPackError(f"{manifest}: files.{key} is required")
         path = (root / rel).resolve()
@@ -316,6 +379,8 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
         if not path.is_file():
             raise FormatPackError(f"{manifest}: files.{key} -> {rel} not found")
         docs[key] = _read(path, f"files.{key}")
+        if base is not None:
+            docs[key] = _merge_doc(key, base_docs[key], docs[key])
 
     units = docs["units"]
     if not isinstance(units, dict) or not isinstance(units.get("units"), dict):
@@ -346,7 +411,7 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
         raise FormatPackError(f"{root}: files.recipes: {exc}") from exc
     recipe_names = [k for k in recipes["recipes"] if k != "cover"]
 
-    if layout_map is not None and "layout_map" not in meta:
+    if layout_map is not None and not explicit_layout_map:
         misfits = LM.fit_problems(layout_map, recipes, units["units"])
         if misfits:
             raise FormatPackError(
@@ -458,13 +523,18 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                     f"{entry[key]!r} not in line_fields")
 
     schema = compose_schema(_skeleton(), vocab, recipe_names)
+    lineage_base = base or (_base_pack(derived_from) if derived_from else None)
 
     return FormatPack(root=root, name=str(meta["name"]), version=str(meta["version"]),
                       units=units["units"], tokens=docs["tokens"], recipes=recipes,
                       schema=schema, vocabulary=vocab,
                       seed=docs["seed"], supports=frozenset(supports), labor=labor,
                       protect=protect, chosen=chosen, strict=strict,
-                      layout_map=layout_map, derived_from=derived_from)
+                      layout_map=layout_map, derived_from=derived_from,
+                      extends=None if base is None else base.name,
+                      lineage=(str(meta["name"]),) + (lineage_base.lineage if lineage_base else ()),
+                      chain=((str(meta["name"]), str(meta["version"])),)
+                      + (lineage_base.chain if lineage_base else ()))
 
 
 def _check_seed_rate_trades(seed: dict, who: str) -> None:

@@ -356,3 +356,119 @@ def test_a_takeoff_row_inserted_inside_the_total_range_is_no_notice():
     sheet = _read(wb)
     assert [r.row for r in sheet.takeoff] == [6, 7, 8]
     assert not any(_OUTSIDE in n for n in sheet.noticed.notices)
+
+
+# ------------------------------------------------------------- package sheets
+from estimating_tools.estimate_spec import build as _B  # noqa: E402
+from estimating_tools.estimate_spec.readback import layout as _L  # noqa: E402
+from estimating_tools.estimate_spec.readback import reader as _R  # noqa: E402
+from estimating_tools.estimate_spec.tests._fieldbook import (  # noqa: E402
+    QUOTES, fieldbook_pack, packaged_spec)
+
+
+def _pkg_wb():
+    return _B.generate(packaged_spec(), fieldbook_pack(), quotes=QUOTES)
+
+
+def _hauling(wb=None):
+    return S.read_package_sheet((wb or _pkg_wb())["Sub Hauling"])
+
+
+def test_package_sheets_are_found_by_their_tag_in_workbook_order():
+    wb = _pkg_wb()
+    assert _R._package_sheets(wb) == ["Sub Hauling", "Sub Valves"]
+    assert _R._package_sheets(build()) == []
+
+
+def test_a_package_sheet_reads_by_its_headers():
+    p = _hauling()
+    assert (p.name, p.selector) == ("Hauling", "Dirt Movers")
+    assert [(v.name, v.is_spare) for v in p.vendors] == [
+        ("Dirt Movers", False), ("Bulk Haul Co", False)] + [("", True)] * 4
+    assert [v.col for v in p.vendors[:3]] == ["K", "M", "O"]
+    dm, bh = p.vendors[:2]
+    # No quote_ref of its own: the column shows its quote date (an Excel date).
+    assert dm.surcharge == 0.04 and str(dm.quote_ref)[:10] == "2026-10-20"
+    assert bh.surcharge == 0
+    (row,) = p.rows
+    assert (row.item_no, row.line_name) == (2, "Haul, import + export")
+    assert row.pick is None and row.carry is None
+    assert row.cells["Dirt Movers"] == 16.5
+    assert row.cells == {"Dirt Movers": 16.5, "Bulk Haul Co": 19.0, "O": None, "Q": None, "S": None, "U": None}
+    assert p.conditions[("Fuel surcharge", "Dirt Movers")] == "4% of invoice"
+    assert p.conditions[("Dump fees", "Dirt Movers")] == "included"
+    assert p.noticed == S.Noticed()
+
+
+def test_a_package_without_vendors_still_reads():
+    import copy
+    spec = packaged_spec()
+    for pk in spec["work_packages"]:
+        pk["selected"] = "ARR"
+    p = S.read_package_sheet(_B.generate(copy.deepcopy(spec), fieldbook_pack(), quotes=[])["Sub Hauling"])
+    assert p.selector == "ARR"
+    assert [v.name for v in p.vendors if not v.is_spare] == []
+    assert [v.col for v in p.vendors] == ["K", "M", "O", "Q"] and all(v.is_spare for v in p.vendors)
+    assert list(p.rows[0].cells) == ["K", "M", "O", "Q"]
+    assert p.cols["carry"] == "S"
+    assert p.noticed.problems == []
+
+
+def test_a_renamed_carry_from_header_is_a_problem():
+    wb = _pkg_wb()
+    wb["Sub Hauling"]["H5"] = "Renamed"
+    problems = _hauling(wb).noticed.problems
+    assert any("Sub Hauling" in m and "Carry from" in m for m in problems), problems
+
+
+def test_a_vendor_typed_into_a_spare_header_is_a_vendor():
+    wb = _pkg_wb()
+    ws = wb["Sub Hauling"]
+    ws["O5"] = "Hauls R Us"
+    ws["O8"] = 15
+    p = _hauling(wb)
+    new = [v for v in p.vendors if v.name == "Hauls R Us"]
+    assert len(new) == 1 and not new[0].is_spare
+    assert p.rows[0].cells["Hauls R Us"] == 15
+    assert sum(v.is_spare for v in p.vendors) == 3
+
+
+def test_a_column_inserted_before_carry_with_a_header_is_a_vendor():
+    wb = _pkg_wb()
+    ws = wb["Sub Hauling"]
+    carry = next(c for c in range(1, 40) if ws.cell(5, c).value == "CARRY")
+    ws.insert_cols(carry)
+    ws.cell(5, carry).value = "Late Quote"
+    ws.cell(8, carry).value = 21
+    p = _hauling(wb)
+    assert [v.name for v in p.vendors if not v.is_spare][-1] == "Late Quote"
+    assert p.rows[0].cells["Late Quote"] == 21
+    assert p.noticed.problems == []
+
+
+def test_a_per_line_pick_is_read():
+    wb = _pkg_wb()
+    wb["Sub Hauling"]["H8"] = "Bulk Haul Co"
+    assert _hauling(wb).rows[0].pick == "Bulk Haul Co"
+
+
+def test_renamed_or_missing_package_headers_are_problems():
+    for label_cell, label in (("E3", "CARRYING"), ("A5", "Item")):
+        wb = _pkg_wb()
+        wb["Sub Hauling"][label_cell] = "Renamed"
+        problems = _hauling(wb).noticed.problems
+        assert any("Sub Hauling" in m and label in m for m in problems), (label, problems)
+    for header in ("CARRY", "Source"):
+        wb = _pkg_wb()
+        ws = wb["Sub Hauling"]
+        (cell,) = [c for c in ws[5] if c.value == header]
+        cell.value = "Renamed"
+        problems = _hauling(wb).noticed.problems
+        assert any("Sub Hauling" in m and header in m for m in problems), (header, problems)
+
+
+def test_a_duplicate_vendor_header_is_a_problem():
+    wb = _pkg_wb()
+    wb["Sub Hauling"]["O5"] = "dirt movers"
+    problems = _hauling(wb).noticed.problems
+    assert any("dirt movers" in m.lower() and "unique" in m for m in problems)

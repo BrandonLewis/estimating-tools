@@ -14,6 +14,8 @@ class QuoteLine:
     is_included: bool = True
     is_alternate: bool = False
     exclusion_notes: str | None = None
+    line_name: str | None = None  # the spec line this prices
+    folded_into: str | None = None  # name of the vendor line that carries this scope
 
 
 @dataclass
@@ -31,3 +33,7 @@ class CanonicalQuote:
     contact_info: str | None = None
     notes: str | None = None
     lines: list[QuoteLine] = field(default_factory=list)
+    quote_date: str | None = None  # ISO YYYY-MM-DD, orders revisions
+    quote_ref: str | None = None
+    surcharge: float | None = None  # fuel-type surcharge, fraction
+    conditions: dict[str, str] = field(default_factory=dict)  # fills the package conditions grid

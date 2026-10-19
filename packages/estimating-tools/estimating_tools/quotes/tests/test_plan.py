@@ -158,3 +158,50 @@ def test_render_quote_plan_ordinary_line_shows_alternate_false():
     )
     out = render_quote_plan(plan)
     assert "False" in out
+
+
+def test_two_lines_on_one_bid_item_sum_into_one_amount():
+    q = CanonicalQuote(vendor_name="V", work_package_name="P", lines=[
+        QuoteLine(schedule_name="Base", item_number="61", unit_price=2.0, quantity=100.0),
+        QuoteLine(schedule_name="Base", item_number="61", amount=50.0),
+        QuoteLine(schedule_name="Base", item_number="61", is_included=False),
+        QuoteLine(schedule_name="Base", item_number="62", unit_price=3.0),
+    ])
+    plan = plan_quote(q)
+    assert plan.bid_item_refs == [{"schedule_name": "Base", "item_number": "61"},
+                                  {"schedule_name": "Base", "item_number": "62"}]
+    assert plan.lines == [
+        {"schedule_name": "Base", "item_number": "61", "is_included": True, "amount": 250.0},
+        {"schedule_name": "Base", "item_number": "62", "is_included": True, "unit_price": 3.0},
+    ]
+
+
+def test_combining_base_and_alternate_lines_refuses_instead_of_dropping_the_alternate():
+    import pytest
+    quote = CanonicalQuote(vendor_name="Vendor", work_package_name="Package", lines=[
+        QuoteLine(schedule_name="Base", item_number="1", amount=100),
+        QuoteLine(schedule_name="Base", item_number="1", amount=50, is_alternate=True),
+    ])
+    with pytest.raises(ValueError, match="cannot combine base and alternate"):
+        plan_quote(quote)
+
+
+def test_combining_alternates_retains_their_prices():
+    quote = CanonicalQuote(vendor_name="Vendor", work_package_name="Package", lines=[
+        QuoteLine(schedule_name="Base", item_number="1", amount=100, is_alternate=True),
+        QuoteLine(schedule_name="Base", item_number="1", unit_price=5, quantity=10,
+                  is_alternate=True),
+    ])
+    (line,) = plan_quote(quote).lines
+    assert line["is_alternate"] is True and line["is_included"] is False
+    assert line["amount"] == 150
+
+
+def test_combining_lines_refuses_a_partially_unextended_price():
+    import pytest
+    quote = CanonicalQuote(vendor_name="Vendor", work_package_name="Package", lines=[
+        QuoteLine(schedule_name="Base", item_number="1", amount=100),
+        QuoteLine(schedule_name="Base", item_number="1", unit_price=5),
+    ])
+    with pytest.raises(ValueError, match="needs an amount or quantity"):
+        plan_quote(quote)

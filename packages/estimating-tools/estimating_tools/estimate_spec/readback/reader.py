@@ -4,14 +4,15 @@ from __future__ import annotations
 import copy
 import zipfile
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.estimate_spec.readback import layout as L
 from estimating_tools.estimate_spec.readback import sheets as S
 from estimating_tools.estimate_spec.readback.merge import (
-    Findings, find_needs_rate, merge_bid_date, merge_item, merge_markup, merge_rates)
+    Findings, driven_cells, find_needs_rate, merge_bid_date, merge_item, merge_markup,
+    merge_packages, merge_rates)
 from estimating_tools.estimate_spec.readback.values import blank, fmt, same_text
 
 FIELDBOOK_DIR = fp.ENGINE_DIR / "packs" / "fieldbook"
@@ -26,9 +27,15 @@ class ReadBack:
     """`spec` is the updated spec only when read-back succeeded: when nothing
     changed, or when `blocked`, it is an untouched copy of the input -- the
     merge works on its own copy and commits only on success, so a blocked
-    result never hands back a half-applied spec."""
+    result never hands back a half-applied spec.
+
+    `quote_writes` are the vendor quote files the workbook's package sheets
+    change or add (`merge.QuoteWrite`), returned on a dry run too -- the
+    caller decides whether to write them; empty when `blocked`, like the
+    spec."""
     spec: dict
     findings: Findings
+    quote_writes: list = field(default_factory=list)
 
     @property
     def changed(self) -> bool:
@@ -58,46 +65,46 @@ def load_workbook(path):
 
 
 def check_stamp(wb, pack) -> None:
-    """Refuse a workbook `pack` (this version of it) did not build, and a
-    `pack` whose layout contract this reader does not know.
-
-    The workbook's `estimate_format` stamp must be `"<pack.name>
-    <pack.version>"` -- `pack` being the one the caller resolved the way
-    build does (`--format`, the org profile, the bundled pack) -- and the
-    pack's `readback_family` must be fieldbook's: fieldbook itself, or a pack
-    that declares `derived_from: fieldbook`."""
+    """Refuse another pack, version or base-pack lineage before reading cells."""
     props = {p.name: p.value for p in wb.custom_doc_props.props}
     stamp = props.get("estimate_format")
     if not stamp:
         raise ReadBackRefused(
             "not an est-estimate workbook: it carries no estimate_format property "
             "(est-estimate build stamps every workbook it writes)")
-    name, _, version = str(stamp).partition(" ")
+    chain = [tuple(part.strip().partition(" ")[::2]) for part in str(stamp).split("/")]
+    name = chain[0][0]
     if name != pack.name:
-        # A bundled base is reachable by name; pointing the org profile at it
-        # would redirect every org build, so that is never the advice for it.
         fix = (f"pass --format {name}" if name in fp.DERIVABLE else
                f"pass --format with the {name!r} pack's directory, or set the org "
                "profile's estimating.format to it")
         raise ReadBackRefused(
-            f"this workbook was built in the {name!r} format, but read-back resolved the "
-            f"{pack.name!r} pack -- {fix}")
+            f"not a {pack.name} workbook: this workbook was built in the {name!r} "
+            f"format, but read-back resolved the {pack.name!r} pack -- {fix}")
     family = fp.readback_family(pack)
     if family != L.FAMILY:
         raise ReadBackRefused(
             f"pack {pack.name!r} is in the {family!r} family, and read-back reads only "
             f"{L.FAMILY!r} workbooks (fieldbook, or a pack whose format.yaml declares "
-            f"derived_from: {L.FAMILY})")
-    if version != str(pack.version):
+            f"derived_from: {L.FAMILY} or extends: {L.FAMILY})")
+    want = [(n, str(v)) for n, v in (pack.chain or ((pack.name, pack.version),))]
+    if chain != want:
         raise ReadBackRefused(
-            f"this workbook was built by {name} version {version}; this read-back "
-            f"reads version {pack.version} -- rebuild it from the spec first")
+            f"built with {str(stamp).strip()}; this read-back "
+            f"needs {pack.stamp} -- rebuild from the spec")
 
 
 def _item_sheets(wb) -> list:
     return [ws.title for ws in wb.worksheets
             if ws.title != L.TEMPLATES_SHEET
             and any(ws[f"{L.KIND_COL}{r}"].value == "ITEM" for r in range(1, min(ws.max_row, 5) + 1))]
+
+
+def _package_sheets(wb) -> list:
+    """Titles of the `Sub <package>` sheets (the PKG tag in row 1 -- built in
+    Q1, but a column inserted before it moves it), in workbook order."""
+    return [ws.title for ws in wb.worksheets
+            if any(isinstance(c.value, str) and c.value.strip() == L.PKG_TAG for c in ws[1])]
 
 
 def check_items(spec: dict, wb) -> None:
@@ -234,7 +241,44 @@ def explain_build_error(spec, exc) -> str:
     return raw if friendly is None else f"{friendly}\n  ({raw})"
 
 
-def read_back(spec: dict, wb, pack=None, *, force: bool = False) -> ReadBack:
+def _quote_files(directory) -> tuple[list, list]:
+    """(quotes, file names) of the quote files in `directory`, in
+    `load_quotes`'s order -- the names, so an edited quote is written back
+    to the file it came from."""
+    from estimating_tools.quotes.files import QuoteFileError, load_quote_file
+
+    d = Path(directory)
+    if not d.is_dir():
+        return [], []
+    try:
+        pairs = [(load_quote_file(p), p.name) for p in d.glob("*.json")
+                 if not p.name.endswith(".example.json")]
+    except QuoteFileError as exc:
+        raise ReadBackRefused(f"cannot read the quote files: {exc}") from None
+    pairs.sort(key=lambda qn: (qn[0].quote_date or "", qn[1]))
+    return [q for q, _ in pairs], [n for _, n in pairs]
+
+
+def _with_writes(quotes: list, names: list, writes: list) -> list:
+    """`quotes` as they will be once `writes` are written: a rewritten file's
+    quote replaced, a new file's added."""
+    out = list(quotes)
+    for w in writes:
+        at = next((i for i, (q, n) in enumerate(zip(quotes, names))
+                   if (n or "") == w.file_name
+                   or (n is None and q.vendor_name.strip().casefold()
+                       == w.quote.vendor_name.strip().casefold()
+                       and q.work_package_name.strip().casefold()
+                       == w.quote.work_package_name.strip().casefold())), None)
+        if at is None:
+            out.append(w.quote)
+        else:
+            out[at] = w.quote
+    return out
+
+
+def read_back(spec: dict, wb, pack=None, *, force: bool = False, quotes=None,
+              quotes_dir=None) -> ReadBack:
     """What the edited fieldbook workbook `wb` changes in `spec`.
 
     `pack` is the pack that built `wb` -- fieldbook, or a pack derived from
@@ -245,16 +289,34 @@ def read_back(spec: dict, wb, pack=None, *, force: bool = False) -> ReadBack:
     against `spec` at all; everything else -- including problems that must
     block writing -- comes back in the result's findings. A workbook built
     from another version of `spec` (its `estimate_spec_sha` stamp) is a
-    problem unless `force`."""
-    from estimating_tools.estimate_spec.build import generate
+    problem unless `force`.
 
+    A spec with `work_packages` is read against its vendor quotes: `quotes`
+    (CanonicalQuote list) when given, else the files in `quotes_dir`, else
+    none. They must be the quotes the workbook was built with -- the baseline
+    build levels them into the same package sheets."""
+    from estimating_tools.estimate_spec.build import generate
+    from estimating_tools.estimate_spec.package_frames import build_package_frames
+
+    names = None
+    if quotes is None and quotes_dir is not None:
+        quotes, names = _quote_files(quotes_dir)
+    quotes = list(quotes or [])
+    names = names or [None] * len(quotes)
     pack = pack or fieldbook_pack()
     check_stamp(wb, pack)
     # The baseline build validates the spec BEFORE anything reads its item
     # records: `items: [null]` or a non-mapping item is the build's refusal,
     # never an AttributeError from check_items.
     try:
-        baseline = generate(copy.deepcopy(spec), pack)
+        baseline = generate(copy.deepcopy(spec), pack, quotes=quotes)
+        frames = []
+        if spec.get("work_packages"):
+            book = (pack.recipes or {}).get("book") or []
+            frames = build_package_frames(
+                copy.deepcopy(spec), quotes,
+                taken={sdef["sheet_name"] for sdef in book if "for_each" not in sdef},
+                spare_columns=spec.get("work_packages_spare_vendor_columns", 4))
     except Exception as exc:
         # Broad on purpose: the spec itself not building is always a
         # refusal, never an uncaught traceback, whatever shape the pack's
@@ -272,6 +334,16 @@ def read_back(spec: dict, wb, pack=None, *, force: bool = False) -> ReadBack:
     if L.BID_FORM_SHEET in wb.sheetnames:
         merge_bid_date(new, *S.read_bid_date(wb[L.BID_FORM_SHEET]), f)
     merge_markup(new, S.read_markup(wb[L.MARKUP_SHEET]), f)
+    pkg_sheets = {t: S.read_package_sheet(wb[t]) for t in _package_sheets(wb)}
+    pkg_base = {fr.title: S.read_package_sheet(baseline[fr.title])
+                for fr in frames if fr.title in baseline.sheetnames}
+    writes = merge_packages(new, list(pkg_sheets.values()), quotes, frames, f,
+                            file_names=names, baseline=pkg_base)
+    # Package sheets are read by header, so columns may have been inserted
+    # there: {title: {baseline column: edited column}} for the driven cells.
+    pkg_cols = {t: S.column_map(pkg_base[t], baseline[t], pkg_sheets[t], wb[t])
+                for t in pkg_base if t in pkg_sheets}
+    driven = driven_cells(spec, frames)
     rate_names = [r.get("trade") for r in new.get("rate_table") or []]
     trades = list((pack.vocabulary or {}).get("trades") or [])
     for item in new.get("items") or []:
@@ -286,7 +358,10 @@ def read_back(spec: dict, wb, pack=None, *, force: bool = False) -> ReadBack:
         # ...with its formulas moved onto the edited sheet's rows: a row the
         # estimator inserted or deleted shifts every formula below it.
         S.remap_formulas(baseline_sheet, S.row_map(baseline[item["sheet"]], wb[item["sheet"]]))
-        merge_item(item, sheet, f, rate_names=rate_names, trades=trades, baseline=baseline_sheet)
+        for title, cols in pkg_cols.items():
+            S.remap_columns(baseline_sheet, title, cols)
+        merge_item(item, sheet, f, rate_names=rate_names, trades=trades, baseline=baseline_sheet,
+                   driven=driven.get(str(item.get("item_no"))))
     if L.BID_FORM_SHEET in wb.sheetnames:
         was = baseline[L.BID_FORM_SHEET][L.BID_FORM_PROJECT].value
         now = wb[L.BID_FORM_SHEET][L.BID_FORM_PROJECT].value
@@ -300,11 +375,16 @@ def read_back(spec: dict, wb, pack=None, *, force: bool = False) -> ReadBack:
             S.scan_against_baseline(
                 wb[name], baseline[name], noticed,
                 free_text=(L.BID_FORM_PROJECT,) if name == L.BID_FORM_SHEET else ())
+    # The package sheets are read by header: their columns are compared
+    # through the header map, so an inserted column moves nothing.
+    for title, cols in pkg_cols.items():
+        S.scan_against_baseline(wb[title], baseline[title], noticed, cols=cols)
     f.absorb(noticed)
     find_needs_rate(new, f)
-    if f.changes and not f.problems:
+    if (f.changes or writes) and not f.problems:
         try:
-            generate(copy.deepcopy(new), pack)
+            generate(copy.deepcopy(new), pack, quotes=_with_writes(quotes, names, writes))
         except Exception as exc:          # broad on purpose -- see the baseline build above
             f.problems.append(explain_build_error(new, exc))
-    return ReadBack(new if f.changes and not f.problems else copy.deepcopy(spec), f)
+    return ReadBack(new if f.changes and not f.problems else copy.deepcopy(spec), f,
+                    [] if f.problems else writes)

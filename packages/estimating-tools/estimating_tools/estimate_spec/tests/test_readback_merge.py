@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import copy
 
+import pytest
+
 from estimating_tools.estimate_spec.readback import sheets as S
 from estimating_tools.estimate_spec.readback.merge import (
     Findings, _merge_takeoff, _merge_tasks, align, find_needs_rate, merge_item, merge_markup,
@@ -544,7 +546,7 @@ def test_a_changed_footing_cy_recomputes_the_hidden_footing_cf():
         {"label": "Wingwall A", "length": 20, "height": 8, "footing_cy": 10, "footing_cf": 270,
          "wall_cy": 5, "wall_cf": 135}]}
     sheet = S.ItemSheet(sheet="3 - VALVES")
-    sheet.takeoff = [S.Row(10, {"A": "Wingwall A", "D": 20, "E": 8, "F": 15, "G": 5})]
+    sheet.takeoff = [S.Row(10, {"A": "Wingwall A", "E": 20, "G": 8, "H": 15, "I": 5})]
     f = Findings()
     _merge_takeoff(takeoff, sheet, "item 3", f)
     assert takeoff["lines"][0]["footing_cy"] == 15
@@ -553,13 +555,28 @@ def test_a_changed_footing_cy_recomputes_the_hidden_footing_cf():
     assert takeoff["lines"][0]["wall_cf"] == 135             # unchanged -- not re-derived
 
 
+def test_a_measured_line_reads_unit_count_width_weight_and_adjust_back():
+    takeoff = {"kind": "measured", "lines": [
+        {"label": "Footing A", "unit": "CY", "count": 1, "length": 10, "width": 4, "height": 2,
+         "footing_cy": 2.96, "adjust": 0.04}]}
+    sheet = S.ItemSheet(sheet="3 - VALVES")
+    sheet.takeoff = [S.Row(10, {"A": "Footing A", "C": "CY", "D": 1, "E": 10, "F": 5, "G": 2,
+                                "H": 2.96, "L": 120, "N": 0})]
+    f = Findings()
+    _merge_takeoff(takeoff, sheet, "item 3", f)
+    assert f.problems == []
+    line = takeoff["lines"][0]
+    assert (line["unit"], line["count"], line["length"], line["width"], line["height"]) == ("CY", 1, 10, 5, 2)
+    assert (line["footing_cy"], line["weight_lb"], line["adjust"]) == (2.96, 120, 0)
+
+
 def test_a_formula_in_a_measured_cy_cell_is_a_problem_not_a_crash():
     # Copilot review (PR #355): `=10+5` was kept as a string, then
     # round("=10+5" * 27) raised TypeError. Takeoff fields are schema numbers.
     takeoff = {"kind": "measured", "lines": [
         {"label": "Wingwall A", "length": 20, "height": 8, "footing_cy": 10, "footing_cf": 270}]}
     sheet = S.ItemSheet(sheet="3 - VALVES")
-    sheet.takeoff = [S.Row(10, {"A": "Wingwall A", "D": 20, "E": 8, "F": "=10+5"})]
+    sheet.takeoff = [S.Row(10, {"A": "Wingwall A", "E": 20, "G": 8, "H": "=10+5"})]
     f = Findings()
     _merge_takeoff(takeoff, sheet, "item 3", f)
     assert f.problems == [
@@ -658,3 +675,557 @@ def test_crew_rows_or_lines_swapped_in_place_are_a_reorder_not_remove_and_add():
     assert [ln["name"] for ln in task["lines"]] == [
         lines[2]["name"], lines[1]["name"], lines[0]["name"]]
     assert task["lines"][0] == lines[2]
+
+
+# ------------------------------------------------------------------ work packages
+
+def _packaged():
+    from estimating_tools.estimate_spec.build import generate
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    return generate(packaged_spec(), fieldbook_pack(), quotes=QUOTES)
+
+
+def _read_packaged(wb):
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    before = copy.deepcopy(QUOTES)
+    rb = read_back(packaged_spec(), wb, fieldbook_pack(), quotes=QUOTES)
+    assert QUOTES == before                      # the caller's quotes are never edited
+    return rb
+
+
+def _hauling(spec):
+    (pkg,) = [p for p in spec["work_packages"] if p["name"] == "Hauling"]
+    return pkg
+
+
+def test_an_unedited_packaged_workbook_reads_back_to_itself():
+    from estimating_tools.estimate_spec.tests._fieldbook import packaged_spec
+    rb = _read_packaged(_packaged())
+    assert rb.findings == Findings()
+    assert rb.quote_writes == []
+    assert rb.spec == packaged_spec()
+
+
+def test_a_selector_change_is_the_packages_selection():
+    wb = _packaged()
+    wb["Sub Hauling"]["F3"] = "arr"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.changes == ["packages · Hauling · selected Dirt Movers → ARR"]
+    assert _hauling(rb.spec)["selected"] == "ARR"
+    assert rb.quote_writes == []
+
+
+def test_a_pick_names_the_vendor_for_the_item():
+    wb = _packaged()
+    wb["Sub Hauling"]["H8"] = " bulk haul co "
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.changes == ["packages · Hauling · pick item 2 → Bulk Haul Co"]
+    assert _hauling(rb.spec)["picks"] == {"2": "Bulk Haul Co"}
+
+
+def test_a_carry_figure_typed_in_and_selected():
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    ws["F3"], ws["W8"] = "CARRY", 17.5
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.changes == ["packages · Hauling · selected Dirt Movers → CARRY",
+                                   "packages · Hauling · carry 2 → 17.5"]
+    assert _hauling(rb.spec)["selected"] == "CARRY"
+    assert _hauling(rb.spec)["carry"] == {"2": 17.5}
+
+
+def test_a_surcharge_typed_under_a_vendor():
+    wb = _packaged()
+    wb["Sub Hauling"]["K7"] = 0.05
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.changes == ["packages · Hauling · surcharge Dirt Movers 0.04 → 0.05"]
+    assert _hauling(rb.spec)["surcharge"] == {"Dirt Movers": 0.05}
+
+
+def test_a_vendor_typed_into_a_spare_column_is_a_new_quote_file():
+    from datetime import date
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    ws["O5"], ws["O8"], ws["O16"] = "Coastal Trucking", 15.25, "3% of invoice"
+    ws["F3"] = "Coastal Trucking"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.changes == [
+        "packages · Hauling · selected Dirt Movers → Coastal Trucking",
+        "packages · Hauling · new quote Coastal Trucking → coastal-trucking--hauling.json"]
+    (w,) = rb.quote_writes
+    assert w.file_name == "coastal-trucking--hauling.json"
+    assert w.reason == "typed into Sub Hauling"
+    q = w.quote
+    assert (q.vendor_name, q.work_package_name) == ("Coastal Trucking", "Hauling")
+    assert q.quote_date == date.today().isoformat()
+    assert q.notes == f"entered in workbook on {date.today().isoformat()}"
+    assert [(ln.item_number, ln.line_name, ln.unit_price, ln.is_included) for ln in q.lines] == [
+        ("2", "Haul, import + export", 15.25, True)]
+    assert q.conditions == {"Fuel surcharge": "3% of invoice"}
+    assert _hauling(rb.spec)["selected"] == "Coastal Trucking"
+
+
+def test_typed_vendors_with_incl_and_with_no_price():
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    ws["O5"], ws["O8"] = "Coastal Trucking", "Incl"
+    ws["Q5"], ws["Q8"] = "Shore Haul", 14
+    ws["S5"], ws["S8"] = "Nobody Yet", "excl"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    by = {w.quote.vendor_name: w.quote for w in rb.quote_writes}
+    assert sorted(by) == ["Coastal Trucking", "Shore Haul"]
+    (ln,) = by["Coastal Trucking"].lines
+    assert (ln.is_included, ln.folded_into, ln.unit_price) == (True, "Haul, import + export", None)
+    assert by["Shore Haul"].lines[0].unit_price == 14
+    assert rb.findings.notices == ["Sub Hauling: vendor Nobody Yet (column S) has no prices "
+                                   "typed under it -- no quote file written"]
+
+
+def test_an_existing_vendor_excluding_a_line():
+    wb = _packaged()
+    wb["Sub Hauling"]["K8"] = None
+    rb = _read_packaged(wb)
+    (w,) = rb.quote_writes
+    (ln,) = w.quote.lines
+    assert (ln.is_included, ln.unit_price) == (False, None)
+
+
+def test_a_typed_vendor_that_already_has_a_quote_file_is_a_problem():
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    from estimating_tools.quotes.model import CanonicalQuote
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    ws["O5"], ws["O8"] = "Late Hauler", 15
+    # Its quote file arrived after the workbook was built, so the sheet has no
+    # column for it: typing it into a spare does not make it one.
+    late = CanonicalQuote(vendor_name="late hauler", work_package_name="Hauling", amount=1)
+    rb = read_back(packaged_spec(), wb, fieldbook_pack(), quotes=QUOTES + [late])
+    assert ("Sub Hauling: Hauling's quote files changed since the workbook was built (7 vendor "
+            "columns now, 6 on the sheet; a vendor typed in may already have a quote file) -- "
+            "rebuild the workbook and redo the edits") in rb.findings.problems, rb.findings.problems
+    assert rb.quote_writes == []
+
+
+def test_an_edited_vendor_price_rewrites_that_quote_file():
+    wb = _packaged()
+    wb["Sub Hauling"]["K8"] = 15.9
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.overwrites == []
+    assert rb.findings.quote_edits == [
+        "Sub Hauling!K8 (Dirt Movers, item 2 Haul, import + export): 16.5 → 15.9 "
+        "written to dirt-movers--hauling.json"]
+    (w,) = rb.quote_writes
+    assert (w.file_name, w.reason) == ("dirt-movers--hauling.json", "edited in Sub Hauling")
+    assert [ln.unit_price for ln in w.quote.lines] == [15.9]
+    assert w.quote.conditions == {"Fuel surcharge": "4% of invoice", "Dump fees": "included"}
+
+
+def test_edited_prices_and_conditions_make_one_write_per_vendor():
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    ws["K8"], ws["K17"] = "incl", "extra $5/load"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    (w,) = rb.quote_writes
+    (ln,) = w.quote.lines
+    assert (ln.is_included, ln.folded_into, ln.unit_price) == (
+        True, "Haul, import + export", None)
+    assert w.quote.conditions["Dump fees"] == "extra $5/load"
+
+
+def test_a_prorated_lump_sum_cell_typed_over_is_a_real_price():
+    wb = _packaged()
+    wb["Sub Hauling"]["M8"] = 18.25
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    (w,) = rb.quote_writes
+    assert w.quote.vendor_name == "Bulk Haul Co" and w.quote.amount == 8740
+    assert [(ln.item_number, ln.line_name, ln.unit_price) for ln in w.quote.lines] == [
+        ("2", "Haul, import + export", 18.25)]
+
+
+def test_a_number_typed_over_a_package_lines_price_is_a_problem():
+    wb = _packaged()
+    ws = wb["2 - 8IN MAIN"]
+    (row,) = [r for r in task_block(ws, "02-200")["LINE"] if ws[f"A{r}"].value.startswith("Haul")]
+    ws[f"G{row}"] = 20
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == [
+        f"2 - 8IN MAIN row {row} (item 2 · 02-200): unit price is driven by the Sub Hauling "
+        "sheet -- change the selector or the vendor price there"]
+    assert rb.blocked
+
+
+def _pipelayer(ws):
+    (row,) = [r for r in task_block(ws, "02-510")["CREW"] if ws[f"A{r}"].value == "Pipelayer"]
+    return row
+
+
+def test_a_number_typed_over_self_perform_days_is_the_new_days():
+    wb = _packaged()
+    wb["Sub Valves"]["F3"] = "Valve Pros"
+    ws = wb["3 - VALVES"]
+    row = _pipelayer(ws)
+    ws[f"E{row}"] = 3
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert ("item 3 · 02-510 · Pipelayer: days 2 → 3" in rb.findings.changes), \
+        rb.findings.changes
+    assert (f"3 - VALVES row {row} (item 3 · 02-510): days 3 typed over the self-perform "
+            "formula -- the self-perform factor (Sub Valves) is re-applied on rebuild"
+            ) in rb.findings.notices
+    (item3,) = [i for i in rb.spec["items"] if i["item_no"] == "3"]
+    (pipe,) = [m for m in item3["labor"][0]["crew"] if m["trade"] == "Pipelayer"]
+    assert pipe["days"] == 3
+
+
+def test_the_built_shape_with_a_new_number_is_the_new_days():
+    wb = _packaged()
+    ws = wb["3 - VALVES"]
+    row = _pipelayer(ws)
+    built = ws[f"E{row}"].value
+    assert built.startswith("=2*'Sub Valves'!")
+    ws[f"E{row}"] = "=3*" + built[len("=2*"):]
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert any(c.endswith("Pipelayer: days 2 → 3") for c in rb.findings.changes)
+    assert any("re-applied on rebuild" in n for n in rb.findings.notices)
+
+
+def test_another_formula_over_self_perform_days_is_a_problem():
+    wb = _packaged()
+    ws = wb["3 - VALVES"]
+    row = _pipelayer(ws)
+    ws[f"E{row}"] = "=3*1"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == [
+        f"3 - VALVES row {row} (item 3 · 02-510): days is driven by the Sub Valves sheet -- type "
+        "a number (the new days; the self-perform factor is re-applied on rebuild) or change "
+        "the selector there"]
+    assert rb.blocked
+
+
+def test_a_number_typed_over_a_self_perform_lines_qty_is_the_new_qty():
+    from estimating_tools.estimate_spec.build import generate
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    spec = packaged_spec()
+    (item3,) = [i for i in spec["items"] if i["item_no"] == "3"]
+    item3["labor"][0]["lines"].append({"cost_type": "material", "name": "Gaskets", "qty": 4,
+                                       "uom": "EA", "unit_price": 10, "source": "plug"})
+    wb = generate(copy.deepcopy(spec), fieldbook_pack(), quotes=QUOTES)
+    ws = wb["3 - VALVES"]
+    (row,) = [r for r in task_block(ws, "02-510")["LINE"] if ws[f"A{r}"].value == "Gaskets"]
+    assert ws[f"B{row}"].value.startswith("=4*'Sub Valves'!")
+    ws[f"B{row}"] = 6
+    rb = read_back(spec, wb, fieldbook_pack(), quotes=QUOTES)
+    assert rb.findings.problems == []
+    (got,) = [i for i in rb.spec["items"] if i["item_no"] == "3"]
+    (gaskets,) = [ln for ln in got["labor"][0]["lines"] if ln["name"] == "Gaskets"]
+    assert gaskets["qty"] == 6
+
+
+def test_a_selector_naming_no_vendor_lists_the_vendors():
+    wb = _packaged()
+    wb["Sub Hauling"]["F3"] = "Dirt Mover"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == [
+        "Sub Hauling: selector 'Dirt Mover' is not ARR, CARRY or a quoted vendor "
+        "(vendors: Dirt Movers, Bulk Haul Co)"]
+
+
+def test_a_pick_naming_no_vendor_names_the_item():
+    wb = _packaged()
+    wb["Sub Hauling"]["H8"] = "Nobody"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == [
+        "Sub Hauling row 8: pick 'Nobody' for item 2 is not ARR, CARRY or a quoted vendor "
+        "(vendors: Dirt Movers, Bulk Haul Co)"]
+
+
+def test_a_missing_package_sheet_is_a_problem():
+    wb = _packaged()
+    del wb["Sub Valves"]
+    rb = _read_packaged(wb)
+    assert "Sub Valves: the workbook has no such sheet for package Valves -- rebuild the workbook" in (
+        rb.findings.problems)
+
+
+def test_quotes_read_from_a_directory_are_written_back_to_their_own_files(tmp_path):
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    from estimating_tools.quotes.files import write_quote_file
+    for i, q in enumerate(QUOTES):
+        write_quote_file(tmp_path / f"q{i}.json", q)
+    wb = _packaged()
+    wb["Sub Hauling"]["K8"] = 15.9
+    rb = read_back(packaged_spec(), wb, fieldbook_pack(), quotes_dir=tmp_path)
+    assert rb.findings.problems == []
+    assert [w.file_name for w in rb.quote_writes] == ["q0.json"]
+    assert rb.findings.quote_edits[0].endswith("written to q0.json")
+
+
+def test_a_typed_vendor_whose_file_name_is_taken_is_a_problem():
+    from estimating_tools.estimate_spec.build import generate
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    from estimating_tools.quotes.model import CanonicalQuote, QuoteLine
+    other = CanonicalQuote(vendor_name="Coastal-Trucking", work_package_name="Hauling",
+                           lines=[QuoteLine(schedule_name="Base", item_number="2", unit_price=17,
+                                            line_name="Haul, import + export")])
+    quotes = QUOTES + [other]
+    wb = generate(packaged_spec(), fieldbook_pack(), quotes=quotes)
+    ws = wb["Sub Hauling"]
+    (spare,) = [c.column_letter for c in ws[5] if c.value == ""][:1]
+    ws[f"{spare}5"], ws[f"{spare}8"] = "Coastal Trucking", 15
+    rb = read_back(packaged_spec(), wb, fieldbook_pack(), quotes=quotes)
+    assert rb.findings.problems == [
+        "Sub Hauling: typed vendor 'Coastal Trucking' would write coastal-trucking--hauling.json, "
+        "which already belongs to 'Coastal-Trucking' -- rename the vendor"]
+    assert rb.quote_writes == []
+
+
+def test_a_condition_typed_under_a_lump_sum_keeps_it_a_lump_sum():
+    wb = _packaged()
+    wb["Sub Hauling"]["M17"] = "extra"
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == [] and rb.findings.notices == []
+    (w,) = rb.quote_writes
+    assert w.quote.vendor_name == "Bulk Haul Co"
+    assert (w.quote.amount, w.quote.lines) == (8740, [])
+    assert w.quote.conditions == {"Dump fees": "extra"}
+
+
+def test_prices_under_a_blank_spare_header_are_a_problem():
+    wb = _packaged()
+    wb["Sub Hauling"]["O8"] = 15
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == [
+        "Sub Hauling: column O has prices but no vendor name in its header -- type the "
+        "vendor's name in row 5"]
+    assert rb.quote_writes == []
+
+
+def test_a_vendor_whose_quote_file_was_removed_is_a_problem():
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    # Built WITH Bulk Haul Co (no quote_ref of its own: its column shows the
+    # default ref), read back after its quote file is gone.
+    wb = _packaged()
+    rb = read_back(packaged_spec(), wb, fieldbook_pack(),
+                   quotes=[q for q in QUOTES if q.vendor_name != "Bulk Haul Co"])
+    assert ("Sub Hauling: vendor 'Bulk Haul Co' has a quote ref but no quote file -- a quote "
+            "file was removed since the build; rebuild the workbook (or, for a vendor you just "
+            "typed in, clear its Quote ref cell)") in rb.findings.problems
+    assert not any("new quote" in c for c in rb.findings.changes)
+    assert rb.quote_writes == []
+
+
+def _insert_cols(wb, sheet: str, at: int, amount: int) -> None:
+    """Excel's column insert on `sheet` at column index `at`: every reference to
+    a column >= `at` of that sheet -- its own unqualified ones, and qualified ones
+    on every sheet -- moves right by `amount`."""
+    import re
+    from openpyxl.utils import column_index_from_string as idx
+    from openpyxl.utils import get_column_letter as letter
+    ref = re.compile(r"((?:'[^']*(?:''[^']*)*'|[A-Za-z0-9_ ]+)!)?(\$?)([A-Z]{1,3})(\$?\d+)")
+    quoted = "'" + sheet.replace("'", "''") + "'"
+
+    def shift(own):
+        def move(m):
+            q = m.group(1)
+            if (q is None and not own) or (q is not None and q[:-1] not in (sheet, quoted)):
+                return m.group(0)
+            c = idx(m.group(3))
+            return (q or "") + m.group(2) + letter(c + amount if c >= at else c) + m.group(4)
+        return move
+
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                v = cell.value
+                if isinstance(v, str) and v.startswith("="):
+                    parts = re.split(r'("[^"]*")', v)
+                    cell.value = "".join(p if i % 2 else ref.sub(shift(ws.title == sheet), p)
+                                         for i, p in enumerate(parts))
+    wb[sheet].insert_cols(at, amount)
+
+
+def test_a_vendor_typed_into_an_inserted_column_pair():
+    from openpyxl.utils import column_index_from_string as idx
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    assert ws["W5"].value == "CARRY"
+    _insert_cols(wb, "Sub Hauling", idx("W"), 2)
+    assert wb["2 - 8IN MAIN"]["I36"].value == "='Sub Hauling'!$AC$8"     # Label moved
+    ws["W5"], ws["X5"], ws["W8"] = "Coastal Trucking", "ext", 15
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.overwrites == []
+    (w,) = rb.quote_writes
+    assert (w.file_name, w.quote.lines[0].unit_price) == ("coastal-trucking--hauling.json", 15)
+
+
+def test_a_vendor_typed_into_a_column_inserted_at_carry_is_priced(tmp_path):
+    # One pair inserted AT the CARRY column (W): the F/State vendor ranges end
+    # at CARRY, so they grow over the new pair, and carrying the typed-in
+    # vendor prices the line (no #N/A); read-back writes its one quote.
+    from openpyxl.utils import column_index_from_string as idx
+    from estimating_tools.estimate_spec.tests._formula_eval import evaluate
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    assert ws["W5"].value == "CARRY"
+    _insert_cols(wb, "Sub Hauling", idx("W"), 2)
+    assert ws["Y5"].value == "CARRY"
+    assert "$K8:$Y8" in ws["F8"].value and "$K$5:$Y$5" in ws["F8"].value
+    ws["W5"], ws["X5"], ws["W8"] = "Coastal Trucking", "ext", 15
+    ws["F3"] = "Coastal Trucking"
+    ev = evaluate(wb, tmp_path)
+    assert ev["Sub Hauling!AB8"] == "price"                    # State, built at Z
+    assert ev["Sub Hauling!F8"] == 15
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    (w,) = rb.quote_writes
+    assert (w.file_name, w.quote.lines[0].unit_price) == ("coastal-trucking--hauling.json", 15)
+    assert "packages · Hauling · selected Dirt Movers → Coastal Trucking" in rb.findings.changes
+
+
+def test_a_formula_typed_over_on_a_package_sheet_is_reported_not_dropped():
+    wb = _packaged()
+    wb["Sub Hauling"]["F8"] = 99
+    rb = _read_packaged(wb)
+    assert rb.findings.problems == []
+    assert rb.findings.overwrites == ["Sub Hauling!F8 (formula): typed 99 over the formula"]
+    assert rb.quote_writes == []
+
+
+def test_a_formula_typed_over_after_a_column_insert_is_found_where_it_moved():
+    from openpyxl.utils import column_index_from_string as idx
+    wb = _packaged()
+    _insert_cols(wb, "Sub Hauling", idx("W"), 2)
+    wb["Sub Hauling"]["Z8"] = 5                     # CARRY ext, built at X
+    rb = _read_packaged(wb)
+    assert rb.findings.overwrites == ["Sub Hauling!Z8 (formula): typed 5 over the formula"]
+
+
+def test_an_alternate_row_is_shown_not_read_back():
+    from estimating_tools.estimate_spec.build import generate
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    from estimating_tools.quotes.model import QuoteLine
+    alt = copy.deepcopy(QUOTES)
+    alt[0].lines.append(QuoteLine(schedule_name="Base", item_number="2", unit_price=12.0,
+                                  line_name="Haul, import + export", is_alternate=True))
+    wb = generate(packaged_spec(), fieldbook_pack(), quotes=alt)
+    ws = wb["Sub Hauling"]
+    (r,) = [r for r in range(1, ws.max_row + 1)
+            if ws[f"B{r}"].value == "Alternate: Haul, import + export"]
+    assert ws[f"K{r}"].value == "$12.00 / CY"
+    assert read_back(packaged_spec(), wb, fieldbook_pack(), quotes=alt).quote_writes == []
+    ws[f"K{r}"] = "$11.00 / CY"
+    rb = read_back(packaged_spec(), wb, fieldbook_pack(), quotes=alt)
+    assert rb.findings.problems == [] and rb.quote_writes == []
+    assert ("Sub Hauling (Dirt Movers, 'Alternate: Haul, import + export'): an alternate row "
+            "shows the quote file's alternate line -- edit the quote file to change it"
+            ) in rb.findings.notices
+
+
+def _two_line_valves():
+    from estimating_tools.estimate_spec.build import generate
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    spec = packaged_spec()
+    (item3,) = [i for i in spec["items"] if i["item_no"] == "3"]
+    item3["labor"][0]["lines"].append({"cost_type": "subcontract", "name": "Box risers",
+                                       "qty": 4, "uom": "EA", "unit_price": 80,
+                                       "package": "Valves"})
+    wb = generate(copy.deepcopy(spec), fieldbook_pack(), quotes=QUOTES)
+    ws = wb["Sub Valves"]
+    rows = {ws[f"B{r}"].value: r for r in range(1, ws.max_row + 1)}
+    return spec, wb, rows["Valve boxes (subcontract)"], rows["Box risers"]
+
+
+def _read(spec, wb):
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES
+    return read_back(spec, wb, fieldbook_pack(), quotes=QUOTES)
+
+
+def test_a_pick_on_one_line_of_a_two_line_item_is_a_problem():
+    spec, wb, boxes, risers = _two_line_valves()
+    wb["Sub Valves"][f"H{boxes}"] = "Valve Pros"
+    rb = _read(spec, wb)
+    assert rb.findings.problems == [
+        f"Sub Valves: item 3's lines carry different picks (row {boxes} Valve Pros, row {risers} "
+        "(blank)) -- set the same pick on every line of the item or clear them"]
+    assert rb.blocked
+
+
+def test_two_different_picks_on_one_item_are_a_problem():
+    spec, wb, boxes, risers = _two_line_valves()
+    wb["Sub Valves"][f"H{boxes}"] = "Valve Pros"
+    wb["Sub Valves"][f"H{risers}"] = "carry"
+    rb = _read(spec, wb)
+    assert rb.findings.problems == [
+        f"Sub Valves: item 3's lines carry different picks (row {boxes} Valve Pros, row {risers} "
+        "CARRY) -- set the same pick on every line of the item or clear them"]
+
+
+def test_the_same_pick_on_every_line_of_an_item_is_read():
+    spec, wb, boxes, risers = _two_line_valves()
+    wb["Sub Valves"][f"H{boxes}"] = "Valve Pros"
+    wb["Sub Valves"][f"H{risers}"] = "valve pros"
+    rb = _read(spec, wb)
+    assert rb.findings.problems == []
+    (valves,) = [p for p in rb.spec["work_packages"] if p["name"] == "Valves"]
+    assert valves["picks"] == {"3": "Valve Pros"}
+
+
+def test_a_price_edit_preserves_an_alternate_before_the_base_line():
+    from estimating_tools.estimate_spec.build import generate
+    from estimating_tools.estimate_spec.readback import read_back
+    from estimating_tools.estimate_spec.tests._fieldbook import QUOTES, packaged_spec
+    from estimating_tools.quotes.model import QuoteLine
+    quotes = copy.deepcopy(QUOTES)
+    alternate = QuoteLine(schedule_name="Base", item_number="2", unit_price=12.0,
+                          line_name="Haul, import + export", is_alternate=True)
+    quotes[0].lines.insert(0, alternate)
+    spec = packaged_spec()
+    wb = generate(spec, fieldbook_pack(), quotes=quotes)
+    wb["Sub Hauling"]["K8"] = 15
+    result = read_back(spec, wb, fieldbook_pack(), quotes=quotes)
+    assert result.findings.problems == []
+    (write,) = result.quote_writes
+    assert write.quote.lines[0] == alternate
+    (base,) = [line for line in write.quote.lines
+               if line.item_number == "2" and not line.is_alternate]
+    assert base.unit_price == 15
+    rebuilt = generate(result.spec, fieldbook_pack(), quotes=[write.quote, *quotes[1:]])
+    assert rebuilt["Sub Hauling"]["K8"].value == 15
+
+
+@pytest.mark.parametrize("value", ["NaN", "inf", "1e999"])
+def test_nonfinite_quote_prices_are_blocked_before_writing(value):
+    wb = _packaged()
+    wb["Sub Hauling"]["K8"] = value
+    result = _read_packaged(wb)
+    assert result.blocked and result.quote_writes == []
+    assert any("not a price" in problem for problem in result.findings.problems)
+
+
+@pytest.mark.parametrize("value", ["fee", "NaN"])
+def test_a_typed_vendors_invalid_surcharge_is_blocked_instead_of_dropped(value):
+    wb = _packaged()
+    ws = wb["Sub Hauling"]
+    ws["O5"], ws["O8"], ws["O7"] = "Late Vendor", 15, value
+    result = _read_packaged(wb)
+    assert result.blocked and result.quote_writes == []
+    assert any("surcharge" in problem for problem in result.findings.problems)

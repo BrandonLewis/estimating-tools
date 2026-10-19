@@ -76,6 +76,17 @@ styles:
   input_money: { fill: input, font_color: input, number_format: rate }
   input_pct:   { fill: input, font_color: input, number_format: pct }
   input_date:  { fill: input, font_color: input, number_format: date, align: left }
+  input_select: { fill: input, font_color: input, bold: true }   # a dropdown pick (ARR / CARRY / vendor)
+  # -- package sheets: a vendor column's cells by the column's role ---------------
+  # (a line's price cell is input_money, or derived_money for a lump sum's column)
+  derived_money: { italic: true, font_color: muted, fill: note, number_format: rate }   # a price derived (prorated) from a lump sum
+  calc_state:    { font_color: muted, align: center }
+  vendor_head_quoted: { fill: colhead, bold: true, align: center, font_color: heading }
+  vendor_head_lump:   { fill: colhead, bold: true, align: center, font_color: heading }
+  vendor_head_spare:  { fill: input, font_color: input, bold: true, align: center }
+  vendor_pct_quoted:  { fill: input, font_color: input, number_format: pct }
+  vendor_pct_lump:    { fill: input, font_color: input, number_format: pct }
+  vendor_pct_spare:   { fill: input, font_color: input, number_format: pct }
   # -- task band -----------------------------------------------------------------
   task_text:   { fill: task, bold: true, font_color: heading }
   # -- formulas ------------------------------------------------------------------

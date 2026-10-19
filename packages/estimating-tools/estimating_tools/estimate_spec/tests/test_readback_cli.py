@@ -9,14 +9,14 @@ import yaml
 from openpyxl import load_workbook
 
 from estimating_tools.estimate_spec import cli
-from estimating_tools.estimate_spec.tests._fieldbook import EXAMPLE, FIELDBOOK_DIR
+from estimating_tools.estimate_spec.tests._fieldbook import DERIVED, EXAMPLE, FIELDBOOK_DIR
 from estimating_tools.estimate_spec.tests.test_readback_spec_io import commented_spec
 
 
 @pytest.fixture(autouse=True)
-def _no_profile(monkeypatch):
-    """read-back resolves its pack the way build does; no org profile on the
-    test machine may pick it (these workbooks are built with fieldbook)."""
+def _no_ambient_profile(monkeypatch):
+    """read-back resolves its pack like build: an org profile in the
+    environment would name a pack the fieldbook examples were not built with."""
     monkeypatch.delenv("ESTIMATING_PROFILES", raising=False)
 
 
@@ -112,6 +112,17 @@ def test_blocking_problems_exit_1_and_write_nothing(bid, capsys):
     assert "blocked: 1 problem(s) -- nothing written" in captured.err
     assert spec.read_bytes() == before
     assert _backups(spec) == []
+
+
+def test_a_workbook_from_fieldbook_1_is_refused_with_exit_2(bid, capsys):
+    spec, xlsx = bid
+    wb = load_workbook(xlsx)
+    (prop,) = [p for p in wb.custom_doc_props.props if p.name == "estimate_format"]
+    prop.value = "fieldbook 1"
+    wb.save(xlsx)
+    assert cli.main(["read-back", str(spec), str(xlsx)]) == 2
+    assert ("read-back refused: built with fieldbook 1; this read-back needs fieldbook 2 "
+            "-- rebuild from the spec") in capsys.readouterr().err
 
 
 def test_refusals_exit_2(bid, tmp_path, capsys):
@@ -287,3 +298,90 @@ def test_a_spec_with_a_null_item_is_refused_with_exit_2(bid, capsys):
     assert "  - null" in spec.read_text(encoding="utf-8")
     assert cli.main(["read-back", str(spec), str(xlsx)]) == 2
     assert "read-back refused: the spec itself does not build" in capsys.readouterr().err
+
+
+def test_read_back_takes_the_same_format_as_build(tmp_path, capsys):
+    spec = tmp_path / "bid.estimate.yaml"
+    spec.write_text(EXAMPLE.read_text(encoding="utf-8"), encoding="utf-8")
+    xlsx = tmp_path / "bid.xlsx"
+    assert cli.main(["build", str(spec), "-o", str(xlsx), "--format", str(DERIVED)]) == 0
+    capsys.readouterr()
+    assert cli.main(["read-back", str(spec), str(xlsx), "--format", str(DERIVED)]) == 0
+    assert "nothing to write: the workbook matches the spec" in capsys.readouterr().out
+    # Without the pack that built it, the bundled pack refuses the workbook.
+    assert cli.main(["read-back", str(spec), str(xlsx)]) == 2
+    assert "built in the 'derived_demo' format" in capsys.readouterr().err
+
+
+PACKAGED = FIELDBOOK_DIR / "examples" / "demo-packages.estimate.yaml"
+
+
+@pytest.fixture
+def packaged_bid(tmp_path):
+    """The packaged example and its quotes/ in tmp_path, and the workbook built from them."""
+    import shutil
+    spec = tmp_path / "bid.estimate.yaml"
+    shutil.copy(PACKAGED, spec)
+    shutil.copytree(PACKAGED.parent / "quotes", tmp_path / "quotes")
+    xlsx = tmp_path / "bid.xlsx"
+    assert cli.main(["build", str(spec), "-o", str(xlsx), "--format", str(FIELDBOOK_DIR)]) == 0
+    return spec, xlsx
+
+
+def test_write_saves_quote_files_beside_the_spec(packaged_bid, tmp_path, capsys):
+    from estimating_tools.quotes.files import load_quote_file
+    spec, xlsx = packaged_bid
+    _edit(xlsx, **{"Sub Hauling!O5": "Coastal Trucking", "Sub Hauling!O8": 15})
+    capsys.readouterr()
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", "--format", str(FIELDBOOK_DIR)]) == 0
+    path = tmp_path / "quotes" / "coastal-trucking--hauling.json"
+    assert path.exists()
+    (haul,) = [ln for ln in load_quote_file(path).lines if ln.line_name == "Haul, import + export"]
+    assert haul.unit_price == 15
+    assert f"quote -> {path}" in capsys.readouterr().out
+    rebuilt = tmp_path / "rebuilt.xlsx"
+    assert cli.main(["build", str(spec), "-o", str(rebuilt), "--format", str(FIELDBOOK_DIR)]) == 0
+    ws = load_workbook(rebuilt)["Sub Hauling"]
+    assert "Coastal Trucking" in [c.value for c in ws[5]]
+
+
+def test_an_edited_existing_quote_is_overwritten_and_reported_as_updated(packaged_bid, tmp_path, capsys):
+    spec, xlsx = packaged_bid
+    _edit(xlsx, **{"Sub Hauling!K8": 15.9})
+    capsys.readouterr()
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", "--format", str(FIELDBOOK_DIR)]) == 0
+    out = capsys.readouterr().out
+    path = tmp_path / "quotes" / "bulk-haul-co--hauling.json"
+    (backup,) = sorted((tmp_path / "quotes").glob("bulk-haul-co--hauling.json.bak-*"))
+    assert f"quote updated -> {path} (backup: {backup.name})" in out
+    assert backup.read_text(encoding="utf-8") == (
+        PACKAGED.parent / "quotes" / "bulk-haul-co--hauling.json").read_text(encoding="utf-8")
+    assert path.read_text(encoding="utf-8") != backup.read_text(encoding="utf-8")
+    from estimating_tools.quotes.files import load_quotes
+    assert len(load_quotes(tmp_path / "quotes")) == 3          # the backup is never a quote
+
+
+def test_a_dry_run_writes_no_quote_file(packaged_bid, tmp_path, capsys):
+    spec, xlsx = packaged_bid
+    before = sorted(p.name for p in (tmp_path / "quotes").iterdir())
+    _edit(xlsx, **{"Sub Hauling!O5": "Coastal Trucking", "Sub Hauling!O8": 15})
+    capsys.readouterr()
+    assert cli.main(["read-back", str(spec), str(xlsx), "--format", str(FIELDBOOK_DIR)]) == 0
+    out = capsys.readouterr().out
+    assert "quote ->" not in out and "dry run:" in out
+    assert sorted(p.name for p in (tmp_path / "quotes").iterdir()) == before
+
+
+def test_a_quote_file_that_cannot_be_written_exits_1_after_the_spec(packaged_bid, tmp_path, capsys, monkeypatch):
+    from estimating_tools.quotes import files
+    spec, xlsx = packaged_bid
+    _edit(xlsx, **{"Sub Hauling!O5": "Coastal Trucking", "Sub Hauling!O8": 15})
+
+    def boom(path, quote):
+        raise OSError("disk full")
+    monkeypatch.setattr(files, "write_quote_file", boom)
+    capsys.readouterr()
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", "--format", str(FIELDBOOK_DIR)]) == 1
+    err = capsys.readouterr().err
+    assert "could not write" in err and "spec written; quote file failed" in err
+    assert list(spec.parent.glob(spec.name + ".bak-*"))

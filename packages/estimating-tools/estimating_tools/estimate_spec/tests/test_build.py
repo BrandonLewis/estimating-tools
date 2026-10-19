@@ -787,3 +787,71 @@ def test_in_summary_true_is_the_default_and_changes_nothing(alt):
 def _cells_of(wb):
     return {(ws.title, c.coordinate): c.value
             for ws in wb.worksheets for row in ws.iter_rows() for c in row}
+
+
+# ---------------------------------------------------------------- packaged builds at the CLI
+
+def _packaged_copy(tmp_path, *, quotes=True):
+    import shutil
+    from estimating_tools.estimate_spec.tests._fieldbook import FIELDBOOK_DIR
+    ex = FIELDBOOK_DIR / "examples"
+    spec = tmp_path / "bid.estimate.yaml"
+    shutil.copy(ex / "demo-packages.estimate.yaml", spec)
+    if quotes:
+        shutil.copytree(ex / "quotes", tmp_path / "quotes")
+    return spec
+
+
+def _cli_build(spec, tmp_path, *extra):
+    from estimating_tools.estimate_spec import cli
+    from estimating_tools.estimate_spec.tests._fieldbook import FIELDBOOK_DIR
+    out = tmp_path / "out.xlsx"
+    return cli.main(["build", str(spec), "-o", str(out), "--format", str(FIELDBOOK_DIR), *extra]), out
+
+
+@pytest.fixture
+def _no_profile(monkeypatch):
+    monkeypatch.delenv("ESTIMATING_PROFILES", raising=False)
+
+
+def test_packaged_item_without_a_package_line_fails_the_build(tmp_path, capsys, _no_profile):
+    spec = _packaged_copy(tmp_path)
+    cfg = yaml.safe_load(spec.read_text(encoding="utf-8"))
+    for item in cfg["items"]:
+        for block in item.get("labor", []):
+            for ln in block.get("lines", []):
+                ln.pop("package", None)
+    spec.write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
+    rc, _ = _cli_build(spec, tmp_path)
+    err = capsys.readouterr().err
+    assert rc == 1
+    assert "has no line tagged package:" in err
+    assert "PackageError" in err
+
+
+def test_a_missing_quotes_dir_builds_with_spares_only(tmp_path, _no_profile):
+    from openpyxl import load_workbook
+    spec = _packaged_copy(tmp_path, quotes=False)
+    # With no quotes there is no vendor to select; the example's Dirt Movers
+    # selection would (rightly) be refused, so carry the package at ARR.
+    spec.write_text(spec.read_text(encoding="utf-8").replace("selected: Dirt Movers", "selected: ARR"),
+                    encoding="utf-8")
+    rc, out = _cli_build(spec, tmp_path)
+    assert rc == 0
+    ws = load_workbook(out)["Sub Hauling"]
+    heads = [ws.cell(row=5, column=c).value for c in range(11, 19)]     # K..R
+    assert [h for h in heads if h not in (None, "", "ext")] == []       # spares only
+    assert ws["S5"].value == "CARRY"
+
+
+
+def test_lint_warns_on_a_package_with_no_quote(tmp_path, capsys, _no_profile):
+    spec = _packaged_copy(tmp_path)
+    (tmp_path / "quotes" / "valve-pros--valves.json").unlink()
+    rc, _ = _cli_build(spec, tmp_path)
+    err = capsys.readouterr().err
+    assert rc == 0
+    assert "lint: package 'Valves' has no quote file" in err
+    assert "package 'Hauling'" not in err
+    rc, _ = _cli_build(spec, tmp_path, "--no-lint")
+    assert "has no quote file" not in capsys.readouterr().err

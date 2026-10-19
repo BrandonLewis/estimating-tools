@@ -1,0 +1,16 @@
+{
+ "vendor_name": "Valve Pros",
+ "work_package_name": "Valves",
+ "is_dbe": false,
+ "lines": [
+  {
+   "schedule_name": "Base",
+   "item_number": "3",
+   "unit_price": 900,
+   "is_included": true,
+   "is_alternate": false,
+   "line_name": "Valve boxes (subcontract)"
+  }
+ ],
+ "conditions": {}
+}

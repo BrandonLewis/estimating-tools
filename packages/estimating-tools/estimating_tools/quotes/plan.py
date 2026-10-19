@@ -34,6 +34,36 @@ class QuotePlan:
     lines: list[dict] = field(default_factory=list)
 
 
+def _merge(group: list[dict]) -> dict:
+    """Sum several payload lines for one bid item into a single line. unit_price and
+    quantity are dropped (they no longer describe the whole); an excluded line adds
+    nothing to the sum; the merged line is included if any source line is."""
+    alternates = {bool(g.get("is_alternate")) for g in group}
+    where = f"{group[0]['schedule_name']} item {group[0]['item_number']}"
+    if len(alternates) > 1:
+        raise ValueError(f"{where}: cannot combine base and alternate lines into one quote line")
+    priced = [g for g in group if g["is_included"] or g.get("is_alternate")]
+    if any("amount" not in g and not ("unit_price" in g and "quantity" in g)
+           for g in priced):
+        raise ValueError(f"{where}: combining quote lines needs an amount or quantity "
+                         "and unit_price on every priced line")
+    merged = {
+        "schedule_name": group[0]["schedule_name"],
+        "item_number": group[0]["item_number"],
+        "is_included": any(g["is_included"] for g in group),
+    }
+    parts = [g["amount"] if "amount" in g else g["unit_price"] * g["quantity"]
+             for g in priced]
+    if parts:
+        merged["amount"] = sum(parts)
+    notes = [g["exclusion_notes"] for g in group if "exclusion_notes" in g]
+    if notes:
+        merged["exclusion_notes"] = "; ".join(notes)
+    if all(g.get("is_alternate") for g in group):
+        merged["is_alternate"] = True
+    return merged
+
+
 def plan_quote(canonical: CanonicalQuote) -> QuotePlan:
     """Field-map a CanonicalQuote into a QuotePlan (no live calls)."""
     header = {"vendor_name": canonical.vendor_name, "is_dbe": canonical.is_dbe}
@@ -42,14 +72,8 @@ def plan_quote(canonical: CanonicalQuote) -> QuotePlan:
         if value is not None:
             header[key] = value
 
-    refs: list[dict] = []
-    seen: set[tuple[str, str]] = set()
-    lines: list[dict] = []
+    groups: dict[tuple[str, str], list[dict]] = {}
     for line in canonical.lines:
-        pair = (line.schedule_name, line.item_number)
-        if pair not in seen:
-            seen.add(pair)
-            refs.append({"schedule_name": line.schedule_name, "item_number": line.item_number})
         # is_alternate wins: an alternate line's payload is always is_included=False,
         # regardless of what the extracted line's is_included was set to -- an
         # alternate is never in the base.
@@ -65,7 +89,10 @@ def plan_quote(canonical: CanonicalQuote) -> QuotePlan:
                 payload[key] = value
         if line.is_alternate:
             payload["is_alternate"] = True
-        lines.append(payload)
+        groups.setdefault((line.schedule_name, line.item_number), []).append(payload)
+
+    refs = [{"schedule_name": s, "item_number": i} for s, i in groups]
+    lines = [group[0] if len(group) == 1 else _merge(group) for group in groups.values()]
 
     return QuotePlan(work_package_name=canonical.work_package_name,
                      quote_header=header, bid_item_refs=refs, lines=lines)

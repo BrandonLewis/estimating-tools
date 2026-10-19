@@ -166,7 +166,7 @@ def test_the_cli_round_trip_writes_what_read_back_computed(tmp_path, capsys):
     _estimator_edits(wb)
     wb.save(xlsx)
     expected = read_back(example_spec(), load_workbook(xlsx)).spec
-    assert cli.main(["read-back", str(spec), str(xlsx), "--write"]) == 0
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", "--format", str(FIELDBOOK_DIR)]) == 0
     assert yaml.safe_load(spec.read_text(encoding="utf-8")) == expected
     rebuilt = tmp_path / "rebuilt.xlsx"
     assert cli.main(["build", str(spec), "-o", str(rebuilt), "--format", str(FIELDBOOK_DIR)]) == 0
@@ -205,7 +205,7 @@ def test_an_edit_to_a_yaml_anchor_shared_by_two_tasks_edits_only_its_own_task(tm
     wb.save(xlsx)
     edited_bid = _bid(load_workbook(xlsx), tmp_path / "ev_edited")
     capsys.readouterr()
-    assert cli.main(["read-back", str(spec), str(xlsx), "--write"]) == 0
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", "--format", str(FIELDBOOK_DIR)]) == 0
     out = capsys.readouterr().out
     assert "- item 1 · 01-100 · Superintendent: days 2 → 3" in out
     assert "item 3" not in out.split("## Changes")[1].split("##")[0]     # no bogus change
@@ -286,7 +286,7 @@ def test_one_edit_rebuilds_to_the_bid_the_edited_workbook_shows(tmp_path, edit):
     edit(wb)
     wb.save(xlsx)
     edited = _bid(load_workbook(xlsx), tmp_path / "ev_edited")
-    assert cli.main(["read-back", str(spec), str(xlsx), "--write"]) == 0
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", "--format", str(FIELDBOOK_DIR)]) == 0
     rebuilt = tmp_path / "rebuilt.xlsx"
     assert cli.main(["build", str(spec), "-o", str(rebuilt), "--format", str(FIELDBOOK_DIR)]) == 0
     assert _bid(load_workbook(rebuilt), tmp_path / "ev_rebuilt") == edited
@@ -382,7 +382,75 @@ def test_a_placeholder_moved_by_an_inserted_takeoff_row_rebuilds_to_the_same_bid
     wb.save(xlsx)
     edited = _bid(load_workbook(xlsx), tmp_path / "ev_edited")
     assert edited != unedited                     # 260 more LF -- and more trench-box days
-    assert cli.main(["read-back", str(spec), str(xlsx), "--write"]) == 0
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", "--format", str(FIELDBOOK_DIR)]) == 0
     rebuilt = tmp_path / "rebuilt.xlsx"
     assert cli.main(["build", str(spec), "-o", str(rebuilt), "--format", str(FIELDBOOK_DIR)]) == 0
     assert _bid(load_workbook(rebuilt), tmp_path / "ev_rebuilt") == edited
+
+
+def test_a_selection_round_trips(tmp_path):
+    import shutil
+
+    from openpyxl import load_workbook as xl_load
+    src = FIELDBOOK_DIR / "examples" / "demo-packages.estimate.yaml"
+    spec = tmp_path / "bid.estimate.yaml"
+    shutil.copy(src, spec)
+    shutil.copytree(src.parent / "quotes", tmp_path / "quotes")
+    xlsx = tmp_path / "bid.xlsx"
+    args = ["--format", str(FIELDBOOK_DIR)]
+    assert cli.main(["build", str(spec), "-o", str(xlsx), *args]) == 0
+    wb = xl_load(xlsx)
+    wb["Sub Hauling"]["F3"] = "Bulk Haul Co"
+    wb.save(xlsx)
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", *args]) == 0
+    written = yaml.safe_load(spec.read_text(encoding="utf-8"))
+    (hauling,) = [p for p in written["work_packages"] if p["name"] == "Hauling"]
+    assert hauling["selected"] == "Bulk Haul Co"
+    rebuilt = tmp_path / "rebuilt.xlsx"
+    assert cli.main(["build", str(spec), "-o", str(rebuilt), *args]) == 0
+    a, b = xl_load(xlsx)["Sub Hauling"], xl_load(rebuilt)["Sub Hauling"]
+    for row in range(1, a.max_row + 1):
+        if row <= 6 or a[f"A{row}"].value is not None:
+            assert [c.value for c in a[row]] == [c.value for c in b[row]], row
+    from estimating_tools.estimate_spec.tests.test_fieldbook_packages_eval import _subtotal
+    wb2 = xl_load(rebuilt)
+    ev = evaluate(wb2, tmp_path)
+    assert ev[f"{ITEM2}!P{_subtotal(wb2[ITEM2], '02-200')}"] == pytest.approx(17116.00)
+
+
+def test_self_perform_days_typed_over_round_trip(tmp_path, capsys):
+    # Valves at ARR (factor 1): the Pipelayer's days typed 2 -> 3 over the
+    # self-perform formula; --write takes 3 into the spec, the rebuild
+    # re-applies the factor, and the crew prices 3 days: 2 x 3 x 8 x 74.
+    import shutil
+
+    from openpyxl import load_workbook as xl_load
+    src = FIELDBOOK_DIR / "examples" / "demo-packages.estimate.yaml"
+    spec = tmp_path / "bid.estimate.yaml"
+    shutil.copy(src, spec)
+    shutil.copytree(src.parent / "quotes", tmp_path / "quotes")
+    xlsx = tmp_path / "bid.xlsx"
+    args = ["--format", str(FIELDBOOK_DIR)]
+    assert cli.main(["build", str(spec), "-o", str(xlsx), *args]) == 0
+    wb = xl_load(xlsx)
+    ws = wb["3 - VALVES"]
+    (row,) = [r for r in task_block(ws, "02-510")["CREW"] if ws[f"A{r}"].value == "Pipelayer"]
+    ws[f"E{row}"] = 3
+    wb.save(xlsx)
+    capsys.readouterr()
+    assert cli.main(["read-back", str(spec), str(xlsx), "--write", *args]) == 0
+    out = capsys.readouterr().out
+    assert "days 2 → 3" in out and "re-applied on rebuild" in out
+    written = yaml.safe_load(spec.read_text(encoding="utf-8"))
+    (item3,) = [i for i in written["items"] if i["item_no"] == "3"]
+    assert [m["days"] for m in item3["labor"][0]["crew"]] == [3, 2]
+    rebuilt = tmp_path / "rebuilt.xlsx"
+    assert cli.main(["build", str(spec), "-o", str(rebuilt), *args]) == 0
+    wb2 = xl_load(rebuilt)
+    ws2 = wb2["3 - VALVES"]
+    (row2,) = [r for r in task_block(ws2, "02-510")["CREW"] if ws2[f"A{r}"].value == "Pipelayer"]
+    assert ws2[f"E{row2}"].value.startswith("=3*'Sub Valves'!")
+    ev = evaluate(wb2, tmp_path)
+    assert ev[f"3 - VALVES!P{row2}"] == pytest.approx(2 * 3 * 8 * 74)
+    assert cli.main(["read-back", str(spec), str(rebuilt), *args]) == 0
+    assert "nothing to write" in capsys.readouterr().out

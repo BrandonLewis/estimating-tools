@@ -569,3 +569,73 @@ def test_a_template_item_must_name_a_known_recipe(tmp_path):
                         encoding="utf-8")
     with pytest.raises(fp.FormatPackError, match="templates.item.recipe"):
         fp.load_pack(root)
+
+
+DERIVED = fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "derived_demo"
+
+
+def _derived_copy(tmp_path: Path) -> Path:
+    root = tmp_path / "derived"
+    shutil.copytree(DERIVED, root)
+    return root
+
+
+def test_a_derived_pack_inherits_every_document_it_does_not_ship():
+    pack = fp.load_pack(DERIVED)
+    base = fp.load_pack(fp.BUNDLED)
+    assert pack.name == "derived_demo" and pack.extends == "fieldbook"
+    assert pack.lineage == ("derived_demo", "fieldbook")
+    assert base.extends is None and base.lineage == ("fieldbook",)
+    assert pack.units == base.units and pack.recipes == base.recipes
+    assert pack.strict is True and pack.layout_map == base.layout_map
+
+
+def test_a_derived_vocabulary_merges_at_top_level():
+    pack = fp.load_pack(DERIVED)
+    assert "Ironworker" in pack.vocabulary["trades"]
+    assert pack.vocabulary["item_rules"] == fp.load_pack(fp.BUNDLED).vocabulary["item_rules"]
+
+
+def test_a_derived_pack_builds_the_fieldbook_example():
+    import yaml
+    from estimating_tools.estimate_spec import build as B
+    from estimating_tools.estimate_spec.tests._fieldbook import EXAMPLE
+    spec = yaml.safe_load(EXAMPLE.read_text(encoding="utf-8"))
+    wb = B.generate(spec, fp.load_pack(DERIVED))
+    assert {p.name: p.value for p in wb.custom_doc_props.props}["estimate_format"] == "derived_demo 1 / fieldbook 2"
+
+
+def test_extends_naming_an_unknown_pack_is_refused(tmp_path):
+    root = _derived_copy(tmp_path)
+    manifest = root / "format.yaml"
+    manifest.write_text(manifest.read_text().replace("extends: fieldbook", "extends: nowhere"))
+    with pytest.raises(fp.FormatPackError, match="nowhere"):
+        fp.load_pack(root)
+
+
+def test_a_derived_units_doc_overrides_one_unit_and_keeps_the_rest(tmp_path):
+    import yaml
+    root = _derived_copy(tmp_path)
+    base = fp.load_pack(fp.BUNDLED)
+    (root / "units.yaml").write_text(yaml.safe_dump({"units": {"scope_notes": base.units["scope_notes"]}}))
+    manifest = root / "format.yaml"
+    manifest.write_text(manifest.read_text() + "  units: units.yaml\n")
+    pack = fp.load_pack(root)
+    assert pack.units["task"] == base.units["task"]
+    assert set(pack.units) == set(base.units)
+
+
+def test_extends_may_be_a_path_relative_to_the_pack_root(tmp_path):
+    root = _derived_copy(tmp_path)
+    shutil.copytree(fp.BUNDLED, tmp_path / "base")
+    manifest = root / "format.yaml"
+    manifest.write_text(manifest.read_text().replace("extends: fieldbook", "extends: ../base"))
+    pack = fp.load_pack(root)
+    assert pack.extends == "fieldbook" and pack.lineage == ("derived_demo", "fieldbook")
+
+
+def test_a_merged_document_is_still_validated(tmp_path):
+    root = _derived_copy(tmp_path)
+    (root / "vocabulary.yaml").write_text("slot_pattern: 5\ndefs: {}\n")
+    with pytest.raises(fp.FormatPackError):
+        fp.load_pack(root)
