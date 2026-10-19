@@ -1487,6 +1487,10 @@ def _write_layout(wb, builder, *, spec_name=None, brand=None) -> None:
               "layout_version": LM.LAYOUT_VERSION, "tables": tables,
               "tags": dict(lm["tags"]), "blocks": dict(lm["blocks"]),
               "templates": bool(tpl_names)}
+    if builder.pack.derived_from:
+        # Which layout contract the grid keeps: Estimate Navigator offers
+        # read-back for a fork of a pack read-back reads.
+        layout["derived_from"] = builder.pack.derived_from
     if spec_name:
         layout["spec"] = spec_name
     if brand:

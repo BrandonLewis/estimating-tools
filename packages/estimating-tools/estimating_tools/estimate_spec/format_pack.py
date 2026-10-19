@@ -80,6 +80,11 @@ _SEED_CODE_KEYS = frozenset({"code", "description"})
 #: Keys a `seed.rate_table_trades` mapping entry may carry.
 _SEED_TRADE_KEYS = frozenset({"trade", "kind"})
 _RATE_KINDS = ("labor", "equipment")
+#: The packs a pack may name in `derived_from:`, by name -> directory. A
+#: derived pack keeps its base's layout contract (hidden Q..T tags, row-kind
+#: vocabulary, input columns) and, when it declares no `layout_map:` of its
+#: own, inherits the base's. Only the bundled fieldbook is a base today.
+DERIVABLE = {"fieldbook": BUNDLED}
 
 
 class FormatPackError(ValueError):
@@ -204,6 +209,11 @@ class FormatPack:
     #: defined names/document property/`_templates` sheet for that pack, and
     #: Estimate Navigator falls back to its heuristic reader.
     layout_map: dict | None = None
+    #: `derived_from:` in the manifest: the pack (one of `DERIVABLE`) whose
+    #: layout contract this pack keeps -- an org fork of fieldbook with its
+    #: own name, trades and seed says `derived_from: fieldbook`. None for a
+    #: pack that declares nothing. See `readback_family`.
+    derived_from: str | None = None
 
     @property
     def key(self) -> tuple[str, str, str]:
@@ -270,12 +280,26 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
         raise FormatPackError(
             f"{manifest}: protect.password is set but protect.sheets is not "
             "true -- a password only means something once sheets are protected")
+    derived_from = meta.get("derived_from")
+    if derived_from is not None:
+        if not isinstance(derived_from, str) or not derived_from.strip():
+            raise FormatPackError(
+                f"{manifest}: derived_from must be a non-empty string naming a pack "
+                f"(got {type(derived_from).__name__} {derived_from!r})")
+        if derived_from not in DERIVABLE:
+            raise FormatPackError(
+                f"{manifest}: derived_from {derived_from!r} is not a pack a pack can "
+                f"derive from (supported: {sorted(DERIVABLE)})")
     layout_map = None
     if "layout_map" in meta:
         try:
             layout_map = LM.validate(meta["layout_map"], str(manifest))
         except LM.LayoutMapError as exc:
             raise FormatPackError(str(exc)) from None
+    elif derived_from is not None:
+        # No map of its own: the base's, as this pack's own copy (a caller
+        # editing one pack's map must never reach the cached base's).
+        layout_map = copy.deepcopy(_base_pack(derived_from).layout_map)
     files = meta.get("files") or {}
     unknown = sorted(set(files) - set(_REQUIRED) - set(_OPTIONAL))
     if unknown:
@@ -321,6 +345,14 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
     except RecipeError as exc:
         raise FormatPackError(f"{root}: files.recipes: {exc}") from exc
     recipe_names = [k for k in recipes["recipes"] if k != "cover"]
+
+    if layout_map is not None and "layout_map" not in meta:
+        misfits = LM.fit_problems(layout_map, recipes, units["units"])
+        if misfits:
+            raise FormatPackError(
+                f"{manifest}: layout_map inherited from {derived_from} does not fit this "
+                f"pack: {'; '.join(misfits)}; keep {derived_from}'s Cost Summary/Checks/Codes "
+                "export names or declare your own layout_map:")
 
     tpl_recipe = ((layout_map or {}).get("templates") or {}).get("item", {}).get("recipe")
     if tpl_recipe is not None and tpl_recipe not in (recipes.get("recipes") or {}):
@@ -432,7 +464,7 @@ def load_pack(root, *, chosen: bool = True) -> FormatPack:
                       schema=schema, vocabulary=vocab,
                       seed=docs["seed"], supports=frozenset(supports), labor=labor,
                       protect=protect, chosen=chosen, strict=strict,
-                      layout_map=layout_map)
+                      layout_map=layout_map, derived_from=derived_from)
 
 
 def _check_seed_rate_trades(seed: dict, who: str) -> None:
@@ -551,6 +583,21 @@ def require_chosen(pack: FormatPack, verb: str) -> None:
             "(the bundled pack's own path works, if you meant it).")
 
 
+@lru_cache(maxsize=None)
+def _base_pack(name: str) -> FormatPack:
+    """The `DERIVABLE` pack `name`, loaded once. Loaded from its own
+    directory, not through `bundled_pack()`, so a derived pack's base never
+    follows whatever the bundled fallback is (tests redirect that)."""
+    return load_pack(DERIVABLE[name])
+
+
+def readback_family(pack: FormatPack) -> str:
+    """The layout contract `pack`'s workbooks follow: its `derived_from`
+    base, or its own name. Read-back reads a workbook by its family -- a
+    fork that keeps fieldbook's grid is read the way fieldbook is."""
+    return pack.derived_from or pack.name
+
+
 @lru_cache(maxsize=1)
 def bundled_pack() -> FormatPack:
     """The fallback pack. `chosen=False`: reaching it means nobody named one."""
@@ -558,8 +605,14 @@ def bundled_pack() -> FormatPack:
 
 
 def resolve_pack(cli_path=None, profile=None) -> FormatPack:
-    """`--format PATH` > profile `estimating.format` > the bundled pack."""
+    """`--format PATH` > profile `estimating.format` > the bundled pack.
+
+    `--format` also takes a base pack's bare name (`--format fieldbook`, a key
+    of `DERIVABLE`) when no such path exists: the bundled directory is not
+    somewhere an estimator can be expected to know."""
     if cli_path:
+        if not Path(cli_path).exists() and str(cli_path) in DERIVABLE:
+            return load_pack(DERIVABLE[str(cli_path)])
         return load_pack(cli_path)
     if profile is not None:
         named = profile.section("estimating").get("format")

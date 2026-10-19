@@ -64,7 +64,9 @@ the other:
   `estimating.format` (the `create-org-profile` skill sets it), or per command with
   `--format <dir>`. The quickest start is a copy of `packs/fieldbook/` with the org's own
   trades (`vocabulary.yaml`) and its rate-table trades and cost-code list (`seed.yaml`);
-  `packs/README.md`, shipped beside it, is the full contract. `scaffold`,
+  give the copy its own `name:` and add `derived_from: fieldbook` to its `format.yaml` so
+  read-back and Estimate Navigator treat its workbooks as fieldbook's (keep fieldbook's
+  input columns when you do); `packs/README.md`, shipped beside it, is the full contract. `scaffold`,
   `apply-takeoff` and `scaffold-save` write files, so they refuse the bundled pack unless
   something names a pack — `--format <estimate_spec>/packs/fieldbook` is a valid choice.
   The demo pack that used to be the default is retired.
@@ -197,8 +199,8 @@ Use this when the user wants to tweak one item (a single Excel sheet's worth of 
 
 ## Workflow — read Excel edits back into the spec (fieldbook)
 
-A workbook built with the fieldbook pack (the bundled default, or a copy of it named with
-`--format` / `estimating.format`) is edited in
+A workbook built with the fieldbook pack (the bundled default), or with an org pack whose
+`format.yaml` declares `derived_from: fieldbook`, is edited in
 Excel: the estimator types inputs and copies and pastes rows and whole task blocks. The spec
 stays the source of truth, so those edits are read back into it before the next rebuild or
 `bm-sync`. When the user says "read it back" (or hands you an edited fieldbook workbook):
@@ -207,8 +209,14 @@ stays the source of truth, so those edits are read back into it before the next 
    ```bash
    ~/.estimating/bin/est-estimate read-back <bid>.estimate.yaml <bid>.xlsx --report readback.md
    ```
-   Exit 2 means refused — the file is not a workbook, was not built by fieldbook, was built by
-   another fieldbook version, was built from a spec with other items, the spec itself does
+   Read-back resolves the pack the way `build` does: `--format <dir>`, else the org profile's
+   `estimating.format`, else the bundled fieldbook. On the machine that built the workbook
+   with the org profile in place, nothing more is needed; otherwise add the same
+   `--format <dir>` the build used. A stock fieldbook workbook on a machine whose
+   profile names the org pack reads back with `--format fieldbook` (the bare name).
+   Exit 2 means refused — the file is not a workbook, was built by another pack than the one
+   resolved (pass `--format` or set the profile), by another version of it, or by a pack
+   outside the fieldbook family, was built from a spec with other items, the spec itself does
    not build (or cannot be read the way `build` reads it), or `--report` names the spec or the
    workbook. Say why and stop; never edit the spec
    by hand to force it. Tell the user not to edit or re-save the workbook between this dry run

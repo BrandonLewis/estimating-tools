@@ -52,6 +52,7 @@ supports: [summarize, artifact]      # optional; see "Capabilities"
 labor:
   crew_factor_default: 1             # required if `supports:` includes summarize
 strict: true                         # optional, default false; see "strict:" below
+derived_from: fieldbook              # optional; see "derived_from:" below
 ```
 
 Every `files:` path must stay inside the pack directory. An unknown `files:`
@@ -61,6 +62,36 @@ key is refused.
 in this repo, as a guard against a customer's real format being committed here
 by accident. `load_pack` does not require it, so your own pack need not carry
 it.
+
+### `derived_from:` — a fork that keeps fieldbook's grid
+
+An org pack copied from fieldbook (its own `name`, trades, seed, an extra
+column) declares `derived_from: fieldbook` to say it keeps fieldbook's layout
+contract: the hidden Q..T tag columns, the row-kind vocabulary (ITEM, TASK,
+CREW, LINE, ...) and the input columns of each row kind. Then:
+
+- **It inherits fieldbook's `layout_map:`** when it declares none, so its
+  workbooks get Estimate Navigator's defined names, `_templates` sheet and
+  `est.layout` (which records `derived_from`). Its own `layout_map:` wins when
+  present.
+- **`est-estimate read-back` reads its workbooks.** Read-back resolves the
+  pack the way `build` does — `--format`, then the org profile's
+  `estimating.format`, then the bundled pack — accepts a workbook whose
+  `estimate_format` stamp is that pack's `"<name> <version>"`, and builds its
+  comparison baseline with that pack. `--format` also takes the bare name
+  `fieldbook` (no path needed), so a stock fieldbook workbook reads back with
+  `--format fieldbook` on a machine whose profile names the org pack.
+- **An inherited map must fit.** The pack is refused at load when fieldbook's
+  map names an export it does not publish: keep fieldbook's Cost Summary,
+  Checks and Codes export names (`cs[ITEM].bid`, `cost_summary_total.direct`,
+  `checks_head.count`, `code_rows.codes`), or declare your own `layout_map:`.
+
+Only `fieldbook` can be named today; any other value is refused at load. The
+declaration is a promise: `test_readback_layout.py` checks every pack that
+makes it against what the reader expects (set `EST_READBACK_LAYOUT_PACKS` to
+your pack's directory to run it against yours). A fork that moves an input
+column fails it — and read-back would misread that column — so keep the
+columns, or do not declare `derived_from`.
 
 ## Capabilities (`supports:`)
 
@@ -684,9 +715,15 @@ with nothing to change, nothing is written. It reads and writes the spec exactly
 as `build` (PyYAML, YAML 1.1) reads it: a plain `includes_operator: no` is
 `false`, and a value typed in Excel that YAML 1.1 would misread written plain
 (`Yes`, `Off`, `1:30`) is written double-quoted; a write that would not read back
-as the merged spec is refused. It refuses (exit 2) a file that is not a workbook,
-a workbook without fieldbook's `estimate_format` stamp or from another fieldbook
-version, one whose item sheets are not the spec's items, and a spec that does
+as the merged spec is refused. It reads workbooks built with fieldbook or with a
+pack that declares `derived_from: fieldbook` (see the manifest section), and
+resolves the pack the way `build` does: `--format PATH`, then the org profile's
+`estimating.format`, then the bundled fieldbook. It refuses (exit 2) a file that
+is not a workbook, a workbook without an `estimate_format` stamp, one stamped by
+another pack than the one resolved (pass `--format`, which also takes the bare
+name `fieldbook`, or set the profile) or by
+another version of it, a pack outside the fieldbook family, one whose item
+sheets are not the spec's items, and a spec that does
 not itself build or that YAML 1.1 reads in a way that cannot be reconciled (a
 mapping key `yes:`). `build` also stamps the workbook with the spec's
 fingerprint (`estimate_spec_sha`); a workbook built from an older version of the

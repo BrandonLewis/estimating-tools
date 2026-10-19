@@ -170,6 +170,51 @@ def _table_rows(name: str, t: dict, exports: dict, max_row: int):
     return (first, max_row) if max_row >= first else None
 
 
+def _instance_pattern(key: str) -> str:
+    """A recipe entry's instance key with each `{...}` placeholder as `*`:
+    `cs[{it.item_no}]` -> `cs[*]`."""
+    return re.sub(r"\{[^{}]*\}", "*", key)
+
+
+def fit_problems(lm: dict, recipes: dict, units: dict) -> list[str]:
+    """What in `lm` the pack (its `recipes` document and `units:` map) cannot
+    satisfy, read statically: each `cells:` export, and each table's `each` /
+    `after` / `span` anchor, must be an export some book sheet's unit
+    publishes under that instance key. Empty when the map fits.
+
+    Static on purpose: `resolve` finds the same defects only once a spec is
+    built, and a pack that INHERITS a map (`derived_from`) should be refused
+    when it loads, not on an estimator's first build."""
+    published: dict = {}
+    for sheet in recipes.get("book") or []:
+        if not isinstance(sheet, dict):
+            continue
+        keys = published.setdefault(sheet.get("sheet_name"), set())
+        for entry in sheet.get("units") or []:
+            if not isinstance(entry, dict) or "unit" not in entry:
+                continue
+            instance = _instance_pattern(str(entry.get("key") or entry["unit"]))
+            for export in ((units.get(entry["unit"]) or {}).get("exports") or {}):
+                keys.add(f"{instance}.{export}")
+
+    problems = []
+
+    def need(where: str, sheet: str, key: str) -> None:
+        if sheet not in published:
+            problems.append(f"{where}: no book sheet {sheet!r}")
+        elif not any(_glob(key).match(k) for k in published[sheet]):
+            problems.append(f"{where}: sheet {sheet!r} publishes no export {key!r}")
+
+    for name, t in (lm.get("tables") or {}).items():
+        for mode in _ROW_MODES:
+            if mode in t["rows"]:
+                need(f"tables.{name}.rows.{mode}", t["sheet"], t["rows"][mode])
+    for cname, ref in (lm.get("cells") or {}).items():
+        sheet, _, key = ref.rpartition("!")
+        need(f"cells.{cname}", sheet, key)
+    return problems
+
+
 def resolve(lm: dict, exports: dict, max_rows: dict) -> tuple[dict, list]:
     """({defined name: (sheet, absolute ref)}, sorted names of the tables that resolved).
 

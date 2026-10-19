@@ -58,21 +58,39 @@ def load_workbook(path):
 
 
 def check_stamp(wb, pack) -> None:
-    """Refuse a workbook the fieldbook pack (this version of it) did not build."""
+    """Refuse a workbook `pack` (this version of it) did not build, and a
+    `pack` whose layout contract this reader does not know.
+
+    The workbook's `estimate_format` stamp must be `"<pack.name>
+    <pack.version>"` -- `pack` being the one the caller resolved the way
+    build does (`--format`, the org profile, the bundled pack) -- and the
+    pack's `readback_family` must be fieldbook's: fieldbook itself, or a pack
+    that declares `derived_from: fieldbook`."""
     props = {p.name: p.value for p in wb.custom_doc_props.props}
     stamp = props.get("estimate_format")
     if not stamp:
         raise ReadBackRefused(
-            "not a fieldbook workbook: it carries no estimate_format property "
+            "not an est-estimate workbook: it carries no estimate_format property "
             "(est-estimate build stamps every workbook it writes)")
     name, _, version = str(stamp).partition(" ")
-    if name != L.PACK_NAME:
+    if name != pack.name:
+        # A bundled base is reachable by name; pointing the org profile at it
+        # would redirect every org build, so that is never the advice for it.
+        fix = (f"pass --format {name}" if name in fp.DERIVABLE else
+               f"pass --format with the {name!r} pack's directory, or set the org "
+               "profile's estimating.format to it")
         raise ReadBackRefused(
-            f"not a fieldbook workbook: it was built in the {name!r} format, and "
-            f"read-back reads only {L.PACK_NAME!r} workbooks")
+            f"this workbook was built in the {name!r} format, but read-back resolved the "
+            f"{pack.name!r} pack -- {fix}")
+    family = fp.readback_family(pack)
+    if family != L.FAMILY:
+        raise ReadBackRefused(
+            f"pack {pack.name!r} is in the {family!r} family, and read-back reads only "
+            f"{L.FAMILY!r} workbooks (fieldbook, or a pack whose format.yaml declares "
+            f"derived_from: {L.FAMILY})")
     if version != str(pack.version):
         raise ReadBackRefused(
-            f"this workbook was built by fieldbook version {version}; this read-back "
+            f"this workbook was built by {name} version {version}; this read-back "
             f"reads version {pack.version} -- rebuild it from the spec first")
 
 
@@ -218,6 +236,10 @@ def explain_build_error(spec, exc) -> str:
 
 def read_back(spec: dict, wb, pack=None, *, force: bool = False) -> ReadBack:
     """What the edited fieldbook workbook `wb` changes in `spec`.
+
+    `pack` is the pack that built `wb` -- fieldbook, or a pack derived from
+    it -- and the one the fresh baseline build uses; None is the bundled
+    fieldbook.
 
     Never mutates `spec`. Raises ReadBackRefused when `wb` cannot be read back
     against `spec` at all; everything else -- including problems that must

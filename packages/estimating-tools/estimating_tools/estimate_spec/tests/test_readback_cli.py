@@ -13,6 +13,13 @@ from estimating_tools.estimate_spec.tests._fieldbook import EXAMPLE, FIELDBOOK_D
 from estimating_tools.estimate_spec.tests.test_readback_spec_io import commented_spec
 
 
+@pytest.fixture(autouse=True)
+def _no_profile(monkeypatch):
+    """read-back resolves its pack the way build does; no org profile on the
+    test machine may pick it (these workbooks are built with fieldbook)."""
+    monkeypatch.delenv("ESTIMATING_PROFILES", raising=False)
+
+
 @pytest.fixture
 def bid(tmp_path):
     """A spec (the example, comments and all) and the workbook built from it."""
@@ -113,7 +120,7 @@ def test_refusals_exit_2(bid, tmp_path, capsys):
     assert cli.main(["build", str(spec), "-o", str(other), "--format", str(FIELDBOOK_DIR),
                      "--no-stamp"]) == 0
     assert cli.main(["read-back", str(spec), str(other)]) == 2
-    assert "read-back refused: not a fieldbook workbook" in capsys.readouterr().err
+    assert "read-back refused: not an est-estimate workbook" in capsys.readouterr().err
     assert cli.main(["read-back", str(spec), str(tmp_path / "missing.xlsx")]) == 2
     assert "read-back refused: no such file" in capsys.readouterr().err
     assert cli.main(["read-back", str(tmp_path / "missing.yaml"), str(xlsx)]) == 2

@@ -4,6 +4,10 @@ An Excel task pane that lists a workbook's bid items, checks and cost codes, ins
 templates, and gives the exact `est-estimate read-back` command to run. It reads only the open
 workbook and sends nothing anywhere.
 
+The Read back tab accepts a workbook built with fieldbook or with an org pack that declares
+`derived_from: fieldbook`. The copied command does not name the pack, so run it where the org profile
+that names the pack is set (`ESTIMATING_PROFILES`), or add `--format <pack directory>` to it.
+
 ## Layout
 
 - `core/`: pure logic, with no Office.js. Unit-tested with `node --test`.

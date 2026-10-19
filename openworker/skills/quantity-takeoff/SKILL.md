@@ -78,9 +78,13 @@ covers CLI unit conversions. The functions' docstrings carry the call shapes.
 
 ## Output & BidSheet.ai hand-off
 
-Once quantities are organized into rows, **quantity** rows reach BidSheet.ai bid
-items via the **`push-takeoff`** skill — it drives `estimated_quantity` onto a
-matching (or newly created) bid item. Material and structure rows are not yet
+Once quantities are organized into rows, **quantity** rows reach BidSheet.ai via
+the **`push-takeoff`** skill. It never writes the official bid-item quantity
+(BidSheet.ai issue #984): takeoff quantities land on the estimate layer as
+structure sections, and where the cost quantity differs from the official
+schedule it is set on the estimate item with
+`mcp__bidmanager__update_estimate_item(quantity_override=…)`; model quantities are only compared
+against the official schedule, read-only. Material and structure rows are not yet
 bridged directly; until that support lands, their quantities reach BidSheet.ai the
 way any estimate's do — carried into bid items by `push-estimate` (see
 `import-estimate` → `push-estimate`). This takeoff table is the source you enter

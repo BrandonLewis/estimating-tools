@@ -1,14 +1,16 @@
 """What the reader knows about the fieldbook workbook's layout.
 
 Everything here mirrors `packs/fieldbook/units.yaml`; `test_readback_layout.py`
-reads that file and fails the moment the two disagree, so a pack edit can
-never leave the reader looking at the wrong column.
+reads that file -- and the units.yaml of every pack that declares
+`derived_from: fieldbook` -- and fails the moment they disagree, so a pack
+edit can never leave the reader looking at the wrong column.
 """
 from __future__ import annotations
 
-#: The pack whose workbooks this reader understands (the `estimate_format`
-#: custom property is `"<name> <version>"`).
-PACK_NAME = "fieldbook"
+#: The layout contract this reader understands: a pack's
+#: `format_pack.readback_family` (its `derived_from`, else its own name) must
+#: be this. The workbook's own `estimate_format` stamp names the pack itself.
+FAMILY = "fieldbook"
 
 #: Item sheets: the hidden kind tag column.
 KIND_COL = "Q"
