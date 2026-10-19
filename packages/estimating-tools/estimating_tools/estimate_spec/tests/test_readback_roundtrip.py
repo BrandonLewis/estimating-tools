@@ -20,6 +20,13 @@ from estimating_tools.estimate_spec.tests._formula_eval import evaluate
 ITEM2 = "2 - 8IN MAIN"
 
 
+@pytest.fixture(autouse=True)
+def _no_profile(monkeypatch):
+    """read-back resolves its pack the way build does; no org profile on the
+    test machine may pick it (these workbooks are built with fieldbook)."""
+    monkeypatch.delenv("ESTIMATING_PROFILES", raising=False)
+
+
 def _row(ws, kind, name):
     (r,) = [r for r in rows_of_kind(ws, kind) if ws[f"A{r}"].value == name]
     return r

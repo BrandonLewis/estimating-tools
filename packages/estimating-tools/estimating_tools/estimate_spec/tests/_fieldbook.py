@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import copy
 import re
+import shutil
+import tempfile
+from pathlib import Path
 
 import yaml
 from openpyxl.formula.translate import Translator
@@ -24,6 +27,63 @@ _CELL_REF = re.compile(r"(?<![!'A-Za-z0-9_])(\$?[A-Z]{1,3}\$?)(\d+)")
 
 def fieldbook_pack():
     return fp.load_pack(FIELDBOOK_DIR)
+
+
+#: The name of the throwaway fieldbook fork `derived_pack_dir` writes.
+DERIVED_NAME = "derived_fieldbook"
+#: The fork's visible difference in the grid: the Cost Summary's column-A
+#: head (fieldbook's "Item"), on a fixed-shape book sheet read-back compares
+#: against its baseline -- a baseline built with fieldbook instead of the
+#: fork would see column A differ and skip the sheet with a notice.
+DERIVED_ITEM_HEAD = "Bid item"
+
+
+def _fork_item_head(units) -> None:
+    head = units["cost_summary_head"]["rows"][1]["cells"]["A"]
+    assert head["value"] == "Item"
+    head["value"] = DERIVED_ITEM_HEAD
+
+
+def derived_pack_dir(tmp_path, *, name: str = DERIVED_NAME, derived_from="fieldbook",
+                     keep_layout_map: bool = False, format_edit=None, units_edit=None,
+                     replace: dict | None = None) -> Path:
+    """A minimal org-style fork of fieldbook under a fresh directory in `tmp_path`.
+
+    A copy of the bundled pack renamed `name`, declaring `derived_from`
+    (omitted when None), with two harmless differences -- an extra seed rate
+    trade, and the Cost Summary's item head reading DERIVED_ITEM_HEAD -- and,
+    unless `keep_layout_map`, no `layout_map:` of its own (it inherits
+    fieldbook's). `format_edit(meta)` / `units_edit(units)` mutate the parsed
+    format.yaml / units.yaml `units:` mapping before it is written;
+    `replace` is {old: new} text replaced in units.yaml and recipes.yaml first.
+    """
+    root = Path(tempfile.mkdtemp(dir=tmp_path)) / "pack"
+    shutil.copytree(FIELDBOOK_DIR, root)
+    for old, new in (replace or {}).items():
+        for doc in ("units.yaml", "recipes.yaml"):
+            path = root / doc
+            path.write_text(path.read_text(encoding="utf-8").replace(old, new), encoding="utf-8")
+    manifest = root / "format.yaml"
+    meta = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+    meta["name"] = name
+    if derived_from is not None:
+        meta["derived_from"] = derived_from
+    if not keep_layout_map:
+        meta.pop("layout_map", None)
+    if format_edit:
+        format_edit(meta)
+    manifest.write_text(yaml.safe_dump(meta, sort_keys=False), encoding="utf-8")
+    seed_path = root / "seed.yaml"
+    seed = yaml.safe_load(seed_path.read_text(encoding="utf-8"))
+    seed["rate_table_trades"].append("Truck Driver")
+    seed_path.write_text(yaml.safe_dump(seed, sort_keys=False), encoding="utf-8")
+    units_path = root / "units.yaml"
+    doc = yaml.safe_load(units_path.read_text(encoding="utf-8"))
+    _fork_item_head(doc["units"])
+    if units_edit:
+        units_edit(doc["units"])
+    units_path.write_text(yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+    return root
 
 
 def example_spec() -> dict:

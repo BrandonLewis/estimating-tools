@@ -1,8 +1,17 @@
 /** The Read back tab: is this workbook ready, and the exact command to run. */
 import { cellText } from "./refs.js";
 
-/** Packs `est-estimate read-back` can read today. */
+/**
+ * Packs `est-estimate read-back` can read today -- and so any pack that
+ * declares `derived_from:` one of them (an org fork that keeps its grid),
+ * which the layout JSON carries as `derived_from`.
+ */
 export const READBACK_PACKS = new Set(["fieldbook"]);
+
+/** True when read-back reads workbooks laid out by `layout`'s pack. */
+export function readbackSupported(layout) {
+  return READBACK_PACKS.has(layout?.pack) || READBACK_PACKS.has(layout?.derived_from);
+}
 
 /**
  * The readiness list. A row with `advisory: true` is a reminder the pane
@@ -11,10 +20,11 @@ export const READBACK_PACKS = new Set(["fieldbook"]);
  * itself still checks it).
  */
 export function readiness({ layout, dirty, untagged, tooLarge = [] }) {
-  const supported = READBACK_PACKS.has(layout?.pack);
+  const supported = readbackSupported(layout);
+  const packs = [...READBACK_PACKS].join(", ");
   const rows = [
     { ok: !!layout, text: "Built by est-estimate", sub: layout ? `${layout.pack} pack` : "No estimate_layout stamp" },
-    { ok: supported, text: "Read-back supports this pack", sub: supported ? "" : `Read-back reads ${[...READBACK_PACKS].join(", ")} workbooks` },
+    { ok: supported, text: "Read-back supports this pack", sub: supported ? "" : `Read-back reads ${packs} workbooks, or a pack derived from ${packs}` },
     dirty === false
       ? { ok: true, text: "No unsaved changes", sub: "" }
       : dirty === true

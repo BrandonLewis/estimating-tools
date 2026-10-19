@@ -16,9 +16,10 @@ Subcommands:
                  this is how the number is known before Excel opens the
                  workbook (summarize.py; arithmetic-consistency only, NOT
                  a rate check)
-  read-back      an edited fieldbook workbook -> the updated spec and a
-                 Markdown report; a dry run unless --write, which first
-                 saves a timestamped backup of the spec (readback/)
+  read-back      an edited fieldbook (or derived_from: fieldbook) workbook
+                 -> the updated spec and a Markdown report; a dry run
+                 unless --write, which first saves a timestamped backup
+                 of the spec (readback/)
 
 Deterministic file operations only; MCP lookups stay at the skill layer
 (build-estimate-workbook fetches BM bid-item scaffolds to scaffolds.json)."""
@@ -47,6 +48,7 @@ def cmd_build(args) -> int:
     """
     from estimating_tools.addin.brand import workbook_brand
     from estimating_tools.estimate_spec.build import build
+    from estimating_tools.estimate_spec.layout_map import LayoutMapError
     from estimating_tools.estimate_spec.recipe import RecipeError
 
     pack = _resolve_pack_or_report(args)
@@ -62,6 +64,11 @@ def cmd_build(args) -> int:
     except yaml.YAMLError as exc:
         print(f"invalid YAML in {args.config}: {exc}", file=sys.stderr)
         return 1
+    except LayoutMapError as exc:
+        # The pack's layout_map does not fit what the pack lays out: a pack
+        # defect, whatever the spec says.
+        print(f"format pack error: {exc}", file=sys.stderr)
+        return 2
     except (RecipeError, ValueError, KeyError, TypeError) as exc:
         # ValueError is what validate_cross_references raises; RecipeError
         # names the offending unit or recipe; KeyError is a spec missing a
@@ -435,8 +442,12 @@ def cmd_read_back(args) -> int:
     run, or written with --write, or nothing to write. Exit 1: problems
     that block writing (the report lists them; nothing is written) --
     including a workbook built from an older version of the spec, unless
-    --force. Exit 2: refused -- a file cannot be read, or the workbook is not
-    a fieldbook workbook built from this spec.
+    --force. Exit 2: refused -- a file cannot be read, the format pack cannot
+    be resolved, or the workbook is not one that pack (fieldbook, or a pack
+    derived from it) built from this spec.
+
+    The pack is resolved the way build resolves it: --format, then the org
+    profile's estimating.format, then the bundled pack.
     """
     try:
         from ruamel.yaml import YAMLError
@@ -473,8 +484,11 @@ def cmd_read_back(args) -> int:
     if not isinstance(spec, dict):
         _emit(f"invalid spec {spec_path}: expected a mapping", file=sys.stderr)
         return 2
+    pack = _resolve_pack_or_report(args)
+    if pack is None:
+        return 2
     try:
-        result = read_back(spec, load_workbook(args.workbook), force=args.force)
+        result = read_back(spec, load_workbook(args.workbook), pack=pack, force=args.force)
     except ReadBackRefused as exc:
         _emit(f"read-back refused: {exc}", file=sys.stderr)
         return 2
@@ -608,6 +622,11 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--write", action="store_true",
                    help="write the updated spec (after saving SPEC.bak-YYYYmmdd-HHMMSS)")
     p.add_argument("--report", default=None, help="also write the Markdown report here")
+    p.add_argument("--format", default=None,
+                   help="the format pack that built the workbook (default: the org "
+                        "profile's estimating.format, else the bundled pack) -- "
+                        "fieldbook, or a pack whose format.yaml declares "
+                        "derived_from: fieldbook")
     p.add_argument("--force", action="store_true",
                    help="apply a workbook built from an older version of the spec (its "
                         "estimate_spec_sha stamp differs) over the current spec -- a notice, "

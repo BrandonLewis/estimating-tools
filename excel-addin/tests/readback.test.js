@@ -21,6 +21,18 @@ test("an unsupported pack and untagged rows are named", () => {
   assert.match(r[3].sub, /2 - MAIN row 40/);
 });
 
+test("a pack derived from a read-back pack is supported, and named by its own name", () => {
+  const r = readiness({ layout: { pack: "org-fieldbook", derived_from: "fieldbook" }, dirty: false, untagged: [] });
+  assert.ok(r.every((x) => x.ok));
+  assert.equal(r[0].sub, "org-fieldbook pack");
+});
+
+test("deriving from a pack read-back does not read is not enough", () => {
+  const r = readiness({ layout: { pack: "org-other", derived_from: "other" }, dirty: false, untagged: [] });
+  assert.deepEqual(r.map((x) => x.ok), [true, false, true, true]);
+  assert.match(r[1].sub, /derived from fieldbook/);
+});
+
 test("the command quotes both paths and refuses a quote inside one", () => {
   assert.equal(command("job.estimate.yaml", "Job.xlsx"),
                'est-estimate read-back "job.estimate.yaml" "Job.xlsx" --write');
