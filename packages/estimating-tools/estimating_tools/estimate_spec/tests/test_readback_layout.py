@@ -58,12 +58,12 @@ def pack_dir(request, tmp_path_factory) -> Path:
 
 @pytest.fixture(scope="module")
 def units(pack_dir) -> dict:
-    return yaml.safe_load((pack_dir / "units.yaml").read_text(encoding="utf-8"))["units"]
+    return fp.load_pack(pack_dir).units
 
 
 @pytest.fixture(scope="module")
 def recipes(pack_dir) -> dict:
-    return yaml.safe_load((pack_dir / "recipes.yaml").read_text(encoding="utf-8"))
+    return fp.load_pack(pack_dir).recipes
 
 
 def test_the_contract_covers_fieldbook_and_every_pack_derived_from_it(pack_dir):
@@ -201,7 +201,7 @@ def test_baseline_sheets_are_the_book_sheets_other_than_rates_and_codes(recipes)
     # Rates grows with new rates (not fixed-shape) and Codes is regenerated
     # (decision 9) -- every other book sheet's shape depends only on the
     # items, which read-back has already confirmed match the spec.
-    sheet_names = {s["sheet_name"] for s in recipes["book"]}
+    sheet_names = {s["sheet_name"] for s in recipes["book"] if "for_each" not in s}
     assert set(L.BASELINE_SHEETS) <= sheet_names
     assert sheet_names - set(L.BASELINE_SHEETS) == {"Rates", "Codes"}
 
@@ -241,3 +241,43 @@ def test_a_pack_named_in_the_environment_is_checked_even_outside_the_family(monk
     assert LEGACY_DIR in _family_packs().values()
     with pytest.raises(AssertionError):
         test_the_contract_covers_fieldbook_and_every_pack_derived_from_it(LEGACY_DIR)
+
+
+def test_the_package_tag_and_columns_are_the_packs(units):
+    assert _unit_cell(units, "package_head", L.KIND_COL, index=0) == L.PACKAGE_TAG
+    (crew,) = [c for n, k, c in _tagged_rows(units) if n == "task" and k == "CREW"]
+    (line,) = [c for n, k, c in _tagged_rows(units) if n == "task" and k == "LINE"]
+    for cells in (crew, line):
+        assert cells[L.PACKAGE_ROW_TAG_COL]["value"] == "{it.u_tag}"
+        assert "formula" in cells[L.ARR_BASIS_COL]
+
+
+def test_the_package_sheet_labels_are_the_packs(units):
+    lines = units["package_lines"]["rows"]
+    head = lines[0]["cells"]
+    h = L.PKG_HEADERS
+    assert {k: head[c]["value"] for k, c in
+            {"item": "A", "line": "B", "qty": "D", "uom": "E", "rate": "F", "pick": "H",
+             "arr": "I", "arr_ext": "J"}.items()} == {k: h[k] for k in
+            ("item", "line", "qty", "uom", "rate", "pick", "arr", "arr_ext")}
+    assert head["{col:vl+2}"]["value"] == h["carry"]
+    assert head["{col:vl+4}"]["value"] == h["source"]
+    assert head["{col:vl+5}"]["value"] == h["state"]
+    assert lines[0]["repeat_cols"]["cells"]["+1"]["value"] == h["ext"]
+    assert lines[0]["repeat_cols"]["start"] == "K"        # vendor pairs start after ARR ext (J)
+    assert lines[1]["cells"]["A"]["value"] == L.PKG_QUOTE_REF_LABEL
+    assert lines[2]["cells"]["A"]["value"] == L.PKG_SURCHARGE_LABEL
+    sel = next(r for r in units["package_head"]["rows"] if r.get("mark") == "sel")["cells"]
+    assert sel["E"]["value"] == L.PKG_SELECTOR_LABEL
+    assert sel["F"]["style"] == "input_select"
+    items = units["package_items"]["rows"]
+    assert items[0]["cells"]["B"]["value"] == L.PKG_ITEMS_HEAD
+    assert items[1]["cells"]["B"]["value"] == L.PKG_ITEM_ROW_LABEL
+    assert units["package_totals"]["rows"][0]["cells"]["A"]["value"] == L.PKG_TOTAL_LABEL
+    assert units["package_conditions"]["rows"][0]["cells"]["B"]["value"] == L.PKG_CONDITIONS_LABEL
+    assert units["package_conditions"]["rows"][1]["cells"]["B"]["value"] == "{it.text}"
+
+
+def test_the_summary_sheet_is_a_baseline_sheet(recipes):
+    names = {s["sheet_name"] for s in recipes["book"] if "for_each" not in s}
+    assert L.SUMMARY_SHEET in names and L.SUMMARY_SHEET in L.BASELINE_SHEETS

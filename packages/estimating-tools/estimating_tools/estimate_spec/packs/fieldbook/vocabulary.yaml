@@ -93,8 +93,14 @@ defs:
               required: [label]
               properties:
                 label:      { type: string }
+                unit:       { type: string, enum: [CY, CUYD, CF, CUFT, SF, SQFT, SY, SQYD, LF, LNFT, LB, LBS, TON, EA] }
+                count:      { type: number }
                 length:     { type: number }
+                width:      { type: number }
                 height:     { type: number }
+                weight_lb:  { type: number }
+                model_qty:  { type: number }
+                adjust:     { type: number }
                 footing_cy: { type: number }
                 footing_cf: { type: number }
                 wall_cy:    { type: number }

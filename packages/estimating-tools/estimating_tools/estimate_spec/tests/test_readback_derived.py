@@ -125,7 +125,7 @@ def test_a_derived_workbook_from_another_version_is_refused(derived, tmp_path):
     (prop,) = [p for p in wb.custom_doc_props.props if p.name == "estimate_format"]
     prop.value = f"{DERIVED_NAME} 7"
     with pytest.raises(ReadBackRefused,
-                       match=rf"built by {DERIVED_NAME} version 7; this read-back reads version 1"):
+                       match=rf"built with {DERIVED_NAME} 7; this read-back needs {DERIVED_NAME} 2"):
         read_back(example_spec(), _saved(wb, tmp_path), pack=derived)
 
 
@@ -215,3 +215,13 @@ def test_cli_reads_a_stock_workbook_with_format_fieldbook_under_an_org_profile(
     assert "pass --format fieldbook" in capsys.readouterr().err
     assert cli.main(["read-back", str(spec), str(xlsx), "--format", "fieldbook", "--write"]) == 0
     assert _supt_count(spec) == 2
+
+
+def test_a_copied_derived_pack_refuses_a_stamp_without_the_base_version(derived):
+    spec = example_spec()
+    wb = B.generate(spec, derived)
+    (stamp,) = [p for p in wb.custom_doc_props.props if p.name == "estimate_format"]
+    assert stamp.value == f"{derived.name} {derived.version} / fieldbook 2"
+    stamp.value = f"{derived.name} {derived.version}"
+    with pytest.raises(ReadBackRefused, match="needs.*fieldbook 2.*rebuild"):
+        read_back(spec, wb, pack=derived)

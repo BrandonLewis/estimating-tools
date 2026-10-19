@@ -78,7 +78,7 @@ def test_a_derived_pack_builds_a_navigator_workbook_stamped_with_its_own_name(tm
     pack = fp.load_pack(derived_pack_dir(tmp_path))
     wb = B.generate(example_spec(), pack)
     props = {p.name: p.value for p in wb.custom_doc_props.props}
-    assert props["estimate_format"] == f"{DERIVED_NAME} 1"
+    assert props["estimate_format"] == f"{DERIVED_NAME} 2 / fieldbook 2"
     assert "estimate_layout" in props
     assert "_templates" in wb.sheetnames
     assert {"est.index", "est.layout", "est.direct_total"} <= set(wb.defined_names)
@@ -155,4 +155,14 @@ def test_build_with_format_fieldbook(monkeypatch, tmp_path):
     assert cli.main(["build", str(EXAMPLE), "-o", str(out), "--format", "fieldbook"]) == 0
     from openpyxl import load_workbook
     props = {p.name: p.value for p in load_workbook(out).custom_doc_props.props}
-    assert props["estimate_format"] == "fieldbook 1"
+    assert props["estimate_format"] == "fieldbook 2"
+
+
+def test_an_extending_pack_inherits_the_family_and_its_own_layout_copy():
+    from estimating_tools.estimate_spec.tests._fieldbook import DERIVED
+    pack = fp.load_pack(DERIVED)
+    base = fieldbook_pack()
+    assert pack.derived_from == fp.readback_family(pack) == "fieldbook"
+    assert pack.layout_map == base.layout_map and pack.layout_map is not base.layout_map
+    wb = B.generate(example_spec(), pack)
+    assert _layout(wb)["derived_from"] == "fieldbook"

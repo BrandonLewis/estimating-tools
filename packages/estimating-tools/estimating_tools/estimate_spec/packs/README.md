@@ -77,7 +77,7 @@ CREW, LINE, ...) and the input columns of each row kind. Then:
 - **`est-estimate read-back` reads its workbooks.** Read-back resolves the
   pack the way `build` does — `--format`, then the org profile's
   `estimating.format`, then the bundled pack — accepts a workbook whose
-  `estimate_format` stamp is that pack's `"<name> <version>"`, and builds its
+  `estimate_format` stamp is that pack's `"<name> <version> / fieldbook <version>"`, and builds its
   comparison baseline with that pack. `--format` also takes the bare name
   `fieldbook` (no path needed), so a stock fieldbook workbook reads back with
   `--format fieldbook` on a machine whose profile names the org pack.
@@ -416,6 +416,36 @@ way, which still works even though the cell's own `{ref:...}` could not — and
 raises it as a `RecipeError`. It does not apply to a cross-sheet
 `{ref:SHEET!...}` failure, which always names its own site (see "Referring to
 another sheet" below) and is never swallowed or renamed.
+
+### Cells past a band, per-element styles, comments, hidden columns
+
+```yaml
+- cells:
+    "{col:vl+2}": { value: "CARRY", style: head }                    # past the band
+    "{col:vl+6}": { value: "Label", style: head, hide_column: true }
+  repeat_cols:
+    over: p.vendors
+    start: K
+    width: 2
+    cells:
+      "+0": { value: "{v.name}", style: "vendor_head_{v.role}", comment: "{v.note}" }
+  mark_cols_last: vl
+```
+
+- A cell key may be a column landmark, `"{col:NAME}"` or `"{col:NAME+N}"`,
+  instead of a letter: the cell lands N columns right of the column a
+  `mark_cols_first`/`mark_cols_last` recorded, on this row (the band is
+  placed first) or on an earlier row of the unit. An unknown landmark stops
+  the build.
+- `style:` may carry placeholders (`"{v.role}"`, `"{it.kind}"`), resolved
+  per placed cell; a name that resolves to no style in `tokens.styles` stops
+  the build.
+- `comment: TEMPLATE` writes an Excel comment on the cell when the template
+  resolves to text, and none when it resolves to `""`.
+- `hide_column: true` hides the cell's column (useful for a helper column
+  whose letter depends on a band's width).
+- A recipe param's `{for_each: PATH, as: V}` sees each element's 0-based
+  position as `it_index` (`index: { from: it_index }`).
 
 ### A leading zero marks text, not a number
 
@@ -790,6 +820,67 @@ the two drift apart.
 Its tests evaluate the built workbook with `pycel` (the `test` extra) and
 fail, not skip, without it under `CI=true`.
 
+### Package sheets, driven cells and their read-back (fieldbook)
+
+A spec with `work_packages` gets, after the item sheets, one `Sub <package>` sheet per package
+(name cut to Excel's 31 characters, de-duplicated) and a `Sub Spreads` summary. These are the
+engine features above put to work (`for_each` book sheets, `repeat_cols` vendor bands, column
+landmarks, `export_each`); the layout is `units.yaml`'s `package_*` units, nothing is hard-coded.
+
+- **Columns by header, not letter.** The sheet has a band of vendor price/extension pairs (one per
+  vendor found in the quote files, then `work_packages_spare_vendor_columns` blank pairs), a CARRY
+  pair after the last spare and a Source column. The pack's formulas and read-back find CARRY,
+  Source and each vendor by header text, so a column inserted in Excel does not break either.
+- **Source and State.** A line's Source is its pick, else the sheet's selector (ARR, a vendor, or
+  CARRY). Its State is ARR, a price, `incl` (folded into another line: 0), `excl` (not quoted: the
+  ARR price), or `#N/A` when Source names no vendor column or is CARRY with a blank CARRY cell.
+  The `#N/A` is deliberate: it reaches the item cell and fails Checks rule 10 rather than
+  under-pricing the bid. CARRY is a $/unit of the package line, never an item amount.
+- **Quote lines on the spread.** A quote line prices the package line it names (`line_name`, or
+  the item's only package line). Two non-alternate lines on one package line are a build error
+  naming the quote file and both lines. An `is_alternate` line never prices: it shows as an
+  `Alternate: <line name>` row of the conditions grid with its price under that vendor (read-back
+  leaves those rows alone; edit the quote file). A quote's `amount` is a lump sum: with no lines
+  it is prorated over every package line by plug extension (`$/unit = share / qty`); with priced
+  lines too, the **remainder** -- `amount` minus the priced lines' extensions (price x qty) -- is
+  prorated the same way over the included lines the quote does not price. Excluded (`excl`) and
+  folded (`incl`) lines take no share; a remainder of 0 or less is a build error; an amount
+  whose lines price every package line is not prorated. A prorated cell is italic (derived)
+  with a comment "prorated from $<amount> lump sum" (or "... $<remainder> remainder of $<amount>
+  lump sum").
+- **Self-perform switch.** A task marked `labor_block.carry: self_perform` (default `support`:
+  an ARR crew that always stays) has its crew days and non-package line quantities multiplied by
+  the item's `sp_factor` on the package sheet: 1 while ARR prices the item, 0 once a vendor or
+  CARRY does. The factor follows the effective source (pick, else selector) of the item's FIRST
+  package line, on the first `kind: subcontract` package that lists the item; a supply package
+  never switches a task. CARRY figures live in `work_packages[].carry` ($/unit, keyed `item` or
+  `item/line`).
+- **Driven item cells.** On an item in a package, a package line's unit price, Source and Vendor
+  cells, and the crew days and line quantities of its `self_perform` tasks (times the sheet's
+  `sp_factor`, 0 when a vendor is carried) are formulas reading the spread. The item sheet exports
+  `arr_cost` (U/V columns) for the ARR-versus-carried comparison.
+
+**Read-back of package sheets.** `est-estimate read-back` finds a package sheet by its `PKG` tag in
+row 1 and reads it by header. Selector, per-line picks, CARRY and surcharge go to
+`work_packages[].selected / picks / carry / surcharge`. A vendor typed into a spare (or inserted)
+column becomes a new `CanonicalQuote` file in the quotes directory; a price or condition edited under
+an existing vendor updates that quote file. These are reported under "Packages" and `--write` saves
+the files (a quote ref whose file has been removed since the build is a problem: rebuild the
+workbook). A number typed over a package line's driven price, Source or Vendor cell is a blocking
+problem naming the package sheet (change the selector or the vendor price there); so is an unknown
+vendor in the selector. On a self-perform task's crew days or line qty (`=N*<factor>`), a plain
+number or `=<N>*<the same factor ref>` is taken as the new spec value N, with a notice that the
+self-perform factor is re-applied on rebuild; any other formula there is a problem. Package
+sheets are not position-scanned for typed-over formulas: the baseline is compared after mapping the
+sheet's columns by header. When a lump-sum quote was prorated across lines and one prorated cell is
+typed over, the other lines of that quote are written at their prorated prices.
+
+## Derived packs (`extends:`)
+
+A pack can start from another instead of copying it. Set `extends: fieldbook` (the bundled pack) or `extends: <path relative to the pack root>` in the manifest and ship only what you override. `name` and `version` are required on the derived manifest. Every `files.*` entry is optional on a derived pack; a present document is merged over the base's: for `units` and `recipes` the merge is one level down (`units:` keys, `recipes:` keys, `globals:` keys, `takeoff_kinds:` keys replace by name; a `book:` list present in the derived doc replaces the base's whole list); for `tokens`, `vocabulary` and `seed` the merge is top-level keys. Manifest keys `strict`, `layout_map`, `provenance`, `supports`, `labor`, `protect` are inherited unless the derived manifest sets them.
+
+The merged documents go through every check a root pack's documents do. `FormatPack.extends` is the base pack's name and `FormatPack.lineage` runs from this pack to the root, e.g. `("arr-fieldbook", "fieldbook")`.
+
 ## Checking your pack
 
 ```python
@@ -805,5 +896,12 @@ est-estimate build my-pack/examples/sample.estimate.yaml -o /tmp/sample.xlsx \
     --format my-pack
 ```
 
-The workbook's `estimate_format` custom document property records
-`<name> <version>`, so any file traces back to the pack that produced it.
+The workbook's `estimate_format` custom document property records the
+pack's lineage -- `<name> <version>` for a root pack, `<name> <version> /
+<base> <version>` (and so on down the chain) for a derived one -- so any file
+traces back to the packs that produced it. read-back compares every element:
+a base pack's version bump (fieldbook 1 -> 2 changed the item-sheet grid)
+refuses a derived pack's older workbooks too. This includes copied packs that
+declare `derived_from: fieldbook`, as well as `extends:` overlays. A copied
+pack must still keep the current fieldbook grid; update it and run the layout
+contract tests before rebuilding its older workbooks.

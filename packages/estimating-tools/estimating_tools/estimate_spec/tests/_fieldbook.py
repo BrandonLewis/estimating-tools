@@ -13,8 +13,12 @@ from openpyxl.formula.translate import Translator
 from estimating_tools.estimate_spec import build as B
 from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.estimate_spec.readback.values import _REF, _STRING
+from estimating_tools.quotes.model import CanonicalQuote, QuoteLine
 
 FIELDBOOK_DIR = fp.ENGINE_DIR / "packs" / "fieldbook"
+#: A pack that `extends: fieldbook` (read-back accepts it) and one outside that lineage.
+DERIVED = fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "derived_demo"
+LEGACY = fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
 EXAMPLE = FIELDBOOK_DIR / "examples" / "demo-pipeline.estimate.yaml"
 #: Item sheets' hidden tag/helper columns: kind, code, ok-flag, flag.
 KIND, CODE, OK, FLAG = "Q", "R", "S", "T"
@@ -88,6 +92,50 @@ def derived_pack_dir(tmp_path, *, name: str = DERIVED_NAME, derived_from="fieldb
 
 def example_spec() -> dict:
     return yaml.safe_load(EXAMPLE.read_text(encoding="utf-8"))
+
+
+#: The two example packages (Task 12's demo-packages example, in code).
+PACKAGES = [
+    {"name": "Hauling", "kind": "subcontract", "strategy": "sub_out", "items": ["2"],
+     "selected": "Dirt Movers", "conditions": ["Fuel surcharge", "Dump fees"]},
+    {"name": "Valves", "kind": "subcontract", "strategy": "hybrid", "items": ["3"],
+     "selected": "ARR"},
+]
+
+#: The three example quotes: a priced line with a surcharge and conditions, a
+#: lump sum with no lines, and a priced line on the Valves package.
+QUOTES = [
+    CanonicalQuote(
+        vendor_name="Dirt Movers", work_package_name="Hauling", quote_date="2026-10-20",
+        surcharge=0.04, conditions={"Fuel surcharge": "4% of invoice", "Dump fees": "included"},
+        lines=[QuoteLine(schedule_name="Base", item_number="2", unit_price=16.5,
+                         line_name="Haul, import + export")]),
+    CanonicalQuote(vendor_name="Bulk Haul Co", work_package_name="Hauling", amount=8740),
+    CanonicalQuote(
+        vendor_name="Valve Pros", work_package_name="Valves",
+        lines=[QuoteLine(schedule_name="Base", item_number="3", unit_price=900,
+                         line_name="Valve boxes (subcontract)")]),
+]
+
+
+def _line(spec: dict, item_no: str, slot: str, name: str) -> dict:
+    (item,) = [i for i in spec["items"] if i["item_no"] == item_no]
+    (block,) = [b for b in item["labor"] if b["slot"] == slot]
+    (line,) = [ln for ln in block["lines"] if ln["name"] == name]
+    return line
+
+
+def packaged_spec() -> dict:
+    """The example plus the Hauling and Valves packages: item 2 task 02's haul
+    line prices Hauling; item 3 task 01 is self-perform and its valve-box line
+    prices Valves."""
+    spec = example_spec()
+    spec["work_packages"] = copy.deepcopy(PACKAGES)
+    _line(spec, "2", "02", "Haul, import + export")["package"] = "Hauling"
+    (item3,) = [i for i in spec["items"] if i["item_no"] == "3"]
+    item3["labor"][0]["carry"] = "self_perform"
+    _line(spec, "3", "01", "Valve boxes (subcontract)")["package"] = "Valves"
+    return spec
 
 
 def build(spec: dict | None = None):

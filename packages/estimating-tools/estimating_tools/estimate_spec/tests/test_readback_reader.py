@@ -6,10 +6,11 @@ import copy
 import pytest
 
 from estimating_tools.estimate_spec import build as B
+from estimating_tools.estimate_spec import format_pack as fp
 from estimating_tools.estimate_spec.readback import (
     ReadBackRefused, fieldbook_pack, load_workbook, read_back)
 from estimating_tools.estimate_spec.tests._fieldbook import (
-    build, example_spec, rows_of_kind, simulate_delete_row)
+    DERIVED, LEGACY, build, example_spec, rows_of_kind, simulate_delete_row)
 
 
 def _saved(wb, tmp_path, name="edited.xlsx"):
@@ -45,9 +46,61 @@ def test_a_workbook_in_another_format_is_refused():
         read_back(example_spec(), _restamp(build(), "demo 1"))
 
 
+def test_a_derived_pack_workbook_reads_back_with_that_pack(tmp_path):
+    pack, spec = fp.load_pack(DERIVED), example_spec()
+    wb = B.generate(copy.deepcopy(spec), pack)
+    result = read_back(spec, _saved(wb, tmp_path), pack)
+    assert result.changed is False and not result.blocked
+
+
+def test_a_derived_pack_workbook_is_refused_by_the_bundled_pack(tmp_path):
+    wb = B.generate(example_spec(), fp.load_pack(DERIVED))
+    with pytest.raises(ReadBackRefused, match="built in the 'derived_demo' format") as exc:
+        read_back(example_spec(), _saved(wb, tmp_path))
+    assert "read-back resolved the 'fieldbook' pack" in str(exc.value)
+
+
+def test_a_pack_outside_the_fieldbook_lineage_is_refused(tmp_path):
+    # The pack cannot build the example spec, so stamp a fieldbook build as
+    # its workbook: the lineage is refused before the stamp is even read.
+    pack = fp.load_pack(LEGACY)
+    wb = _restamp(build(), f"{pack.name} {pack.version}")
+    with pytest.raises(ReadBackRefused, match="family") as exc:
+        read_back(example_spec(), _saved(wb, tmp_path), pack)
+    assert "'legacy_demo' family" in str(exc.value)
+
+
 def test_a_workbook_from_another_fieldbook_version_is_refused():
-    with pytest.raises(ReadBackRefused, match="fieldbook version 2; this read-back reads version 1"):
-        read_back(example_spec(), _restamp(build(), "fieldbook 2"))
+    with pytest.raises(ReadBackRefused, match="built with fieldbook 1; this read-back needs "
+                                              "fieldbook 2 -- rebuild from the spec"):
+        read_back(example_spec(), _restamp(build(), "fieldbook 1"))
+
+
+def test_the_fieldbook_stamp_is_name_and_version():
+    (prop,) = [p for p in build().custom_doc_props.props if p.name == "estimate_format"]
+    assert prop.value == "fieldbook 2" == fieldbook_pack().stamp
+
+
+def test_a_derived_pack_stamp_carries_the_lineage(tmp_path):
+    pack = fp.load_pack(DERIVED)
+    assert pack.stamp == "derived_demo 1 / fieldbook 2"
+    wb = B.generate(example_spec(), pack)
+    (prop,) = [p for p in wb.custom_doc_props.props if p.name == "estimate_format"]
+    assert prop.value == "derived_demo 1 / fieldbook 2"
+
+
+@pytest.mark.parametrize("old", ["derived_demo 1", "derived_demo 1 / fieldbook 1",
+                                 "derived_demo 2 / fieldbook 2",
+                                 "derived_demo 1 / fieldbook 2 / extra 1"])
+def test_a_derived_workbook_whose_lineage_differs_is_refused(tmp_path, old):
+    # A stamp from before lineage stamps (no base element) or from another
+    # base version: the base pack's grid moved under the derived pack.
+    pack = fp.load_pack(DERIVED)
+    wb = _restamp(B.generate(example_spec(), pack), old)
+    with pytest.raises(ReadBackRefused) as exc:
+        read_back(example_spec(), _saved(wb, tmp_path), pack)
+    assert str(exc.value) == (f"built with {old}; this read-back needs derived_demo 1 / "
+                              "fieldbook 2 -- rebuild from the spec")
 
 
 def test_a_spec_with_other_items_is_refused():

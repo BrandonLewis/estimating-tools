@@ -1,9 +1,10 @@
 # Fieldbook's units.
 #
-# Item sheets share one grid, A..T:
+# Item sheets share one grid, A..V:
 #   A Name/code  B Qty  C Unit  D Count  E Days  F Hrs  G Rate  H Type
 #   I Source     J Vendor  K MH  L Labor  M Equip  N Matl  O Sub  P Total
 #   Q kind (hidden)  R code (hidden)  S ok-flag (hidden)  T flag (hidden)
+#   U package tag (hidden)  V ARR-basis cost (hidden)
 # Q and R are the round-trip tag pair: Q is a literal row kind (ITEM, NOTE,
 # HEAD, TAKEOFF, RECAP, TOTAL, TASK, CREW, LINE, END, SUBTOTAL), R is the row's
 # cost code as a formula -- on a TASK row `=A{r}&""` (the visible code
@@ -35,6 +36,7 @@ units:
     exports:
       qty:        "$G${row:id}"
       takeoff:    "$J${row:id}"
+      uom:        "$H${row:id}"
       total_col:  "$P:$P"
       kind_col:   "$Q:$Q"
       code_col:   "$R:$R"
@@ -211,36 +213,71 @@ units:
     exports:
       total: "$B${row:total}"
 
-  takeoff_measured:                    # what apply-takeoff writes (seed.takeoff_mapping)
+  takeoff_measured:                    # what apply-takeoff + Estimate/takeoff_units.py write
+    # One row per element. The Unit dropdown (default: the item's pay unit)
+    # picks the measure, and Qty is a live formula on Count / L / W / H, the
+    # CY split columns or the model weight -- so every row is recomputable:
+    #   CY = footing + wall + deck + earth/other   CF = CY x 27
+    #   SF = Count x L x W   SY = SF / 9   LF = Count x L
+    #   LBS = Weight LB      TON = LB / 2000       EA = Count
+    # A blank Unit means the item's pay unit (and is totalled with it).
+    # Model qty is the IFC measure in the pay unit (the check, not an input).
     params: { lines: { type: list } }
     rows:
       - cells:
           A: { value: "Takeoff (measured)", style: head_left }
-          B: { value: "CY",          style: head }
-          D: { value: "Length ft",   style: head }
-          E: { value: "Height ft",   style: head }
-          F: { value: "Footing CY",  style: head }
-          G: { value: "Wall CY",     style: head }
-          H: { value: "Deck CY",     style: head }
-          I: { value: "Earth/Other CY", style: head }
+          B: { value: "Qty",         style: head }
+          C: { value: "Unit",        style: head }
+          D: { value: "Count",       style: head }
+          E: { value: "Length ft",   style: head }
+          F: { value: "Width ft",    style: head }
+          G: { value: "Height ft",   style: head }
+          H: { value: "Footing CY",  style: head }
+          I: { value: "Wall CY",     style: head }
+          J: { value: "Deck CY",     style: head }
+          K: { value: "Earth/Other CY", style: head }
+          L: { value: "Weight LB",   style: head }
+          M: { value: "Model qty",   style: head }
+          N: { value: "Adjustment",  style: head }
           Q: { value: HEAD, style: tag }
       - repeat: p.lines
         cells:
           A: { value: "{it.label}",      style: input_text }
-          B: { formula: "=SUM(F{r}:I{r})", style: calc_qty }
-          D: { value: "{it.length}",     style: input_qty, optional: true }
-          E: { value: "{it.height}",     style: input_qty, optional: true }
-          F: { value: "{it.footing_cy}", style: input_qty, optional: true }
-          G: { value: "{it.wall_cy}",    style: input_qty, optional: true }
-          H: { value: "{it.deck_cy}",    style: input_qty, optional: true }
-          I: { value: "{it.other_cy}",   style: input_qty, optional: true }
+          B: { formula: '=N{r}+IF(OR(IF($C{r}="",{ref:item_header.uom},$C{r})="CY",IF($C{r}="",{ref:item_header.uom},$C{r})="CUYD"),SUM(H{r}:K{r}),IF(OR(IF($C{r}="",{ref:item_header.uom},$C{r})="CF",IF($C{r}="",{ref:item_header.uom},$C{r})="CUFT"),SUM(H{r}:K{r})*27,IF(OR(IF($C{r}="",{ref:item_header.uom},$C{r})="SF",IF($C{r}="",{ref:item_header.uom},$C{r})="SQFT"),D{r}*E{r}*F{r},IF(OR(IF($C{r}="",{ref:item_header.uom},$C{r})="SY",IF($C{r}="",{ref:item_header.uom},$C{r})="SQYD"),D{r}*E{r}*F{r}/9,IF(OR(IF($C{r}="",{ref:item_header.uom},$C{r})="LF",IF($C{r}="",{ref:item_header.uom},$C{r})="LNFT"),D{r}*E{r},IF(OR(IF($C{r}="",{ref:item_header.uom},$C{r})="LBS",IF($C{r}="",{ref:item_header.uom},$C{r})="LB"),L{r},IF(IF($C{r}="",{ref:item_header.uom},$C{r})="TON",L{r}/2000,IF(IF($C{r}="",{ref:item_header.uom},$C{r})="EA",D{r},0))))))))', style: calc_qty }
+          C: { value: "{it.unit}",       style: input_text, optional: true,
+               validation: { list: [CY, CUYD, CF, CUFT, SF, SQFT, SY, SQYD, LF, LNFT, LB, LBS, TON, EA] } }
+          D: { value: "{it.count}",      style: input_qty, optional: true }
+          E: { value: "{it.length}",     style: input_qty, optional: true }
+          F: { value: "{it.width}",      style: input_qty, optional: true }
+          G: { value: "{it.height}",     style: input_qty, optional: true }
+          H: { value: "{it.footing_cy}", style: input_qty, optional: true }
+          I: { value: "{it.wall_cy}",    style: input_qty, optional: true }
+          J: { value: "{it.deck_cy}",    style: input_qty, optional: true }
+          K: { value: "{it.other_cy}",   style: input_qty, optional: true }
+          L: { value: "{it.weight_lb}",  style: input_qty, optional: true }
+          M: { value: "{it.model_qty}",  style: calc_qty,  optional: true }
+          N: { value: "{it.adjust}",     style: input_qty, optional: true }
           Q: { value: TAKEOFF, style: tag }
         mark_first: seg_first
         mark_last:  seg_last
-      - *takeoff_total
+      - cells:
+          A: { value: "Takeoff total", style: sub_label }
+          B: { formula: '=SUMIF(C{row:seg_first}:C{row:seg_last},{ref:item_header.uom},B{row:seg_first}:B{row:seg_last})+SUMIF(C{row:seg_first}:C{row:seg_last},"",B{row:seg_first}:B{row:seg_last})', style: sub_qty }
+          C: { formula: "={ref:item_header.uom}", style: calc_text }
+          E: { value: "Bid qty", style: label }
+          F: { formula: "={ref:item_header.qty}", style: calc_qty }
+          G: { formula: '=IF(ABS(B{r}-F{r})<=MAX(0.05,0.005*ABS(F{r})),"✓","✗")', style: status }
+          H: { formula: '=IF(COUNTIFS(C{row:seg_first}:C{row:seg_last},"<>"&{ref:item_header.uom},C{row:seg_first}:C{row:seg_last},"<>")>0,COUNTIFS(C{row:seg_first}:C{row:seg_last},"<>"&{ref:item_header.uom},C{row:seg_first}:C{row:seg_last},"<>")&" line(s) in other units, not totalled","")', style: calc_text }
+          M: { formula: "=SUM(M{row:seg_first}:M{row:seg_last})", style: sub_qty }
+          Q: { value: TOTAL, style: tag }
+        mark: total
+        conditional:
+          - { cells: G, formula: '=$G{r}="✓"', style: status_ok }
+          - { cells: G, formula: '=$G{r}="✗"', style: status_bad }
     exports:
       total: "$B${row:total}"
 
+  # ---------------------------------------------------------------- task blocks
   # ---------------------------------------------------------------- task blocks
   detail_heads:
     rows:
@@ -268,10 +305,20 @@ units:
   # recognized Kind off Rates -- Labor or Equipment, so a resource whose Kind
   # was cleared, or the Rates insert-above marker itself picked as if it were
   # a resource, does not pass just because VLOOKUP happened to return a
-  # number; LINE: a qty, a price, AND a recognized Type; TASK: its code is
+  # number; LINE: a qty, a price, AND a recognized Type -- or, with a work
+  # package carried, a self-perform line whose qty the factor zeroed (U SP,
+  # B 0, a full ARR basis in V) or a package line in the `incl` state (price
+  # 0); TASK: its code is
   # on the org's code list -- the Codes sheet's C column), T = flag (CREW:
   # machine includes its operator; LINE: no cost code; SUBTOTAL: crew pairs
-  # such a machine with an operator row).
+  # such a machine with an operator row). U and V serve work packages: U tags
+# a row SP (a crew member or line of a `carry: self_perform` task a package
+# switches off) or PKG (a line priced by a package sheet), blank otherwise;
+# V is the row's cost at its full ARR basis -- unscaled days and qty, the
+# plug price -- so the package sheet can show what self-performing costs
+# while the visible columns carry the switched-off figures. SUBTOTAL V sums
+# the SP rows (export arr_cost). Without packages U is blank and V repeats
+# the row's own D*E*hours*G (crew) or B*G (line).
   task:
     params:
       cost_code:      { type: string }
@@ -286,10 +333,19 @@ units:
       type_other:       { type: string, default: Other }
       src_quote:        { type: string, default: QUOTE }
       src_plug:         { type: string, default: PLUG }
+      # A package line (`source: pkg`) shows the package sheet's QUOTE/PLUG label.
+      src_pkg:          { type: string, default: "={ref:{it.pkg_ref}.src_label}" }
+      sp_note:          { type: string }          # set on a self-perform task a package switches
+      # LINE ok-flag extras by source (Checks rule 3). A package line in the
+      # `incl` state carries 0 on purpose (folded into another line).
+      ok_quote:         { type: string, default: "" }
+      ok_plug:          { type: string, default: "" }
+      ok_pkg:           { type: string, default: ',{ref:{it.pkg_ref}.state}="incl"' }
     rows:
       - cells:
           A: { value: "{p.cost_code}",   style: input_code, validation: { list: "={code_list}" } }
           B: { value: "{p.description}", style: input_text }
+          K: { value: "{p.sp_note}", style: note, if_param: sp_note }
           Q: { value: TASK, style: tag }
           R: { formula: '=A{r}&""', style: tag }
           S: { formula: "=IFERROR(INDEX({code_listed},MATCH(A{r},{code_range},0)),0)", style: tag }
@@ -318,6 +374,8 @@ units:
           R: { formula: "=R{r-1}", style: tag }
           S: { formula: '=IF(AND(ISNUMBER(G{r}),OR(H{r}="Labor",H{r}="Equipment")),1,0)', style: tag }
           T: { formula: '=IFERROR(IF(VLOOKUP($A{r},{rate_table},6,FALSE)="Yes",1,0),0)', style: tag }
+          U: { value: "{it.u_tag}", style: tag, optional: true }
+          V: { formula: "=D{r}*{it.arr_days}*{shift_hours}*G{r}", style: tag }
         conditional:
           - { cells: H, formula: '=$H{r}="No rate"', style: status_bad }
       - repeat: p.lines
@@ -336,8 +394,11 @@ units:
           P: { formula: "=SUM(L{r}:O{r})", style: calc_money }
           Q: { value: LINE, style: tag }
           R: { formula: "=R{r-1}", style: tag }
-          S: { formula: '=IF(AND(ISNUMBER(B{r}),ISNUMBER(G{r}),OR(H{r}="Material",H{r}="Subcontract",H{r}="Equipment",H{r}="Other")),IF(AND(B{r}<>0,G{r}<>0),1,0),0)', style: tag }
+          S: { formula: '=IF(AND(ISNUMBER(B{r}),ISNUMBER(G{r}),OR(H{r}="Material",H{r}="Subcontract",H{r}="Equipment",H{r}="Other")),IF(OR(AND(B{r}<>0,G{r}<>0),AND(U{r}="SP",B{r}=0,V{r}<>0){p.ok_{it.source}}),1,0),0)', style: tag }
           T: { formula: '=IF(R{r}="",1,0)', style: tag }
+          U: { value: "{it.u_tag}", style: tag, optional: true }
+          V: { formula: "={it.arr_qty}*{it.arr_price}", style: tag }
+        export_each: { key: "line[{it.index}]", cells: { qty: "$B${r}", price: "$G${r}" } }
         conditional:
           - { cells: I, formula: '=$I{r}="QUOTE"', style: status_ok }
           - { cells: I, formula: '=$I{r}="PLUG"',  style: status_bad }
@@ -364,6 +425,7 @@ units:
           Q: { value: SUBTOTAL, style: tag }
           R: { formula: "=R{r-1}", style: tag }
           T: { formula: '=IF(AND(SUMIF(Q{row:head}:Q{row:end},"CREW",T{row:head}:T{row:end})>0,COUNTIF(A{row:head}:A{row:end},"{p.operator_trade}")>0),1,0)', style: tag }
+          V: { formula: '=SUMIF(U{row:head}:U{row:end},"SP",V{row:head}:V{row:end})', style: tag }
         mark: sub
     exports:
       code:  "$A${row:head}"
@@ -375,6 +437,7 @@ units:
       matl:  "$N${row:sub}"
       sub:   "$O${row:sub}"
       total: "$P${row:sub}"
+      arr_cost: "$V${row:sub}"
 
   # ---------------------------------------------------------------- recap
   recap:
@@ -679,7 +742,7 @@ units:
           C: { value: "{p.item_no}", style: calc_text }
           D: { formula: "={ref:{p.sheet}!item_header.takeoff}", style: calc_qty }
           E: { formula: "={ref:{p.sheet}!item_header.qty}", style: calc_qty }
-          F: { formula: '=IFERROR(IF(ISNUMBER(D{r}),IF(ABS(D{r}-E{r})<0.005,"✓","✗"),IF(ISTEXT(D{r}),IF(D{r}="n/a","✓","✗"),"✗")),"✗")', style: status }
+          F: { formula: '=IFERROR(IF(ISNUMBER(D{r}),IF(ABS(D{r}-E{r})<=MAX(0.05,0.005*ABS(E{r})),"✓","✗"),IF(ISTEXT(D{r}),IF(D{r}="n/a","✓","✗"),"✗")),"✗")', style: status }
         conditional:
           - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
           - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
@@ -794,6 +857,19 @@ units:
         conditional:
           - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
           - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+  check_packages:                      # one row per work package (rule 10)
+    params: { name: { type: string }, sheet: { type: string } }
+    rows:
+      - cells:
+          A: { value: 10, style: calc_text }
+          B: { value: "Every package line carries a price", style: label }
+          C: { value: "{p.name}", style: calc_text }
+          D: { formula: "=COUNT({ref:{p.sheet}!lines.ok_col})", style: calc_hours }
+          E: { formula: "=SUM({ref:{p.sheet}!lines.ok_col})", style: calc_hours }
+          F: { formula: '=IFERROR(IF(D{r}=E{r},"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
   # ------------------------------------------------------ Bid Form status strip
   # The agency-facing Bid Form carries no internal cost figure -- not even a
   # plug total (design decision: the Bid Form carries no internal cost) --
@@ -809,3 +885,318 @@ units:
         conditional:
           - { cells: B, formula: "=$B{r}=$D{r}",  style: status_ok }
           - { cells: B, formula: "=$B{r}<>$D{r}", style: status_bad }
+
+  # ------------------------------------------------------- work-package sheets
+  # One `Sub <package>` sheet per work package (recipes.yaml `book:`), laid
+  # out from the package's frame (package_frames.PackageFrame.as_scope):
+  #   head        rows 1-3: name (tag PKG in Q1), kind/strategy, the CARRYING
+  #               selector and its dropdown options (ARR, CARRY, the vendors).
+  #   lines       the vendors row, quote refs, surcharges, then one row per
+  #               package line. Columns:
+  #                 A item  B line  C code  D qty (the item sheet's)  E U/M
+  #                 F carried $/unit  G carried ext  H carry-from pick
+  #                 I ARR $/unit (plug)  J ARR ext
+  #                 K.. one pair per vendor column ($/unit, leveled ext)
+  #                 then CARRY, CARRY ext, Source, State, Label, OK (Label/OK hidden)
+  #   items       one row per item: ARR cost (package lines + self-perform tasks),
+  #               carried cost, per-vendor leveled ext, Source, self-perform factor.
+  #   totals      the package totals.
+  #   conditions  the vendors' answers to the bid conditions.
+  #   detail      the takeoff the package was quoted from (when asked).
+  # Source = the line's pick, else the selector. State = ARR, price (a number
+  # to carry), incl (folded into another line: 0), excl (not quoted: the ARR
+  # price), or #N/A when Source names no vendor column or is CARRY with no
+  # figure in the CARRY cell -- left loud on purpose (check 10 fails).
+  # A vendor's leveled ext fills an exclusion at the ARR price.
+  package_head:
+    params:
+      name:     { type: string }
+      kind:     { type: string }
+      strategy: { type: string }
+      selected: { type: string }
+      vendors:  { type: list }
+    rows:
+      - cells:
+          A: { value: "{p.name}", style: band_title }
+          Q: { value: PKG, style: tag }
+        fill_row: band
+      - cells:
+          A: { value: "Kind", style: label_bold }
+          B: { value: "{p.kind}", style: label }
+          C: { value: "Strategy", style: label_bold }
+          D: { value: "{p.strategy}", style: label, optional: true }
+      - cells:
+          E: { value: "CARRYING", style: label_bold }
+          F: { value: "{p.selected}", style: input_select,
+               validation: { list: "=$H${r}:${col:ol}${r}", strict: false } }
+          G: { value: "options", style: calc_state }
+          H: { value: ARR, style: calc_state }
+          I: { value: CARRY, style: calc_state }
+        repeat_cols:
+          over: p.vendors
+          start: J
+          width: 1
+          cells:
+            "+0": { formula: '=""&INDEX({ref:lines.vend_heads},1,{v.idx}*2+1)', style: calc_state }
+        mark_cols_last: ol
+        mark: sel
+    exports:
+      selector: "$F${row:sel}"
+      options:  "$H${row:sel}:${col:ol}${row:sel}"
+
+  package_lines:
+    params:
+      vendors: { type: list }
+      lines:   { type: list }
+    rows:
+      - cells:
+          A: { value: "Item",       style: head_left }
+          B: { value: "Line",       style: head_left }
+          C: { value: "Code",       style: head }
+          D: { value: "Qty",        style: head }
+          E: { value: "U/M",        style: head }
+          F: { value: "$ / unit",   style: head }
+          G: { value: "Extension",  style: head }
+          H: { value: "Carry from", style: head }
+          I: { value: "ARR",        style: head }
+          J: { value: "ARR ext",    style: head }
+          "{col:vl+2}": { value: "CARRY",     style: head }
+          "{col:vl+3}": { value: "CARRY ext", style: head }
+          "{col:vl+4}": { value: "Source",    style: head }
+          "{col:vl+5}": { value: "State",     style: head }
+          "{col:vl+6}": { value: "Label",     style: head, hide_column: true }
+          "{col:vl+7}": { value: "OK",        style: head, hide_column: true }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+0": { value: "{v.name}", style: "vendor_head_{v.role}" }
+            "+1": { value: "ext",      style: head }
+        mark_cols_first: vf
+        mark_cols_last: vl
+        mark: vendors
+      - cells:
+          A: { value: "Quote ref", style: label_bold }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+0": { value: "{v.quote_ref}", style: calc_state, optional: true }
+            "+1": { value: "{v.lump}",      style: calc_state, optional: true }
+      - cells:
+          A: { value: "Surcharge % of invoice", style: label_bold }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+0": { value: "{v.surcharge}", style: "vendor_pct_{v.role}" }
+        mark: surch
+      - repeat: p.lines
+        cells:
+          A: { value: "{it.item_no}",  style: label_bold }
+          B: { value: "{it.name}",     style: label }
+          C: { value: "{it.code}",     style: calc_text }
+          D: { formula: "={ref:{it.item_sheet}!{it.task_key}.line[{it.line_index}].qty}", style: calc_qty }
+          E: { value: "{it.uom}",      style: calc_text, optional: true }
+          F: { formula: '=IF(OR(${col:vl+5}{r}="ARR",${col:vl+5}{r}="excl"),$I{r},IF(${col:vl+5}{r}="incl",0,IF(${col:vl+4}{r}="CARRY",${col:vl+2}{r},INDEX($K{r}:${col:vl+2}{r},MATCH(${col:vl+4}{r},$K${row:vendors}:${col:vl+2}${row:vendors},0)))*(1+IFERROR(INDEX($K${row:surch}:${col:vl+2}${row:surch},MATCH(${col:vl+4}{r},$K${row:vendors}:${col:vl+2}${row:vendors},0)),0))))', style: calc_rate }
+          G: { formula: "=F{r}*D{r}",  style: calc_money }
+          H: { value: "{it.item_pick}", style: input_select, validation: { list: "={ref:head.options}", strict: false } }
+          I: { value: "{it.plug_price}", style: calc_rate }
+          J: { formula: "=I{r}*D{r}",  style: calc_money }
+          "{col:vl+2}": { value: "{it.carry_price}", style: input_money }
+          "{col:vl+3}": { formula: '=IF(ISNUMBER(${col:vl+2}{r}),${col:vl+2}{r}*$D{r},"")', style: calc_money }
+          "{col:vl+4}": { formula: '=IF($H{r}="",{ref:head.selector},$H{r})', style: calc_state }
+          "{col:vl+5}": { formula: '=IF(${col:vl+4}{r}="ARR","ARR",IF(${col:vl+4}{r}="CARRY",IF(ISNUMBER(${col:vl+2}{r}),"price",NA()),IF(ISNUMBER(INDEX($K{r}:${col:vl+2}{r},MATCH(${col:vl+4}{r},$K${row:vendors}:${col:vl+2}${row:vendors},0))),"price",IF(OR(INDEX($K{r}:${col:vl+2}{r},MATCH(${col:vl+4}{r},$K${row:vendors}:${col:vl+2}${row:vendors},0))="incl",INDEX($K{r}:${col:vl+2}{r},MATCH(${col:vl+4}{r},$K${row:vendors}:${col:vl+2}${row:vendors},0))="excl"),INDEX($K{r}:${col:vl+2}{r},MATCH(${col:vl+4}{r},$K${row:vendors}:${col:vl+2}${row:vendors},0)),IF(INDEX($K{r}:${col:vl+2}{r},MATCH(${col:vl+4}{r},$K${row:vendors}:${col:vl+2}${row:vendors},0))="","excl",NA())))))', style: calc_state }
+          "{col:vl+6}": { formula: '=IF(${col:vl+5}{r}="price","QUOTE","PLUG")', style: calc_state }
+          "{col:vl+7}": { formula: '=IF(ISNA(${col:vl+5}{r}),0,IF(ISNUMBER($F{r}),1,0))', style: tag }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+0": { value: "{it.c{v.idx}}", style: "{it.p{v.idx}}_money", comment: "{it.n{v.idx}}" }
+            "+1": { formula: '=IF({c}${row:vendors}="","",IF(ISNUMBER({c}{r}),{c}{r}*$D{r}*(1+{c}${row:surch}),IF({c}{r}="incl",0,$J{r})))', style: calc_money }
+        mark_last: llast
+        export_each:
+          key: "line[{it.key}]"
+          cells:
+            rate:      "$F${r}"
+            src:       "${col:vl+4}${r}"
+            src_label: "${col:vl+6}${r}"
+            state:     "${col:vl+5}${r}"
+            arr:       "$I${r}"
+    # The vendor ranges in F and State (prices, headers, surcharges) run from
+    # K to the CARRY column, not the last vendor column: a column inserted at
+    # CARRY (or a vendor typed into the last spare) stays inside them. Their
+    # MATCH may meet the "ext" and "CARRY" headers; CARRY is decided before
+    # the MATCH, and "ext" is the leveled-ext header, never a vendor's name.
+    # Ranges over the lines start at the vendors row (`top`), not the first
+    # line: the head cells there are text, which SUM/SUMIF/COUNT/MATCH skip,
+    # and a one-line package still gets a multi-row range.
+    exports:
+      hdr:        "{row:vendors}"
+      top:        "{row:vendors}"
+      last:       "{row:llast}"
+      vend_heads: "$K${row:vendors}:${col:vl+2}${row:vendors}"
+      ok_col:     "${col:vl+7}${row:vendors}:${col:vl+7}${row:llast}"
+
+  package_items:
+    params:
+      vendors: { type: list }
+      items:   { type: list }
+    rows:
+      - mark: ihead
+        cells:
+          A: { value: "Item",     style: head_left }
+          B: { value: "By item",  style: head_left }
+          G: { value: "Carried",  style: head }
+          J: { value: "ARR",      style: head }
+          "{col:vl+3}": { value: "CARRY ext",    style: head }
+          "{col:vl+4}": { value: "Source",       style: head }
+          "{col:vl+5}": { value: "Self-perform", style: head }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+0": { value: "{v.name}", style: "vendor_head_{v.role}" }
+            "+1": { value: "ext",      style: head }
+        mark_cols_first: vf
+        mark_cols_last: vl
+      # J: the item's ARR cost -- its package lines at the plug, plus its
+      # self-perform tasks at their full basis (each task's arr_cost). G:
+      # what the item carries -- the lines' carried ext, plus those tasks
+      # while ARR prices the item. The last column is the self-perform
+      # factor the item sheet's crews read (1 = ARR, 0 = a vendor or CARRY).
+      - repeat: p.items
+        cells:
+          A: { value: "{it.item_no}", style: label_bold }
+          B: { value: "item ARR cost", style: label }
+          G: { formula: "=SUMIF($A${ref:lines.top}:$A${ref:lines.last},$A{r},$G${ref:lines.top}:$G${ref:lines.last})+${col:vl+5}{r}*({it.arr_sp})", style: calc_money }
+          J: { formula: "=SUMIF($A${ref:lines.top}:$A${ref:lines.last},$A{r},$J${ref:lines.top}:$J${ref:lines.last})+({it.arr_sp})", style: calc_money }
+          "{col:vl+3}": { formula: "=SUMIF($A${ref:lines.top}:$A${ref:lines.last},$A{r},${col:vl+3}${ref:lines.top}:${col:vl+3}${ref:lines.last})", style: calc_money }
+          "{col:vl+4}": { formula: "=INDEX(${col:vl+4}${ref:lines.top}:${col:vl+4}${ref:lines.last},MATCH($A{r},$A${ref:lines.top}:$A${ref:lines.last},0))", style: calc_state }
+          "{col:vl+5}": { formula: '=IF(${col:vl+4}{r}="ARR",1,0)', style: calc_state }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+1": { formula: '=IF({c}${ref:lines.hdr}="","",SUMIF($A${ref:lines.top}:$A${ref:lines.last},$A{r},{c+1}${ref:lines.top}:{c+1}${ref:lines.last}))', style: calc_money }
+        mark_first: ifirst
+        mark_last: ilast
+        export_each:
+          key: "item[{it.item_no}]"
+          cells:
+            sp_factor: "${col:vl+5}${r}"
+            arr:       "$J${r}"
+            carried:   "$G${r}"
+    exports:
+      first: "{row:ihead}"
+      last:  "{row:ilast}"
+
+  package_totals:
+    params:
+      vendors: { type: list }
+    rows:
+      - cells:
+          A: { value: "TOTAL", style: total_label }
+          G: { formula: "=SUM(G{ref:items.first}:G{ref:items.last})", style: total_money }
+          J: { formula: "=SUM(J{ref:items.first}:J{ref:items.last})", style: total_money }
+          "{col:vl+3}": { formula: "=SUM({col:vl+3}{ref:lines.top}:{col:vl+3}{ref:lines.last})", style: total_money }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+1": { formula: '=IF({c}${ref:lines.hdr}="","",SUM({c+1}{ref:lines.top}:{c+1}{ref:lines.last}))', style: total_money }
+        mark_cols_first: vf
+        mark_cols_last: vl
+        fill_row: band
+        mark: total
+    exports:
+      arr:       "$J${row:total}"
+      carried:   "$G${row:total}"
+      vend_exts: "$K${row:total}:${col:vl+2}${row:total}"
+
+  package_conditions:
+    params:
+      vendors:    { type: list }
+      conditions: { type: list }
+    rows:
+      - cells:
+          B: { value: "Conditions", style: head_left }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+0": { value: "{v.name}", style: "vendor_head_{v.role}" }
+      - repeat: p.conditions
+        cells:
+          B: { value: "{it.text}", style: label }
+        repeat_cols:
+          over: p.vendors
+          start: K
+          width: 2
+          cells:
+            "+0": { value: "{it.t{v.idx}}", style: input_text }
+
+  package_detail:
+    params:
+      rows: { type: list }
+    rows:
+      - cells:
+          A: { value: "Detail", style: head_left }
+          B: { value: "Qty",    style: head }
+          C: { value: "Unit",   style: head }
+          D: { value: "Source", style: head }
+      - repeat: p.rows
+        cells:
+          A: { value: "{it.label}",  style: label }
+          B: { value: "{it.qty}",    style: calc_qty }
+          C: { value: "{it.unit}",   style: calc_text, optional: true }
+          D: { value: "{it.source}", style: calc_text, optional: true }
+
+  # ------------------------------------------------------------- Sub Spreads
+  package_summary_head:
+    rows:
+      - cells: { A: { value: "Sub Spreads", style: band_title } }
+        fill_row: band
+      - cells:
+          A: { value: "Package",    style: head_left }
+          B: { value: "Kind",       style: head }
+          C: { value: "Strategy",   style: head }
+          D: { value: "ARR total",  style: head }
+          E: { value: "Low vendor", style: head }
+          F: { value: "Low total",  style: head }
+          G: { value: "Carrying",   style: head }
+          H: { value: "Carried",    style: head }
+          I: { value: "Delta",      style: head }
+          J: { value: "Lump sum",   style: head }
+
+  package_summary_row:                 # one instance per package, key sum[NAME]
+    params:
+      name:     { type: string }
+      kind:     { type: string }
+      strategy: { type: string }
+      sheet:    { type: string }
+      lump:     { type: string }
+    rows:
+      - cells:
+          A: { value: "{p.name}",     style: label_bold }
+          B: { value: "{p.kind}",     style: calc_text }
+          C: { value: "{p.strategy}", style: calc_text, optional: true }
+          D: { formula: "={ref:{p.sheet}!totals.arr}", style: calc_money }
+          E: { formula: '=IFERROR(INDEX({ref:{p.sheet}!lines.vend_heads},1,MATCH(MIN({ref:{p.sheet}!totals.vend_exts}),{ref:{p.sheet}!totals.vend_exts},0)-1),"")', style: calc_text }
+          F: { formula: '=IF(E{r}="","",MIN({ref:{p.sheet}!totals.vend_exts}))', style: calc_money }
+          G: { formula: "={ref:{p.sheet}!head.selector}", style: calc_text }
+          H: { formula: "={ref:{p.sheet}!totals.carried}", style: calc_money }
+          I: { formula: "=H{r}-D{r}", style: calc_money }
+          J: { value: "{p.lump}", style: calc_state, optional: true }
+        mark: row
+    exports:
+      carried: "$H${row:row}"

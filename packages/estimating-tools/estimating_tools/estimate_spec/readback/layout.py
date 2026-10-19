@@ -12,11 +12,13 @@ from __future__ import annotations
 #: be this. The workbook's own `estimate_format` stamp names the pack itself.
 FAMILY = "fieldbook"
 
+ROOT_PACK = FAMILY
+
 #: Item sheets: the hidden kind tag column.
 KIND_COL = "Q"
 #: Every kind tag the pack writes.
 KINDS = frozenset({"ITEM", "NOTE", "HEAD", "TAKEOFF", "RECAP", "TOTAL", "TASK",
-                   "CREW", "LINE", "END", "SUBTOTAL"})
+                   "CREW", "LINE", "END", "SUBTOTAL", "PKG"})
 #: Columns whose content makes an untagged row worth reporting (A..P).
 VISIBLE_COLS = "ABCDEFGHIJKLMNOP"
 
@@ -34,9 +36,10 @@ LINE_TYPE, LINE_SOURCE, LINE_VENDOR = "H", "I", "J"
 TAKEOFF_FIELDS = {
     "linear":   (("label", "A", False), ("length_lf", "B", True), ("ref", "C", False)),
     "count":    (("label", "A", False), ("count", "B", True), ("ref", "C", False)),
-    "measured": (("label", "A", False), ("length", "D", True), ("height", "E", True),
-                 ("footing_cy", "F", True), ("wall_cy", "G", True), ("deck_cy", "H", True),
-                 ("other_cy", "I", True)),
+    "measured": (("label", "A", False), ("unit", "C", False), ("count", "D", True),
+                 ("length", "E", True), ("width", "F", True), ("height", "G", True),
+                 ("footing_cy", "H", True), ("wall_cy", "I", True), ("deck_cy", "J", True),
+                 ("other_cy", "K", True), ("weight_lb", "L", True), ("adjust", "N", True)),
 }
 #: The spec list each takeoff kind keeps its rows in.
 TAKEOFF_LIST = {"linear": "segments", "count": "units", "measured": "lines"}
@@ -66,9 +69,9 @@ def formula_columns(kind: str, *, label=None, in_task: bool = False,
     typed over a formula. `label` is the row's column-A text (TOTAL rows
     differ by it), `in_task` whether a NOTE sits in a task block."""
     if kind == "CREW":
-        return "FGHKLMPRST"
+        return "FGHKLMPRSTV"
     if kind == "LINE":
-        return "MNOPRST"
+        return "MNOPRSTV"
     if kind == "TASK":
         return "RS"
     if kind == "END":
@@ -76,7 +79,7 @@ def formula_columns(kind: str, *, label=None, in_task: bool = False,
     if kind == "NOTE":
         return "R" if in_task else ""
     if kind == "SUBTOTAL":
-        return "AIKLMNOPRT"
+        return "AIKLMNOPRTV"
     if kind == "RECAP":
         return "ABIKLMNOP"
     if kind == "ITEM":
@@ -85,7 +88,8 @@ def formula_columns(kind: str, *, label=None, in_task: bool = False,
         return "B" if takeoff_kind == "measured" else ""
     if kind == "TOTAL":
         if label == "Takeoff total":
-            return "BFG"
+            # the measured total adds the unit, the other-units note and the model sum
+            return "BCFGHM" if takeoff_kind == "measured" else "BFG"
         if label == "ITEM TOTAL":
             return "IKLMNOP"
         if isinstance(label, str) and label.startswith("PER "):
@@ -119,6 +123,30 @@ BID_DATE_LABEL = "Bid date"                          # A; the value is in B
 #: The project name (bid_form_head's first row): shown, not an input.
 BID_FORM_PROJECT = "A1"
 
+#: Work packages (only when the spec has `work_packages`): the summary sheet,
+#: and the tag in Q1 of each `Sub <package>` sheet (laid out per package by a
+#: `for_each` book entry, so its title is the package's, not a fixed name).
+SUMMARY_SHEET = "Sub Spreads"
+PKG_TAG = "PKG"
+PACKAGE_SUMMARY_SHEET, PACKAGE_TAG = SUMMARY_SHEET, PKG_TAG
+#: Package sheets: the selector's label (column E of its head row; the value is
+#: in the next column), and the header texts of the vendors row (`package_lines`).
+PKG_SELECTOR_LABEL = "CARRYING"
+PKG_HEADERS = {"item": "Item", "line": "Line", "qty": "Qty", "uom": "U/M", "rate": "$ / unit",
+               "pick": "Carry from", "arr": "ARR", "arr_ext": "ARR ext", "carry": "CARRY",
+               "source": "Source", "state": "State", "ext": "ext"}
+#: Column-A labels of the two rows under the vendors row.
+PKG_QUOTE_REF_LABEL = "Quote ref"
+PKG_SURCHARGE_LABEL = "Surcharge % of invoice"
+#: The items block: its head row's B text, and the B text of each item row.
+PKG_ITEMS_HEAD = "By item"
+PKG_ITEM_ROW_LABEL = "item ARR cost"
+#: The totals row's A text; the conditions grid's head row (B text).
+PKG_TOTAL_LABEL = "TOTAL"
+PKG_CONDITIONS_LABEL = "Conditions"
+#: Item sheets' work-package columns: the SP/PKG row tag and the ARR-basis cost.
+PACKAGE_ROW_TAG_COL, ARR_BASIS_COL = "U", "V"
+
 #: Fixed-shape book sheets scanned for typed-over formulas against a fresh
 #: build of the spec (their shape depends only on the items, which must match).
-BASELINE_SHEETS = ("Bid Form", "Cost Summary", "Markup", "Checks")
+BASELINE_SHEETS = ("Bid Form", "Cost Summary", "Markup", "Checks", SUMMARY_SHEET)

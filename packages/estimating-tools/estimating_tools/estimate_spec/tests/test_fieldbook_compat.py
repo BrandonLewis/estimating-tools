@@ -175,4 +175,4 @@ def test_with_no_pack_named_build_lays_out_fieldbook(tmp_path, monkeypatch):
     assert main(["build", str(EXAMPLE), "-o", str(out)]) == 0
     wb = openpyxl.load_workbook(out)
     assert wb.sheetnames[:6] == ["Bid Form", "Cost Summary", "Markup", "Checks", "Rates", "Codes"]
-    assert {p.name: p.value for p in wb.custom_doc_props.props}["estimate_format"] == "fieldbook 1"
+    assert {p.name: p.value for p in wb.custom_doc_props.props}["estimate_format"] == "fieldbook 2"

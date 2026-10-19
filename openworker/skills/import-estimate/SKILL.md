@@ -30,6 +30,14 @@ export file.
 3. Review the summary (schedule count + item count) and open the JSON to spot-check.
 4. The data is now free of the source app — offline, in an open format.
 
+## Work packages and quote files (read-back)
+When the estimate came from a fieldbook workbook with `Sub <package>` sheets, reading it back
+(`est-estimate read-back <spec> <xlsx>`; `--format <pack-dir>` when the pack was derived from
+fieldbook) carries the package choices into the spec's `work_packages` and writes vendor quotes typed
+into the sheets as `CanonicalQuote` files in the quotes directory on `--write`. `est-estimate
+packages init | sync | coverage` manage the packages themselves. Details: the
+`build-estimate-workbook` skill.
+
 ## Notes
 - Format detection is automatic; the importer dispatches to the matching adapter
   (HCSS HeavyBid today; more adapters are added on the same framework).

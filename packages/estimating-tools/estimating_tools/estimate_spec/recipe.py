@@ -8,6 +8,7 @@ Expansion-time template tokens (resolved before layout):
     {item.PATH}               the bid item being laid out
     {config.PATH}             the top-level estimate config
     {book.PATH}                workbook-level scope on a book sheet; book.items = the bid items it lists
+    {sheet.PATH}               the element a `for_each` book sheet is laid out for
     {span:UNIT.first|last}    first/last row a unit occupied on this sheet
 Every other {...} token (ref:, row:, p., r, declared globals) is left verbatim
 for the write-time Resolver. Tokens nest, innermost first:
@@ -17,7 +18,8 @@ A template that is exactly one expansion-time token ("{item.takeoff}") yields
 the raw value (dict, list, number or None), not its string form.
 
 Param values, recursively: a string is a template; {from: PATH, default: X}
-reads PATH (X when the key is absent); {for_each: PATH, as: V} builds a list;
+reads PATH (X when the key is absent); {for_each: PATH, as: V} builds a list
+(V sees the element as `it` and its 0-based position as `it_index`);
 {sum_existing: [EXPORT, ...]} sums the exports already published on this
 sheet; {concat: V, unique: FIELD} splices V's lists into one, keeping the
 first element per FIELD value; other dicts and lists resolve element-wise.
@@ -29,15 +31,21 @@ import re
 
 _TOKEN = re.compile(r"\{([^{}]+)\}")
 _WHOLE = re.compile(r"^\{([^{}]+)\}$")
-_SCOPED = ("it", "item", "config", "book")
+_SCOPED = ("it", "item", "config", "book", "sheet")
 
 ENTRY_KEYS = frozenset({"unit", "when", "variant_from", "variants", "for_each", "key",
                         "params", "instance_defaults", "default_key", "sheet"})
-_RESERVED_GLOBALS = frozenset({"p", "it", "item", "config", "r", "row", "ref", "span", "book"})
+_RESERVED_GLOBALS = frozenset({"p", "it", "item", "config", "r", "row", "ref", "span", "book",
+                               "sheet"})
 _GLOBAL_KEYS = frozenset({"export", "default", "scope", "qualify"})
 #: Keys a `book:` entry's sheet mapping may carry.
 BOOK_SHEET_KEYS = frozenset({"sheet_name", "position", "column_widths", "units",
-                             "hidden", "hidden_columns", "freeze", "print"})
+                             "hidden", "hidden_columns", "freeze", "print",
+                             "for_each", "when"})
+#: Scopes a book entry's `for_each` may read its list from.
+_BOOK_FOR_EACH_SCOPES = ("config", "book")
+#: The token a `for_each` book entry's sheet_name must carry.
+_SHEET_TOKEN = "{sheet."
 #: Keys a recipe's or book sheet's `print:` mapping may carry.
 PRINT_KEYS = frozenset({"orientation", "fit_to_width", "repeat_rows"})
 _CELL_REF_RE = re.compile(r"^([A-Z]{1,3})([1-9][0-9]*)$")
@@ -149,7 +157,10 @@ def resolve_value(value, scopes: dict):
         if "for_each" in value:
             seq = get_path(scopes, value["for_each"])
             seq = [] if seq is MISSING or seq is None else seq
-            return [resolve_value(value["as"], {**scopes, "it": el}) for el in seq]
+            # `it_index` is the element's 0-based position in the list
+            # (`{from: it_index}`), e.g. a task line's index within its task.
+            return [resolve_value(value["as"], {**scopes, "it": el, "it_index": n})
+                    for n, el in enumerate(seq)]
         if "concat" in value:
             return _concat(value, scopes)
         if "sum_existing" in value:
@@ -316,6 +327,27 @@ def _check_sheet_name(name, where: str) -> None:
             "not allow in a sheet name")
 
 
+def _check_book_repeat(sheet: dict, where: str) -> None:
+    """A `for_each` book entry repeats its sheet once per element, so its
+    sheet_name must vary with the element (a `{sheet.PATH}` token); the
+    expanded title is made Excel-legal at layout. Without `for_each` there
+    is no element, so a `{sheet.` token is refused rather than left verbatim."""
+    name = sheet.get("sheet_name")
+    if "for_each" not in sheet:
+        _check_sheet_name(name, where)
+        if _SHEET_TOKEN in name:
+            raise RecipeError(f"{where}: sheet_name {name!r} uses a {{sheet...}} token, "
+                              "which needs for_each on the entry")
+        return
+    path = sheet["for_each"]
+    if not isinstance(path, str) or path.partition(".")[0] not in _BOOK_FOR_EACH_SCOPES \
+            or not path.partition(".")[2]:
+        raise RecipeError(f"{where}: for_each must be a config. or book. path, got {path!r}")
+    if not isinstance(name, str) or _SHEET_TOKEN not in name:
+        raise RecipeError(f"{where}: sheet_name must carry a {{sheet...}} token (e.g. "
+                          f"\"Pkg {{sheet.name}}\") when the entry has for_each, got {name!r}")
+
+
 def _check_column_widths(widths, where: str) -> None:
     if widths is None:
         return
@@ -386,8 +418,82 @@ def _check_sheet_setup(sheet: dict, where: str) -> None:
         _check_print(sheet["print"], where)
 
 
+#: Keys a row's `repeat_cols:` band may carry.
+REPEAT_COLS_KEYS = frozenset({"over", "start", "width", "as", "cells"})
+#: Placeholder heads a `repeat_cols` binding (`as:`) may not shadow.
+_RESERVED_BINDINGS = frozenset({"p", "it", "r", "c", "row", "ref", "col"})
+_BAND_OFFSET_RE = re.compile(r"^\+(0|[1-9][0-9]*)$")
+
+
+def _check_repeat_cols(band, where: str) -> None:
+    """`repeat_cols: {over: p.NAME, start: K, width: N, as: v, cells: {"+0": ...}}`."""
+    if not isinstance(band, dict):
+        raise RecipeError(f"{where}: repeat_cols must be a mapping, got {band!r}")
+    unknown = set(band) - REPEAT_COLS_KEYS
+    if unknown:
+        raise RecipeError(f"{where}: repeat_cols: unknown keys {sorted(unknown)}")
+    over = band.get("over")
+    if not (isinstance(over, str) and over.startswith("p.") and len(over) > 2):
+        raise RecipeError(f"{where}: repeat_cols needs over: p.NAME, got {over!r}")
+    start = band.get("start")
+    if not (isinstance(start, str) and _COLUMN_LETTER_RE.match(start)
+            and _column_index(start) <= _MAX_COLUMN_INDEX):
+        raise RecipeError(f"{where}: repeat_cols start must be a column letter, got {start!r}")
+    width = band.get("width")
+    if isinstance(width, bool) or not isinstance(width, int) or width < 1:
+        raise RecipeError(f"{where}: repeat_cols width must be an integer >= 1, got {width!r}")
+    name = band.get("as", "v")
+    if not (isinstance(name, str) and name.isidentifier()) or name in _RESERVED_BINDINGS:
+        raise RecipeError(
+            f"{where}: repeat_cols as must be an identifier other than "
+            f"{sorted(_RESERVED_BINDINGS)}, got {name!r}")
+    cells = band.get("cells")
+    if not isinstance(cells, dict) or not cells:
+        raise RecipeError(f"{where}: repeat_cols cells must be a non-empty mapping")
+    for key, cell in cells.items():
+        m = _BAND_OFFSET_RE.match(key) if isinstance(key, str) else None
+        if not m or int(m.group(1)) >= width:
+            raise RecipeError(
+                f"{where}: repeat_cols cells key {key!r} must be \"+N\" with "
+                f"0 <= N < width ({width})")
+        if not isinstance(cell, dict):
+            raise RecipeError(f"{where}: repeat_cols cells[{key!r}] must be a mapping")
+
+
+def _check_unit_rows(units: dict) -> None:
+    """Load-time shape checks for the row keys that lay out column bands
+    (`repeat_cols`, `mark_cols_first`/`mark_cols_last`) and publish per-row
+    exports (`export_each`)."""
+    for uname, udef in units.items():
+        for i, row in enumerate((udef or {}).get("rows") or []):
+            if not isinstance(row, dict):
+                continue
+            where = f"units.{uname}.rows[{i}]"
+            if "repeat_cols" in row:
+                _check_repeat_cols(row["repeat_cols"], where)
+            for mark in ("mark_cols_first", "mark_cols_last"):
+                if mark not in row:
+                    continue
+                if "repeat_cols" not in row:
+                    raise RecipeError(f"{where}: {mark} needs repeat_cols on the same row")
+                if not (isinstance(row[mark], str) and row[mark].isidentifier()):
+                    raise RecipeError(f"{where}: {mark} must be a name, got {row[mark]!r}")
+            if "export_each" in row:
+                each = row["export_each"]
+                if "repeat" not in row:
+                    raise RecipeError(f"{where}: export_each needs a `repeat:` row")
+                if not (isinstance(each, dict) and set(each) == {"key", "cells"}
+                        and isinstance(each["key"], str) and each["key"]
+                        and isinstance(each["cells"], dict) and each["cells"]
+                        and all(isinstance(t, str) for t in each["cells"].values())):
+                    raise RecipeError(
+                        f"{where}: export_each needs key (a template) and cells "
+                        "(a non-empty mapping of NAME to address template), nothing else")
+
+
 def validate_recipes(recipes_doc: dict, units: dict) -> None:
     """Refuse a recipes document the engine cannot render, naming where."""
+    _check_unit_rows(units)
     for gname, g in (recipes_doc.get("globals") or {}).items():
         if gname in _RESERVED_GLOBALS or not gname.isidentifier():
             raise RecipeError(f"globals.{gname}: name is reserved or not an identifier")
@@ -424,8 +530,10 @@ def validate_recipes(recipes_doc: dict, units: dict) -> None:
         unknown = set(sheet) - BOOK_SHEET_KEYS
         if unknown:
             raise RecipeError(f"{where}: unknown keys {sorted(unknown)}")
-        name = sheet.get("sheet_name")
-        _check_sheet_name(name, where)
+        _check_book_repeat(sheet, where)
+        name = sheet["sheet_name"]
+        if "when" in sheet and not (isinstance(sheet["when"], str) and sheet["when"]):
+            raise RecipeError(f"{where}: when must be a scope path, got {sheet['when']!r}")
         # Excel (and openpyxl) treat sheet names case-insensitively -- 'Front'
         # and 'FRONT' are the same sheet to it, so they have to be to us too.
         if name.casefold() in names:

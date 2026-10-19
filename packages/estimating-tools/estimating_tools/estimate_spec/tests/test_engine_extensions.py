@@ -1266,3 +1266,415 @@ def test_every_shipped_and_fixture_pack_passes_the_concat_check():
     for root in (fp.BUNDLED, fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo",
                  fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "alt"):
         fp.load_pack(root)
+
+
+# ---- book sheets repeated per element (for_each) ---------------------------
+
+def _pkg_units(doc):
+    doc["units"]["pkg_echo"] = {
+        "params": {"name": {"type": "string"}},
+        "rows": [{"cells": {"A": {"value": "{p.name}"}}, "mark": "echo"}],
+        "exports": {"echo": "$A${row:echo}"},
+    }
+
+
+def _pkg_recipes(probe_refs=(), **extra):
+    def recipes(doc):
+        del doc["recipes"]["cover"]
+        doc["book"] = [{"sheet_name": "Pkg {sheet.name}", "position": "after_items",
+                        "for_each": "config.x-packages",
+                        "units": [{"unit": "pkg_echo", "key": "pkg[{sheet.name}]",
+                                   "params": {"name": "{sheet.name}"}}], **extra}]
+        if probe_refs:
+            doc["recipes"]["setup"]["units"].insert(0, {"unit": "probe"})
+    return recipes
+
+
+def _probe_units(refs):
+    def units(doc):
+        _pkg_units(doc)
+        doc["units"]["probe"] = {"rows": [
+            {"cells": {"A": {"formula": "={ref:" + ref + "}"}}} for ref in refs]}
+    return units
+
+
+def _pkg_spec(*names):
+    spec = legacy_example()
+    spec["x-packages"] = [{"name": n} for n in names]
+    return spec
+
+
+def test_a_for_each_book_entry_lays_out_one_sheet_per_element(tmp_path):
+    wb = B.generate(_pkg_spec("A", "B"),
+                    patched_pack(tmp_path, units=_pkg_units, recipes=_pkg_recipes()))
+    assert wb.sheetnames[-2:] == ["Pkg A", "Pkg B"]
+    assert wb["Pkg A"]["A1"].value == "A"
+    assert wb["Pkg B"]["A1"].value == "B"
+
+
+def test_colliding_sheet_names_are_suffixed(tmp_path):
+    stem = "S" * 27
+    titles = [f"Pkg {stem}", f"Pkg {stem[:23]} (2)"]
+    refs = [f"{t}!pkg[{stem}{c}].echo" for t, c in zip(titles, "XY")]
+    pack = patched_pack(tmp_path, units=_probe_units(refs),
+                        recipes=_pkg_recipes(probe_refs=refs))
+    wb = B.generate(_pkg_spec(stem + "X", stem + "Y"), pack)
+    assert wb.sheetnames[-2:] == titles
+    assert all(len(t) <= 31 for t in titles)
+    assert [wb["SETUP"][f"A{r}"].value for r in (1, 2)] == [f"='{t}'!$A$1" for t in titles]
+    assert [wb[t]["A1"].value for t in titles] == [stem + "X", stem + "Y"]
+
+
+def test_an_empty_for_each_list_lays_out_no_sheet(tmp_path):
+    pack = patched_pack(tmp_path, units=_pkg_units, recipes=_pkg_recipes())
+    legacy = B.generate(legacy_example(), patched_pack(tmp_path / "l"))
+    wb = B.generate(_pkg_spec(), pack)
+    assert wb.sheetnames == [s for s in legacy.sheetnames if s != "Bid Summary"]
+
+
+def test_a_for_each_book_entry_honours_when_per_element(tmp_path):
+    spec = _pkg_spec("A", "B")
+    spec["x-packages"][0]["keep"] = True
+    spec["x-packages"][1]["keep"] = False
+    pack = patched_pack(tmp_path, units=_pkg_units, recipes=_pkg_recipes(when="sheet.keep"))
+    wb = B.generate(spec, pack)
+    assert "Pkg A" in wb.sheetnames and "Pkg B" not in wb.sheetnames
+
+
+def test_an_expanded_book_title_colliding_with_an_item_sheet_is_refused(tmp_path):
+    spec = _pkg_spec("A")
+    spec["items"][0]["sheet"] = "pkg a"
+    pack = patched_pack(tmp_path, units=_pkg_units, recipes=_pkg_recipes())
+    with pytest.raises(R.RecipeError, match="collides with book sheet_name 'Pkg A'"):
+        B.generate(spec, pack)
+
+
+@pytest.mark.parametrize("bad, match", [
+    ({"sheet_name": "Pkg"}, r"sheet_name must carry a \{sheet\.\.\.\} token"),
+    ({"for_each": "items"}, r"for_each must be a config\. or book\. path"),
+])
+def test_a_malformed_for_each_book_entry_is_refused_at_load(tmp_path, bad, match):
+    def recipes(doc):
+        _pkg_recipes()(doc)
+        doc["book"][0].update(bad)
+
+    with pytest.raises(fp.FormatPackError, match=r"book\[0\]: " + match):
+        patched_pack(tmp_path, units=_pkg_units, recipes=recipes)
+
+
+def test_a_sheet_token_without_for_each_is_refused_at_load(tmp_path):
+    def recipes(doc):
+        _pkg_recipes()(doc)
+        del doc["book"][0]["for_each"]
+
+    with pytest.raises(fp.FormatPackError, match=r"book\[0\]: .*\{sheet\.\.\.\} .*for_each"):
+        patched_pack(tmp_path, units=_pkg_units, recipes=recipes)
+
+
+@pytest.mark.parametrize("name, taken, want", [
+    ("Plain", set(), "Plain"),
+    ("a[b]:c*d?e/f\\g", set(), "a-b--c-d-e-f-g"),
+    ("X" * 40, set(), "X" * 31),
+    ("Pkg A", {"pkg a"}, "Pkg A (2)"),
+    ("Pkg A", {"Pkg A", "Pkg A (2)"}, "Pkg A (3)"),
+    ("X" * 31, {"X" * 31}, "X" * 27 + " (2)"),
+])
+def test_sheet_title(name, taken, want):
+    assert B.sheet_title(name, taken) == want
+
+
+# ---- repeat_cols bands, column landmarks and per-row exports ---------------
+
+def _band_units(band=None):
+    """A `band` unit: a header row with one column pair per name (K/L, M/N,
+    ...), and a `repeat:` row per line publishing `line[<key>].qty`."""
+    def units(doc):
+        repeat_cols = {"over": "p.names", "start": "K", "width": 2,
+                       "cells": {"+0": {"value": "{v}"},
+                                 "+1": {"formula": "=\"{c}|{c+1}|{c-0}\""}}}
+        repeat_cols.update(band or {})
+        doc["units"]["band"] = {
+            "params": {"names": {"type": "list"}, "lines": {"type": "list"}},
+            "rows": [
+                {"cells": {"A": {"value": "HDR"},
+                           "B": {"formula": "=INDEX(${col:vf}{r}:${col:vl+1}{r},1)"}},
+                 "repeat_cols": repeat_cols,
+                 "mark_cols_first": "vf", "mark_cols_last": "vl"},
+                {"repeat": "p.lines",
+                 "cells": {"A": {"value": "{it.key}"}, "B": {"formula": "={it.q}"}},
+                 "export_each": {"key": "line[{it.key}]", "cells": {"qty": "$B${r}"}}},
+            ],
+            "exports": {"band_first": "${col:vf}$1"},
+        }
+        doc["units"]["probe"] = {"rows": [
+            {"cells": {"A": {"formula": "={ref:SETUP!rows.line[a].qty}"},
+                       "B": {"formula": "={ref:SETUP!rows.band_first}"}}}]}
+    return units
+
+
+def _band_recipes(names, lines=({"key": "a", "q": 1}, {"key": "b", "q": 2})):
+    def recipes(doc):
+        doc["recipes"]["setup"]["units"].insert(
+            0, {"unit": "band", "key": "rows",
+                "params": {"names": list(names), "lines": [dict(x) for x in lines]}})
+        doc["recipes"]["line_item"]["units"].insert(0, {"unit": "probe"})
+    return recipes
+
+
+def test_repeat_cols_lays_one_column_pair_per_element(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][0]["cells"]["C"] = {"value": "{col:vl-2}|{col:vf+3}"}
+
+    pack = patched_pack(tmp_path, units=units, recipes=_band_recipes(["X", "Y", "Z"]))
+    ws = B.generate(legacy_example(), pack)["SETUP"]
+    assert [ws[f"{c}1"].value for c in "KMO"] == ["X", "Y", "Z"]
+    assert [ws[f"{c}1"].value for c in "LNP"] == ['="K|L|K"', '="M|N|M"', '="O|P|O"']
+    assert ws["Q1"].value is None
+    assert ws["B1"].value == "=INDEX($K1:$P1,1)"
+    assert ws["C1"].value == "M|N"
+
+
+def test_an_empty_repeat_cols_list_places_nothing_and_landmarks_read_start(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][0]["cells"]["C"] = {"value": "{col:vl}"}
+
+    pack = patched_pack(tmp_path, units=units, recipes=_band_recipes([]))
+    ws = B.generate(legacy_example(), pack)["SETUP"]
+    assert all(ws.cell(1, c).value is None for c in range(11, 20))
+    assert ws["B1"].value == "=INDEX($K1:$L1,1)"
+    assert ws["C1"].value == "K"
+
+
+def test_a_band_on_a_repeat_row_binds_its_as_name_beside_it(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][1]["repeat_cols"] = {
+            "over": "p.vendors", "start": "D", "width": 1, "as": "q",
+            "cells": {"+0": {"value": "{it.key}:{q.name}@{c}{r}"}}}
+
+    def recipes(doc):
+        _band_recipes(["X"])(doc)
+        doc["recipes"]["setup"]["units"][0]["params"]["vendors"] = [
+            {"name": "Acme"}, {"name": "Bolt"}]
+
+    ws = B.generate(legacy_example(), patched_pack(tmp_path, units=units, recipes=recipes))["SETUP"]
+    assert [[ws[f"{c}{r}"].value for c in "DE"] for r in (2, 3)] == [
+        ["a:Acme@D2", "a:Bolt@E2"], ["b:Acme@D3", "b:Bolt@E3"]]
+
+
+def test_export_each_publishes_one_export_per_repeated_row(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+
+    pack = patched_pack(tmp_path, units=units, recipes=_band_recipes(["X"]))
+    wb = B.generate(legacy_example(), pack)
+    assert [wb["SETUP"][f"A{r}"].value for r in (2, 3)] == ["a", "b"]
+    probe = wb["2 - 8IN MAIN"]
+    assert probe["A1"].value == "=" + B.sheet_qualified("SETUP", "$B$2")
+    assert probe["B1"].value == "=" + B.sheet_qualified("SETUP", "$K$1")
+
+
+def test_export_each_key_naming_a_missing_field_is_refused(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][1]["export_each"]["key"] = "line[{it.nope}]"
+
+    pack = patched_pack(tmp_path, units=units, recipes=_band_recipes(["X"]))
+    with pytest.raises(R.RecipeError, match=r"export_each key .*nope"):
+        B.generate(legacy_example(), pack)
+
+
+def test_export_each_rows_sharing_a_key_are_refused(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+
+    pack = patched_pack(tmp_path, units=units, recipes=_band_recipes(
+        ["X"], lines=({"key": "a", "q": 1}, {"key": "a", "q": 2})))
+    with pytest.raises(R.RecipeError, match=r"line\[a\].*twice"):
+        B.generate(legacy_example(), pack)
+
+
+def test_a_unit_with_only_export_each_obeys_the_instance_key_guard(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        del doc["units"]["band"]["exports"]
+
+    def recipes(doc):
+        _band_recipes(["X"])(doc)
+        doc["recipes"]["setup"]["units"].insert(1, dict(doc["recipes"]["setup"]["units"][0]))
+
+    with pytest.raises(R.RecipeError, match=r"instance key 'rows'.*twice"):
+        B.generate(legacy_example(), patched_pack(tmp_path, units=units, recipes=recipes))
+
+
+@pytest.mark.parametrize("band, match", [
+    ({"over": None}, r"repeat_cols needs over: p\.NAME"),
+    ({"over": "names"}, r"repeat_cols needs over: p\.NAME"),
+    ({"start": "k1"}, r"repeat_cols start must be a column letter"),
+    ({"width": 0}, r"repeat_cols width must be an integer >= 1"),
+    ({"width": True}, r"repeat_cols width must be an integer >= 1"),
+    ({"cells": {}}, r"repeat_cols cells must be a non-empty mapping"),
+    ({"cells": {"+2": {"value": "x"}}}, r"repeat_cols cells key '\+2'"),
+    ({"cells": {"1": {"value": "x"}}}, r"repeat_cols cells key '1'"),
+    ({"cells": {"+0": "x"}}, r"repeat_cols cells\['\+0'\] must be a mapping"),
+    ({"as": "it"}, r"repeat_cols as must be an identifier"),
+    ({"as": "a b"}, r"repeat_cols as must be an identifier"),
+    ({"bogus": 1}, r"repeat_cols: unknown keys \['bogus'\]"),
+])
+def test_a_malformed_repeat_cols_is_refused_at_load(tmp_path, band, match):
+    def units(doc):
+        _band_units(band)(doc)
+        rc = doc["units"]["band"]["rows"][0]["repeat_cols"]
+        for k, v in band.items():
+            if v is None:
+                rc.pop(k)
+
+    with pytest.raises(fp.FormatPackError, match=r"units\.band\.rows\[0\]: " + match):
+        patched_pack(tmp_path, units=units, recipes=_band_recipes(["X"]))
+
+
+@pytest.mark.parametrize("edit, match", [
+    (lambda rows: rows[0].pop("repeat_cols"), r"rows\[0\]: mark_cols_first needs repeat_cols"),
+    (lambda rows: rows[0].update(export_each={"key": "k", "cells": {"q": "$B{r}"}}),
+     r"rows\[0\]: export_each needs a `repeat:` row"),
+    (lambda rows: rows[1]["export_each"].pop("key"), r"rows\[1\]: export_each needs key"),
+    (lambda rows: rows[1]["export_each"].update(cells={}),
+     r"rows\[1\]: export_each needs key"),
+])
+def test_malformed_column_marks_and_export_each_are_refused_at_load(tmp_path, edit, match):
+    def units(doc):
+        _band_units()(doc)
+        edit(doc["units"]["band"]["rows"])
+
+    with pytest.raises(fp.FormatPackError, match=r"units\.band\." + match):
+        patched_pack(tmp_path, units=units, recipes=_band_recipes(["X"]))
+
+
+# ---- cells past a band, per-element styles, comments, hidden columns -------
+
+def test_a_cell_keyed_by_a_column_landmark_lands_past_the_band(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        rows = doc["units"]["band"]["rows"]
+        rows[0]["cells"]["{col:vl+2}"] = {"value": "AFTER"}
+        rows[1]["cells"]["{col:vl+3}"] = {"formula": "={col:vl+2}{r}&\"!\""}
+
+    pack = patched_pack(tmp_path, units=units, recipes=_band_recipes(["X", "Y"]))
+    ws = B.generate(legacy_example(), pack)["SETUP"]
+    assert ws["O1"].value == "AFTER"                      # vl = M, +2 = O
+    assert [ws[f"P{r}"].value for r in (2, 3)] == ['=O2&"!"', '=O3&"!"']
+
+
+def test_a_cell_keyed_by_an_unknown_landmark_is_refused(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][0]["cells"]["{col:nope+1}"] = {"value": "x"}
+
+    with pytest.raises(R.RecipeError, match=r"cell key '\{col:nope\+1\}'.*nope"):
+        B.generate(legacy_example(), patched_pack(tmp_path, units=units,
+                                                  recipes=_band_recipes(["X"])))
+
+
+def test_a_style_may_be_chosen_per_band_element(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][0]["repeat_cols"]["cells"]["+0"] = {"value": "{v.n}",
+                                                                         "style": "{v.s}"}
+
+    def recipes(doc):
+        _band_recipes([])(doc)
+        doc["recipes"]["setup"]["units"][0]["params"]["names"] = [
+            {"s": "total", "n": "a"}, {"s": "price_input", "n": "b"}]
+
+    ws = B.generate(legacy_example(), patched_pack(tmp_path, units=units, recipes=recipes))["SETUP"]
+    assert ws["M1"].font.color.rgb.endswith("00B050")     # price_input's green
+    assert ws["M1"].fill.fgColor.rgb != ws["K1"].fill.fgColor.rgb   # `total` carries a fill
+
+
+def test_a_style_that_resolves_to_no_style_is_refused(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][0]["repeat_cols"]["cells"]["+0"]["style"] = "x_{v}"
+
+    with pytest.raises(R.RecipeError, match=r"style 'x_A' is not in tokens.styles"):
+        B.generate(legacy_example(), patched_pack(tmp_path, units=units,
+                                                  recipes=_band_recipes(["A"])))
+
+
+def test_a_comment_is_written_only_when_it_resolves_to_text(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][1]["cells"]["A"]["comment"] = "{it.note}"
+
+    pack = patched_pack(tmp_path, units=units, recipes=_band_recipes(
+        ["X"], lines=({"key": "a", "q": 1, "note": "from a lump sum"},
+                      {"key": "b", "q": 2, "note": ""})))
+    ws = B.generate(legacy_example(), pack)["SETUP"]
+    assert ws["A2"].comment.text == "from a lump sum"
+    assert ws["A3"].comment is None
+
+
+def test_hide_column_hides_the_cells_column(tmp_path):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][0]["cells"]["{col:vl+2}"] = {"value": "H", "hide_column": True}
+
+    ws = B.generate(legacy_example(), patched_pack(
+        tmp_path, units=units, recipes=_band_recipes(["X"])))["SETUP"]
+    assert ws.column_dimensions["M"].hidden
+
+
+@pytest.mark.parametrize("cell, match", [
+    ({"value": "x", "hide_column": "yes"}, "hide_column must be true or false"),
+    ({"value": "x", "comment": ""}, "comment must be a non-empty template"),
+])
+def test_malformed_comment_and_hide_column_are_refused(tmp_path, cell, match):
+    def units(doc):
+        _band_units()(doc)
+        doc["units"]["band"]["rows"][0]["cells"]["C"] = cell
+
+    with pytest.raises(R.RecipeError, match=match):
+        B.generate(legacy_example(), patched_pack(tmp_path, units=units,
+                                                  recipes=_band_recipes(["X"])))
+
+
+def test_a_for_each_element_sees_its_position_as_it_index():
+    scopes = {"config": {"xs": ["a", "b", "c"]}}
+    got = R.resolve_value({"for_each": "config.xs", "as": {"v": "{it}", "i": {"from": "it_index"}}},
+                          scopes)
+    assert got == [{"v": "a", "i": 0}, {"v": "b", "i": 1}, {"v": "c", "i": 2}]
+
+
+# ---- literal text -------------------------------------------------------------
+
+def _with_note(note):
+    spec = legacy_example()
+    (item,) = [i for i in spec["items"] if i.get("sheet") == "2 - 8IN MAIN"]
+    (line,) = [ln for blk in item["cost_details"] for ln in blk.get("lines", [])
+               if ln["name"] == "Bedding rock"]
+    line["note"] = note
+    return spec
+
+
+def _note_units(doc):
+    row = doc["units"]["cost_block"]["rows"][1]          # the `repeat: p.lines` row
+    row["cells"]["H"] = {"value": "{it.note}", "comment": "{it.note}",
+                        "if_it": {"name": "Bedding rock"}}
+
+
+def test_literal_text_is_never_resolved_as_placeholders(tmp_path):
+    # Bound literally: a value's braces stay braces, even ones that look like
+    # a placeholder the resolver knows ({r}) or one it does not ({monthly}).
+    text = "per DOT index {monthly}, row {r}, {ref:nowhere}"
+    spec = _with_note(B.literal(text))
+    ws = B.generate(spec, patched_pack(tmp_path, units=_note_units))["2 - 8IN MAIN"]
+    (cell,) = [c for c in ws["H"] if c.value == text]
+    assert cell.comment.text == text
+    assert ws[f"A{cell.row}"].value == "Bedding rock"
+
+
+def test_the_same_text_unmarked_is_resolved(tmp_path):
+    with pytest.raises(ValueError, match=r"unresolved placeholder \{monthly\}"):
+        B.generate(_with_note("per DOT index {monthly}"), patched_pack(tmp_path, units=_note_units))

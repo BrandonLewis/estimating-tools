@@ -128,6 +128,13 @@ def test_wheel_still_ships_the_format_data_files(freshly_built_wheel):
         "packages/estimating-tools/pyproject.toml")
     assert any(fnmatch.fnmatch(n, REQUIRED_FORMAT_GLOB) for n in names), \
         f"{freshly_built_wheel.name} ships no {REQUIRED_FORMAT_GLOB}"
+    package = PACKAGE_DIR / "estimating_tools"
+    examples = package / "estimate_spec" / "packs" / "fieldbook" / "examples"
+    missing_examples = [p.relative_to(PACKAGE_DIR).as_posix()
+                        for p in examples.rglob("*")
+                        if p.suffix in (".yaml", ".json")
+                        and p.relative_to(PACKAGE_DIR).as_posix() not in names]
+    assert not missing_examples, f"wheel lacks example assets: {missing_examples}"
 
 
 def test_the_fresh_wheel_ships_the_manifest_template(freshly_built_wheel):

@@ -8,7 +8,9 @@
 # read fieldbook's shapes. No `protect:` either: fieldbook is edited by copy
 # and paste, and Excel refuses to paste into a locked cell.
 name: fieldbook
-version: 1
+# 2: the measured takeoff block (item sheet C-N) and the item-sheet U/V
+# self-perform columns changed the grid; read-back refuses a version-1 workbook.
+version: 2
 provenance: authored
 files:
   units: units.yaml

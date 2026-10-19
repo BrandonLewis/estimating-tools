@@ -1,0 +1,21 @@
+{
+ "vendor_name": "Dirt Movers",
+ "work_package_name": "Hauling",
+ "is_dbe": false,
+ "lines": [
+  {
+   "schedule_name": "Base",
+   "item_number": "2",
+   "unit_price": 16.5,
+   "is_included": true,
+   "is_alternate": false,
+   "line_name": "Haul, import + export"
+  }
+ ],
+ "quote_date": "2026-10-20",
+ "surcharge": 0.04,
+ "conditions": {
+  "Fuel surcharge": "4% of invoice",
+  "Dump fees": "included"
+ }
+}

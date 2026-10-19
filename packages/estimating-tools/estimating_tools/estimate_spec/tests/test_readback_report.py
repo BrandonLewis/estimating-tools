@@ -63,3 +63,39 @@ def test_every_finding_has_its_section():
         "- 2 - 8IN MAIN row 21 (item 2 · 02-100): resource 'pipelayer' read as 'Pipelayer' "
         "(same name, different case)",
         ""])
+
+
+def test_the_packages_section_lists_selections_quote_files_and_problems():
+    from estimating_tools.estimate_spec.readback.merge import QuoteWrite
+    from estimating_tools.quotes.model import CanonicalQuote
+    f = Findings(
+        changes=["packages · Hauling · selected Dirt Movers → ARR",
+                 "item 2 · 02-100 · Bedding rock: qty 210 → 220"],
+        problems=["Sub Valves: selector 'Nobody' is not ARR, CARRY or a quoted vendor "
+                  "(vendors: Valve Pros)"],
+        quote_edits=["Sub Hauling!K8 (Dirt Movers, item 2 Haul): 16.5 → 15.9 written to dm.json"])
+    writes = [QuoteWrite("coastal-trucking--hauling.json",
+                         CanonicalQuote(vendor_name="Coastal Trucking", work_package_name="Hauling"),
+                         "typed into Sub Hauling")]
+    text = render_report(ReadBack({}, f, quote_writes=writes), workbook="b.xlsx", spec="b.yaml")
+    assert "\n".join([
+        "## Packages",
+        "",
+        "- packages · Hauling · selected Dirt Movers → ARR",
+        "- quote files to write: coastal-trucking--hauling.json (typed into Sub Hauling)",
+        "- quote edits written: Sub Hauling!K8 (Dirt Movers, item 2 Haul): 16.5 → 15.9 written to "
+        "dm.json",
+        "- Sub Valves: selector 'Nobody' is not ARR, CARRY or a quoted vendor (vendors: Valve Pros)",
+        ""]) in text
+    assert text.index("## Changes") < text.index("## Packages")
+    assert "formula cells typed over: 0" in text and "## Formula cells typed over" not in text
+
+
+def test_quote_writes_alone_are_not_no_changes():
+    from estimating_tools.estimate_spec.readback.merge import QuoteWrite
+    from estimating_tools.quotes.model import CanonicalQuote
+    writes = [QuoteWrite("a--hauling.json",
+                         CanonicalQuote(vendor_name="A", work_package_name="Hauling"),
+                         "edited in Sub Hauling")]
+    text = render_report(ReadBack({}, Findings(), quote_writes=writes), workbook="b", spec="s")
+    assert "No changes" not in text and "a--hauling.json" in text

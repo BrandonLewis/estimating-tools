@@ -18,6 +18,8 @@ def validate_cross_references(config: dict) -> None:
       2. Every `crews[].members[].trade` matches some `rate_table[].trade`.
       3. Every `items[].crew_id` (when set) matches some `crews[].id`.
       4. A rate_table row with a wage breakdown reproduces its rate within $0.01.
+      5. Work packages: unique names, items that exist, task lines that name a
+         package listing their item, picks/carry keyed by the package's items.
 
     Silent on a healthy config."""
     crews = config.get("crews") or []
@@ -25,6 +27,8 @@ def validate_cross_references(config: dict) -> None:
     _check_crew_member_trades(crews, config.get("rate_table") or [])
     _check_item_crew_id_references(config.get("items") or [], crews)
     _check_rate_breakdowns(config.get("rate_table") or [])
+    if config.get("work_packages"):
+        _check_work_packages(config)
 
 
 def _check_crew_id_uniqueness(crews: list[dict]) -> None:
@@ -88,3 +92,67 @@ def _check_rate_breakdowns(rate_table: list[dict]) -> None:
             raise ValueError(
                 f"rate_table[{i}] ({row.get('trade')!r}): base * (1 + burden_pct) + "
                 f"fringe = {built:.2f}, but rate is {row['rate']:.2f}")
+
+
+def _package_line_names(name: str, item: dict) -> list[str]:
+    return [line["name"] for block in item.get("labor") or []
+            for line in block.get("lines") or [] if line.get("package") == name]
+
+
+def _check_carry_key(name: str, key: str, listed: set[str], items: list[dict]) -> None:
+    """A `carry` key is `<item_no>` (an item with one package line) or
+    `<item_no>/<line name>`; its value is that package line's CARRY $/unit."""
+    n, sep, line = key.partition("/")
+    if n not in listed:
+        raise ValueError(f"work_packages[{name}].carry: item '{n}' is not in the package")
+    (item,) = [i for i in items if str(i["item_no"]) == n]
+    lines = _package_line_names(name, item)
+    if sep:
+        if line not in lines:
+            raise ValueError(f"work_packages[{name}].carry: line '{key}' is not a package line")
+    elif len(lines) > 1:
+        raise ValueError(f"work_packages[{name}].carry: item '{n}' has several package lines; "
+                         f"key it as '{n}/<line name>' (lines: {', '.join(lines)})")
+
+
+def _check_work_packages(config: dict) -> None:
+    """Package names are unique; package items exist; each `line.package` names a
+    package that lists the line's item; `picks` keys are the package's items; `carry`
+    keys are `<item_no>` (one package line) or `<item_no>/<line name>`.
+
+    Whether `selected`/`picks` values name a real vendor is not checked here: vendors
+    are known only when the spreads are built."""
+    packages = config["work_packages"]
+    items = config.get("items") or []
+    item_nos = {str(i["item_no"]) for i in items}
+    by_name: dict[str, dict] = {}
+    names = set()
+    for pkg in packages:
+        name = pkg["name"]
+        folded = name.strip().casefold()
+        if folded in names:
+            raise ValueError(f"work_packages: duplicate package name '{name}'")
+        names.add(folded)
+        by_name[name] = pkg
+    for name, pkg in by_name.items():
+        listed = {str(n) for n in pkg["items"]}
+        for n in pkg["items"]:
+            if str(n) not in item_nos:
+                raise ValueError(f"work_packages[{name}].items: item '{n}' is not in the spec")
+        for n in pkg.get("picks") or {}:
+            if str(n) not in listed:
+                raise ValueError(f"work_packages[{name}].picks: item '{n}' is not in the package")
+        for key in pkg.get("carry") or {}:
+            _check_carry_key(name, str(key), listed, items)
+    for item in items:
+        n = str(item["item_no"])
+        for block in item.get("labor") or []:
+            for i, line in enumerate(block.get("lines") or []):
+                ref = line.get("package")
+                if ref is None:
+                    continue
+                where = f"items[{n}].labor[{block.get('slot')}].lines[{i}].package"
+                if ref not in by_name:
+                    raise ValueError(f"{where}: '{ref}' is not a work package")
+                if n not in {str(x) for x in by_name[ref]["items"]}:
+                    raise ValueError(f"{where}: package '{ref}' does not list item '{n}'")

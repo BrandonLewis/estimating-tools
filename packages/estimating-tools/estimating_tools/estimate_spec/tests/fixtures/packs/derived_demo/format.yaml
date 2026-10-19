@@ -1,0 +1,5 @@
+name: derived_demo
+version: 1
+extends: fieldbook
+files:
+  vocabulary: vocabulary.yaml

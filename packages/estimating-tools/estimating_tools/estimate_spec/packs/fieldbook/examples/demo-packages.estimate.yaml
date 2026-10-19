@@ -1,0 +1,117 @@
+# The fieldbook demo estimate with two work packages, each priced from the
+# vendor quotes in quotes/ (next to this file):
+#   est-estimate build demo-packages.estimate.yaml --format <this pack>
+#
+#   Hauling -- sub_out. Item 2's haul line. Dirt Movers quotes $16.50/CY plus a
+#     4% fuel surcharge; Bulk Haul Co quotes an $8,740 lump sum (prorated over
+#     the plug). Carrying Dirt Movers.
+#   Valves  -- hybrid. Item 3's valve boxes; item 3 task 01 is self-perform, so
+#     its crew switches off when a vendor is carried. Valve Pros quotes
+#     $900/EA. Carrying ARR (the plug and our own crew).
+#
+# Each package gets a `Sub <name>` sheet (the spread, with a CARRYING
+# selector) and a row on `Sub Spreads`; the item sheets read the carried rate.
+project: Demo Pipeline Replacement
+bid_date: "2026-10-01"
+shift_hours: 8
+markup:
+  overhead:  { labor: 0.12, equipment: 0.10, material: 0.05, subcontract: 0.03 }
+  insurance: { labor: 0.02, equipment: 0.01, material: 0.0,  subcontract: 0.0 }
+  profit:    { labor: 0.12, equipment: 0.10, material: 0.06, subcontract: 0.04 }
+  bond_pct: 0.012
+rate_table:
+  - { trade: Superintendent, rate: 95.00 }
+  - { trade: Pipelayer, rate: 74.00, base: 44.00, burden_pct: 0.30, fringe: 16.80 }
+  - { trade: Equipment Operator, rate: 82.00 }
+  - { trade: Laborer, rate: 61.00, base: 36.00, burden_pct: 0.25, fringe: 16.00 }
+  - { trade: "Excavator, 320 class", rate: 145.00, kind: equipment, includes_operator: false }
+  - { trade: "Loader, 950 class", rate: 110.00, kind: equipment, includes_operator: false }
+  - { trade: Plate compactor, rate: 35.00, kind: equipment, includes_operator: false }
+# The org's cost-code list (scaffold copies it from the pack seed): the task
+# headers' code dropdown, and check 9 flags a task whose code is not on it.
+cost_codes:
+  - { code: "01-100", description: Mobilization }
+  - { code: "02-100", description: Trench excavation and pipe laying }
+  - { code: "02-200", description: Backfill and compaction }
+  - { code: "02-300", description: Pavement restoration }
+  - { code: "02-510", description: Valves and appurtenances }
+work_packages:
+  - { name: Hauling, kind: subcontract, strategy: sub_out, items: ["2"], selected: Dirt Movers, conditions: [Fuel surcharge, Dump fees] }
+  - { name: Valves,  kind: subcontract, strategy: hybrid,  items: ["3"], selected: ARR }
+items:
+  - recipe: lump_sum
+    sheet: 1 - MOBILIZATION
+    item_no: "1"
+    description: Mobilization and setup
+    qty: 1
+    uom: LS
+    unbalance: 1000
+    labor:
+      - slot: "01"
+        cost_code: "01-100"
+        description: Mobilize crew and equipment
+        notes: ["Two days: yard load-out, haul, site setup."]
+        crew:
+          - { trade: Superintendent, count: 1, days: 2 }
+          - { trade: Laborer, count: 2, days: 2 }
+
+  - recipe: line_item
+    sheet: 2 - 8IN MAIN
+    item_no: "2"
+    description: 8-inch water main
+    qty: 640
+    uom: LF
+    unbalance: -1000
+    notes: ["Trench to 6 ft max; native backfill above the pipe zone."]
+    takeoff:
+      kind: linear
+      segments:
+        - { label: "STA 10+00 to 13+20", length_lf: 320, ref: C-3 }
+        - { label: "STA 13+20 to 16+40", length_lf: 320, ref: C-4 }
+    labor:
+      - slot: "01"
+        cost_code: "02-100"
+        description: Trench excavation & pipe laying
+        notes: ["Trench to 6 ft max; two pipe crews leapfrog; trench box both headings."]
+        crew:
+          - { trade: Superintendent, count: 1, days: 8 }
+          - { trade: Pipelayer, count: 2, days: 8 }
+          - { trade: Equipment Operator, count: 1, days: 8 }
+          - { trade: Laborer, count: 2, days: 8 }
+          - { trade: "Excavator, 320 class", count: 1, days: 8 }
+        lines:
+          - { cost_type: equipment, name: Trench box (rental), qty: 11, uom: DAY, unit_price: 185, source: quote, vendor: Rental Vendor B }
+          - { cost_type: material, name: 8-inch ductile iron pipe, qty: 640, uom: LF, unit_price: 42, source: quote, vendor: Pipe Vendor A }
+          - { cost_type: material, name: Bedding rock, qty: 210, uom: TON, unit_price: 31 }
+      - slot: "02"
+        cost_code: "02-200"
+        description: Backfill & compaction
+        notes: ["Native backfill above the pipe zone; 95% relative compaction under pavement."]
+        crew:
+          - { trade: Equipment Operator, count: 1, days: 3 }
+          - { trade: Laborer, count: 2, days: 3 }
+          - { trade: "Loader, 950 class", count: 1, days: 3 }
+          - { trade: Plate compactor, count: 1, days: 3 }
+        lines:
+          - { cost_type: subcontract, name: "Haul, import + export", qty: 460, uom: CY, unit_price: 18, source: plug, package: Hauling }
+
+  - recipe: line_item
+    sheet: 3 - VALVES
+    item_no: "3"
+    description: 8-inch gate valves
+    qty: 4
+    uom: EA
+    takeoff:
+      kind: count
+      units:
+        - { label: Gate valve, count: 4, ref: C-5 }
+    labor:
+      - slot: "01"
+        cost_code: "02-510"
+        description: Set valves and boxes
+        carry: self_perform
+        crew:
+          - { trade: Pipelayer, count: 2, days: 2 }
+          - { trade: Laborer, count: 1, days: 2 }
+        lines:
+          - { cost_type: subcontract, name: Valve boxes (subcontract), qty: 4, uom: EA, unit_price: 650, source: quote, vendor: Precast Vendor C, package: Valves }

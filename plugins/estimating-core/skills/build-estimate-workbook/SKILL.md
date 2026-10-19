@@ -197,6 +197,20 @@ Use this when the user wants to tweak one item (a single Excel sheet's worth of 
    ~/.estimating/bin/est-estimate <path/to/spec.yaml> -o <output.xlsx>
    ```
 
+## Work packages and sub-spreads (fieldbook)
+
+A spec with `work_packages` (vendor-priced scopes: ready-mix, rebar, pipe, hauling) builds one
+`Sub <package>` sheet per package and a `Sub Spreads` summary into the same workbook. Vendor columns
+come from `CanonicalQuote` JSON files in `work_packages_quotes_dir` (default `quotes/` beside the
+spec), matched by `work_package_name`; the estimator picks who to carry with the sheet's selector,
+per-line picks, or a typed CARRY $/unit, and the item sheets and the bid move with it. A blank CARRY
+on a CARRY source shows `#N/A` on purpose (Checks rule 10 fails) rather than pricing the line at 0.
+Manage the packages with `~/.estimating/bin/est-estimate packages init <spec> --from work-packages.yaml --write`,
+`~/.estimating/bin/est-estimate packages sync <spec> [--write]` (tags the lines a vendor would price; never retags a hand-tagged
+line) and `~/.estimating/bin/est-estimate packages coverage <spec>` (what the quotes leave unpriced). The shipped example is
+`examples/demo-packages.estimate.yaml` in the fieldbook pack. See `packs/README.md`, "Package sheets,
+driven cells and their read-back".
+
 ## Workflow — read Excel edits back into the spec (fieldbook)
 
 A workbook built with the fieldbook pack (the bundled default), or with an org pack whose
@@ -262,6 +276,14 @@ stays the source of truth, so those edits are read back into it before the next 
 4. **Rebuild** with the same pack the workbook was built with (step 2 of the hand-authored
    workflow above), and tell the user to reopen the workbook: the new tasks appear in the
    recap and the Checks sheet reads the rebuilt numbers.
+
+   **Package sheets.** Selector, per-line picks, CARRY and surcharge on a `Sub <package>` sheet are
+   read into `work_packages`, and a vendor typed into a spare column (or a price or condition edited
+   under a vendor) becomes a quote-file change, listed under "Packages" and saved by `--write` into
+   the quotes directory. A number typed over a cell a package drives (package line price/Source/Vendor,
+   self-perform crew days and quantities) is a problem: change the selector or the vendor price on the
+   sheet instead. For a workbook built with a pack derived from fieldbook, pass `--format <pack-dir>`
+   (or set the org profile's `estimating.format`) to steps 1 and 3.
 
 5. **Optionally sync to BidSheet.ai** with the `bm-sync` skill. Its base snapshot is the spec
    as of the last BidSheet.ai fetch; when this read-back is the only edit since then, the

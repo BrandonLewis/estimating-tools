@@ -24,6 +24,7 @@ from pathlib import Path
 
 import openpyxl
 import yaml
+from openpyxl.comments import Comment
 from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Protection, Side
 from openpyxl.utils import column_index_from_string, get_column_letter
@@ -38,7 +39,7 @@ from estimating_tools.estimate_spec import recipe as R
 CONFIG_CHECK_GROUP = "estimating_tools.estimate_spec.config_check"
 
 
-def run_config_checks(config):
+def run_config_checks(config, quotes=None):
     """Run consumer-registered pre-render config checks (#256).
 
     A consumer whose policy lives in its own repo (e.g. "every sheet must carry
@@ -47,8 +48,18 @@ def run_config_checks(config):
     of finding strings`. Advisory ONLY: findings are returned prefixed with the
     check name; a check that raises is reported as a finding, never propagated —
     a broken or absent lint must not break the build. Returns [] when none are
-    registered."""
+    registered.
+
+    `quotes` (the CanonicalQuotes the build loaded, or None when none were
+    loaded) adds the built-in package lint: a package with no quote file. The
+    function stays pure; the caller does the loading."""
     findings: list[str] = []
+    if quotes is not None:
+        from estimating_tools.estimate_spec.package_frames import _fold
+        quoted = {_fold(q.work_package_name) for q in quotes}
+        for pkg in config.get("work_packages") or []:
+            if _fold(str(pkg.get("name", ""))) not in quoted:
+                findings.append(f"package '{pkg.get('name')}' has no quote file")
     try:
         eps = entry_points(group=CONFIG_CHECK_GROUP)
     except Exception:
@@ -68,6 +79,37 @@ def run_config_checks(config):
 
 _PLACEHOLDER = re.compile(r"\{([^{}]+)\}")
 _LANDMARK = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)\s*([+-]\s*\d+)?$")
+#: `{c}`, `{c+1}`, `{c-2}`: the current `repeat_cols` base column, offset.
+_BAND_COL = re.compile(r"^c\s*([+-]\s*\d+)?$")
+#: Column landmarks share the unit's landmark dict under this prefix.
+COL_LANDMARK = "col:"
+
+
+#: A literal brace: text marked with `literal()` carries these private-use
+#: characters instead of `{`/`}`, so the fixed-point resolver never reads it
+#: as a placeholder; the writer turns them back into braces in the cell's
+#: value and comment. For text from outside the pack (a quote file's
+#: conditions, say), which must render exactly as typed.
+_LBRACE, _RBRACE = "\ue000", "\ue001"
+_LITERAL_TEXT = "\ue002"
+
+
+def literal(text) -> str:
+    """Text whose braces stay literal and whose leading equals is not a formula."""
+    text = str(text)
+    prefix = _LITERAL_TEXT if text.startswith("=") else ""
+    return prefix + text.replace("{", _LBRACE).replace("}", _RBRACE)
+
+
+def _unliteral(value):
+    if isinstance(value, str):
+        return value.replace(_LBRACE, "{").replace(_RBRACE, "}").replace(_LITERAL_TEXT, "")
+    return value
+
+
+def col_offset(letter, offset):
+    """`letter` moved `offset` columns right (negative: left)."""
+    return get_column_letter(column_index_from_string(letter) + offset)
 _QUOTED_SHEET = re.compile(r"^'(.*)'$", re.DOTALL)
 
 # The separator that opts a {ref:} into another sheet's namespace. A ref key
@@ -88,6 +130,26 @@ def quoted_sheet(sheet):
     can emit the half-escaped form that only fails when the file is opened.
     """
     return f"{QUOTE}{sheet.replace(QUOTE, QUOTE * 2)}{QUOTE}"
+
+
+def sheet_title(name: str, taken: set[str]) -> str:
+    """`name` as a legal, unused Excel sheet title.
+
+    Excel's refused characters ([ ] : * ? / \\) become `-`, the result is cut
+    to Excel's 31 characters, and a title already in `taken` (compared
+    case-insensitively, as Excel does) is suffixed ` (2)`, ` (3)` ... with
+    the stem shortened so the suffix still fits in 31. `taken` is only read;
+    the caller adds the returned title to it.
+    """
+    clean = "".join("-" if c in R._SHEET_NAME_BAD_CHARS else c for c in name)
+    clean = clean[:R._SHEET_NAME_MAX]
+    folded = {t.casefold() for t in taken}
+    title, n = clean, 1
+    while title.casefold() in folded:
+        n += 1
+        suffix = f" ({n})"
+        title = clean[:R._SHEET_NAME_MAX - len(suffix)] + suffix
+    return title
 
 
 def sheet_qualified(sheet, addr):
@@ -135,7 +197,11 @@ class Resolver:
     """Resolve {placeholders} in a cell value/formula for one render context.
 
     Refs always expand to full cell addresses; {r} and {row:NAME} expand to
-    integers that the author prefixes with a literal column letter.
+    integers that the author prefixes with a literal column letter. {col:NAME}
+    (and {col:NAME+N}) expands to a column letter recorded by a row's
+    `mark_cols_first`/`mark_cols_last`; inside a `repeat_cols` band {c} (and
+    {c+N}) is the band's current base column and {v}/{v.field} (or whatever
+    the band's `as:` names) its bound element.
 
     `exports` is the referring sheet's own namespace and is consulted first,
     so every ref a pack can write today resolves exactly as it always has.
@@ -145,10 +211,13 @@ class Resolver:
     """
 
     def __init__(self, *, params=None, item=None, row=None, landmarks=None,
-                 exports=None, globals=None, book_exports=None, where="", pack=None):
+                 exports=None, globals=None, book_exports=None, where="", pack=None,
+                 col=None, binds=None):
         self.params = params or {}
         self.item = item
         self.row = row
+        self.col = col
+        self.binds = binds or {}
         self.book_exports = book_exports
         self.where = where
         self.pack = pack
@@ -196,6 +265,19 @@ class Resolver:
 
         if token.startswith("row:"):
             return str(self._landmark(token[4:]))
+
+        if token.startswith(COL_LANDMARK):
+            return self._col_landmark(token[len(COL_LANDMARK):])
+
+        if self.col is not None:
+            m = _BAND_COL.match(token)
+            if m:
+                return col_offset(self.col, int(m.group(1).replace(" ", "")) if m.group(1) else 0)
+
+        head, _, field = token.partition(".")
+        if head in self.binds:
+            value = self.binds[head]
+            return str(value[field] if field else value)
 
         if token.startswith("ref:"):
             key = token[4:]
@@ -253,6 +335,16 @@ class Resolver:
             )
         return sheet_qualified(sheet, published[name])
 
+    def _col_landmark(self, expr):
+        m = _LANDMARK.match(expr)
+        if not m:
+            raise ValueError(f"malformed column landmark {expr!r}")
+        name, offset = m.group(1), m.group(2)
+        key = COL_LANDMARK + name
+        if key not in self.landmarks:
+            raise ValueError(f"unknown column landmark {name!r}")
+        return col_offset(self.landmarks[key], int(offset.replace(" ", "")) if offset else 0)
+
     def _landmark(self, expr):
         m = _LANDMARK.match(expr)
         if not m:
@@ -271,7 +363,11 @@ class Resolver:
 # =============================================================================
 
 _RESERVED_CELL_KEYS = {"value", "formula", "style", "optional", "if_ref", "if_param", "if_it",
-                        "validation", "ref_error"}
+                        "validation", "ref_error", "comment", "hide_column"}
+
+#: A cell key placed relative to a column landmark (`"{col:vl+2}"`) instead of
+#: at a fixed letter -- for a cell that sits past a `repeat_cols` band.
+_COL_KEY = re.compile(r"^\{col:[^{}]+\}$")
 
 
 class StyleFactory:
@@ -696,6 +792,7 @@ class EstimateBuilder:
         #: (see `_target`). Lets a book-sheet collision (`_run_book`) name
         #: what it collides WITH, not just that it does.
         self.sheet_origin = {}
+        self._book_plan = None        # _book_sheets(): computed once per build
         #: sheet_name -> {instance keys a unit WITH exports has already
         #: published on it}. A second instance publishing the same key would
         #: otherwise silently overwrite the first's exports (see
@@ -707,14 +804,24 @@ class EstimateBuilder:
         #: {kind: [columns]} blanked on `_templates` at the end of `write()`
         #: (see `build_templates`); empty when the pack declares no templates.
         self.template_clear = {}
+        #: (sheet, column) pairs a placed cell's `hide_column: true` hides.
+        self.hidden_cols = set()
 
     # ---- layout helpers ----------------------------------------------------
     def _exp(self, key, addr):
         self.cur_exports[key] = addr
 
     def _place_row(self, cells, sheet, row, params, item, landmarks, merge, fill_row,
-                   merge_down=0, unit=None, conditional=_NO_CONDITIONAL):
+                   merge_down=0, unit=None, conditional=_NO_CONDITIONAL,
+                   band_col=None, binds=None):
         for col, cell in cells.items():
+            if _COL_KEY.match(col):
+                # Placed past a band: the landmark is the unit's own, recorded
+                # by an earlier row or by this row's band (placed first).
+                try:
+                    col = Resolver(landmarks=landmarks).resolve(col)
+                except ValueError as e:
+                    raise R.RecipeError(f"unit {unit!r} cell key {col!r}: {e}") from e
             raw = cell["formula"] if "formula" in cell else cell.get("value")
             overrides = {k: v for k, v in cell.items() if k not in _RESERVED_CELL_KEYS}
             if "if_it" in cell:
@@ -744,13 +851,25 @@ class EstimateBuilder:
                         f"unit {unit!r} cell {col}: ref_error cannot be combined with "
                         "optional -- an optional cell already renders blank instead of "
                         "raising, so ref_error would never fire")
+            if "hide_column" in cell:
+                if not isinstance(cell["hide_column"], bool):
+                    raise R.RecipeError(
+                        f"unit {unit!r} cell {col}: hide_column must be true or false, "
+                        f"got {cell['hide_column']!r}")
+                if cell["hide_column"]:
+                    self.hidden_cols.add((sheet, col))
+            if "comment" in cell and not (isinstance(cell["comment"], str) and cell["comment"]):
+                raise R.RecipeError(
+                    f"unit {unit!r} cell {col}: comment must be a non-empty template, "
+                    f"got {cell['comment']!r}")
             self.placements.append(dict(
-                sheet=sheet, row=row, col=col, raw=raw, unit=unit,
+                sheet=sheet, row=row, col=col, raw=raw, unit=unit, comment=cell.get("comment"),
                 style=cell.get("style", "label"), overrides=overrides,
                 optional=cell.get("optional", False), if_ref=cell.get("if_ref"),
                 if_param=cell.get("if_param"), if_it=cell.get("if_it"),
                 validation=cell.get("validation"), ref_error=cell.get("ref_error"),
                 params=params, item=item, landmarks=landmarks,
+                band_col=band_col, binds=binds,
                 globals=dict(self.sheet_globals.get(sheet, {})),   # snapshot, as item_qty was
             ))
         if merge:
@@ -861,10 +980,82 @@ class EstimateBuilder:
             return bool(params.get(ref[2:]))
         return True
 
+    def _place_band(self, rowdef, sheet, row, params, item, landmarks, unit):
+        """Lay out a row's `repeat_cols:` band, after its fixed cells.
+
+        One block of `width` columns per element of the `over:` list, the
+        i-th starting `i * width` columns right of `start`; each cell is
+        `start + i*width + offset`, resolved with `{c}` = that block's base
+        column and the element bound under `as:` (default `v`). The row's
+        `mark_cols_first`/`mark_cols_last` record the first and last base
+        columns as column landmarks -- or `start` when the list is empty, so
+        a range written across the band stays well-formed with nothing in it.
+        """
+        band = rowdef.get("repeat_cols")
+        if not band:
+            return
+        start, width, name = band["start"], band["width"], band.get("as", "v")
+        bases = []
+        for i, element in enumerate(self._param_list(params, band["over"])):
+            base = col_offset(start, i * width)
+            bases.append(base)
+            cells = {col_offset(base, int(k)): cell for k, cell in band["cells"].items()}
+            self._place_row(cells, sheet, row, params, item, landmarks, None, None,
+                            unit=unit, band_col=base, binds={name: element})
+        if "mark_cols_first" in rowdef:
+            landmarks[COL_LANDMARK + rowdef["mark_cols_first"]] = bases[0] if bases else start
+        if "mark_cols_last" in rowdef:
+            landmarks[COL_LANDMARK + rowdef["mark_cols_last"]] = bases[-1] if bases else start
+
+    def _place_cells(self, rowdef, sheet, r, params, item, landmarks, unit_name):
+        """One row: its fixed cells, then its `repeat_cols` band, then any cell
+        keyed by a column landmark (`"{col:NAME+N}"`), which may name a
+        landmark this row's band has just recorded."""
+        cells = rowdef.get("cells") or {}
+        fixed = {c: v for c, v in cells.items() if not _COL_KEY.match(c)}
+        after = {c: v for c, v in cells.items() if _COL_KEY.match(c)}
+        self._place_row(fixed, sheet, r, params, item, landmarks,
+                        rowdef.get("merge"), rowdef.get("fill_row"),
+                        rowdef.get("merge_down", 0), unit=unit_name,
+                        conditional=rowdef.get("conditional", _NO_CONDITIONAL))
+        self._place_band(rowdef, sheet, r, params, item, landmarks, unit_name)
+        if after:
+            self._place_row(after, sheet, r, params, item, landmarks, None, None, unit=unit_name)
+
+    def _publish_each(self, each_rows, ekey, landmarks, unit_name, sheet):
+        """Publish a `repeat:` row's `export_each:` once per repeated row:
+        `<instance>.<key>.<NAME>`, with `key` expanded from that row's `it`
+        and each NAME's address template resolved at that row's `r`."""
+        where = f"unit {unit_name!r} on sheet {sheet!r} (export_each:)"
+        published = set()
+        for each, it, r in each_rows:
+            res = Resolver(item=it, row=r, landmarks=landmarks, pack=self.pack.name, where=where)
+            try:
+                key = res.resolve(each["key"])
+            except (KeyError, ValueError, TypeError) as e:
+                raise R.RecipeError(
+                    f"{where}: export_each key {each['key']!r} does not resolve for "
+                    f"element {it!r}: {e!r}") from e
+            if key in published:
+                raise R.RecipeError(
+                    f"{where}: export_each key {key!r} is published twice by instance "
+                    f"{ekey!r} -- two repeated rows share it, and the second would "
+                    "silently overwrite the first's exports")
+            published.add(key)
+            for name, tmpl in each["cells"].items():
+                try:
+                    self.cur_exports[f"{ekey}.{key}.{name}"] = res.resolve(tmpl)
+                except CrossSheetRefError:
+                    raise
+                except (KeyError, ValueError) as e:
+                    raise R.RecipeError(
+                        f"{where}: export_each cell {name!r} for {key!r}: {e}") from e
+
     def layout_unit(self, unit_name, sheet, cursor, params, instance_key=None):
         udef = self.units[unit_name]
         params = self._apply_defaults(udef, params)
         landmarks = {}
+        each_rows = []        # (export_each, it, r) per repeated row, published below
         anchor = udef.get("anchor")
         local = [anchor["row"]] if anchor else cursor   # anchored units use their own cursor
         start = local[0]
@@ -880,10 +1071,9 @@ class EstimateBuilder:
                     r = local[0]
                     first = r if first is None else first
                     last = r
-                    self._place_row(rowdef["cells"], sheet, r, params, it, landmarks,
-                                    rowdef.get("merge"), rowdef.get("fill_row"),
-                                    rowdef.get("merge_down", 0), unit=unit_name,
-                                    conditional=rowdef.get("conditional", _NO_CONDITIONAL))
+                    self._place_cells(rowdef, sheet, r, params, it, landmarks, unit_name)
+                    if "export_each" in rowdef:
+                        each_rows.append((rowdef["export_each"], it, r))
                     local[0] += 1
                 if first is not None:
                     if "mark_first" in rowdef:
@@ -894,10 +1084,7 @@ class EstimateBuilder:
             if "when" in rowdef and not self._truthy(params, rowdef["when"]):
                 continue
             r = local[0]
-            self._place_row(rowdef["cells"], sheet, r, params, None, landmarks,
-                            rowdef.get("merge"), rowdef.get("fill_row"),
-                            rowdef.get("merge_down", 0), unit=unit_name,
-                            conditional=rowdef.get("conditional", _NO_CONDITIONAL))
+            self._place_cells(rowdef, sheet, r, params, None, landmarks, unit_name)
             if "mark" in rowdef:
                 landmarks[rowdef["mark"]] = r
             if rowdef.get("box"):
@@ -919,7 +1106,9 @@ class EstimateBuilder:
         # specific guard (`_promote_globals`). Only a non-anchored repeat
         # publishing the same key twice is the silent-overwrite bug this
         # catches.
-        if udef.get("exports") and not anchor:
+        publishes = udef.get("exports") or any(
+            "export_each" in row for row in udef.get("rows", []))
+        if publishes and not anchor:
             seen = self._seen_instance_keys.setdefault(sheet, set())
             if ekey in seen:
                 raise R.RecipeError(
@@ -939,6 +1128,7 @@ class EstimateBuilder:
                 raise      # the one other broad catch: never swallow this one either
             except (KeyError, ValueError):
                 pass  # landmark omitted by a `when:` row -> export simply not published
+        self._publish_each(each_rows, ekey, landmarks, unit_name, sheet)
         return landmarks, (start, end)
 
     # ---- per-sheet build ---------------------------------------------------
@@ -1024,16 +1214,56 @@ class EstimateBuilder:
         through the items that pay for it."""
         return [it for it in self.config["items"] if it.get("in_summary") is not False]
 
+    def _book_sheets(self):
+        """[(sheet def, title, scopes)] for every book sheet to lay out, in order.
+
+        A `for_each` entry yields one sheet per element of its list (none for
+        an empty or absent list), the element in scope as `sheet`; its
+        `sheet_name` template is expanded per element. An entry's own `when:`
+        is checked against those scopes -- per element under `for_each`.
+        Every title goes through `sheet_title`: the static names are reserved
+        first, so a repeated sheet whose title collides with one is the one
+        suffixed. Computed once; `_run_book` and `build_book` share it.
+        """
+        if self._book_plan is not None:
+            return self._book_plan
+        base = {"item": {}, "config": self.config, "span": {}, "exports": {},
+                "book": {"items": self._book_items()}}
+        laid = []
+        for sdef in self.recipes_doc["book"]:
+            if "for_each" not in sdef:
+                laid.append((sdef, [base]))
+                continue
+            seq = R.get_path(base, sdef["for_each"])
+            seq = [] if seq is R.MISSING or seq is None else seq
+            if not isinstance(seq, list):
+                raise R.RecipeError(f"book sheet {sdef['sheet_name']!r}: for_each "
+                                    f"{sdef['for_each']} is not a list")
+            laid.append((sdef, [{**base, "sheet": el} for el in seq]))
+        laid = [(sdef, [s for s in per if R.is_active(sdef, s)]) for sdef, per in laid]
+        taken = {sdef["sheet_name"] for sdef, per in laid if per and "for_each" not in sdef}
+        plan = []
+        for sdef, per in laid:
+            for scopes in per:
+                if "for_each" in sdef:
+                    title = sheet_title(str(R.expand(sdef["sheet_name"], scopes)), taken)
+                    taken.add(title)
+                else:
+                    title = sdef["sheet_name"]
+                plan.append((sdef, title, scopes))
+        self._book_plan = plan
+        return plan
+
     def build_book(self):
         """Lay out the pack's `book:` sheets; return (before_items, after_items) names.
 
-        A book entry's `when:` is checked against THIS sheet's own `scopes`
-        (`exports` scoped to just this one book sheet) -- it cannot see an
-        item sheet's or another book sheet's exports.
+        A unit entry's `when:` on a book sheet is checked against THIS sheet's
+        own `scopes` (`exports` scoped to just this one book sheet) -- it
+        cannot see an item sheet's or another book sheet's exports.
         """
         before, after = [], []
-        for sdef in self.recipes_doc["book"]:
-            sheet = self._target(sdef["sheet_name"])
+        for sdef, title, sheet_scopes in self._book_sheets():
+            sheet = self._target(title)
             widths = sdef.get("column_widths") or {}
             for col, width in widths.items():
                 self.wb[sheet].column_dimensions[col].width = width
@@ -1046,8 +1276,7 @@ class EstimateBuilder:
             if cols:
                 self.fill_span[sheet] = (cols[0], cols[-1])
             self.cur_exports = self.exports[sheet]
-            scopes = {"item": {}, "config": self.config, "span": {},
-                      "exports": self.cur_exports, "book": {"items": self._book_items()}}
+            scopes = {**sheet_scopes, "span": {}, "exports": self.cur_exports}
             cursor = [1]
             for entry in sdef.get("units") or []:
                 if R.is_active(entry, scopes):
@@ -1146,6 +1375,7 @@ class EstimateBuilder:
 
     def _resolver(self, p, where):
         return Resolver(params=p["params"], item=p["item"], row=p["row"],
+                        col=p.get("band_col"), binds=p.get("binds"),
                         landmarks=p["landmarks"], exports=self.exports[p["sheet"]],
                         globals={**{n: None for n in self.globals_decl},
                                  **self.book_globals, **p["globals"]},
@@ -1168,6 +1398,16 @@ class EstimateBuilder:
         for p in self.placements:
             where = f"sheet {p['sheet']!r} cell {p['col']}{p['row']} (unit {p['unit']!r})"
             res = self._resolver(p, where)
+            if "{" in p["style"]:
+                # A style chosen per element (`style: "vendor_{v.role}"`).
+                try:
+                    p["style"] = res.resolve(p["style"])
+                except CrossSheetRefError:
+                    raise
+                except (KeyError, ValueError) as e:
+                    raise R.RecipeError(f"{where}: style {p['style']!r}: {e}") from e
+                if p["style"] not in self.styles.styles:
+                    raise R.RecipeError(f"{where}: style {p['style']!r} is not in tokens.styles")
             if p["if_ref"] and not self._ref_published(p["if_ref"], p["sheet"]):
                 continue
             if p["if_param"] and p["params"].get(p["if_param"]) is None:
@@ -1203,7 +1443,8 @@ class EstimateBuilder:
                             f"{where}: ref_error itself failed to resolve: {e2}") from e2
                     raise R.RecipeError(message) from e
                 raise
-            value = _coerce(value)
+            literal_text = isinstance(value, str) and value.startswith(_LITERAL_TEXT)
+            value = _unliteral(_coerce(value))
             if value == "" or value is None:
                 if p["optional"]:
                     self._lock_blank_cell(p)
@@ -1211,7 +1452,21 @@ class EstimateBuilder:
             ws = self.wb[p["sheet"]]
             cell = ws[f"{p['col']}{p['row']}"]
             cell.value = value
+            if literal_text:
+                cell.data_type = "s"
             self.styles.apply(cell, p["style"], p["overrides"])
+            if p.get("comment"):
+                try:
+                    text = res.resolve(p["comment"])
+                except CrossSheetRefError:
+                    raise
+                except (KeyError, ValueError) as e:
+                    raise R.RecipeError(f"{where}: comment: {e}") from e
+                if text:
+                    cell.comment = Comment(_unliteral(text), "estimate")
+
+        for sheet, col in sorted(self.hidden_cols):
+            self.wb[sheet].column_dimensions[col].hidden = True
 
         # Data validations are grouped by (sheet, formula1, strict): every
         # placement recorded against the same list/range and strictness gets
@@ -1324,11 +1579,12 @@ class EstimateBuilder:
         return self.wb
 
     def _run_book(self):
-        book = self.recipes_doc["book"]
-        # Excel (and openpyxl) treat sheet names case-insensitively -- every
-        # comparison below casefold()s both sides so 'Front' and 'FRONT'
-        # collide exactly as they would in the workbook itself.
-        book_names = {sdef["sheet_name"].casefold() for sdef in book}
+        # Every book sheet as laid out -- a `for_each` entry's expanded titles,
+        # not its template. Excel (and openpyxl) treat sheet names
+        # case-insensitively -- every comparison below casefold()s both sides
+        # so 'Front' and 'FRONT' collide exactly as they would in the workbook.
+        titles = [title for _, title, _ in self._book_sheets()]
+        book_names = {t.casefold(): t for t in titles}
         # openpyxl's own default sheet is just a blank "Sheet" nothing has
         # claimed yet; remove it so that name is ordinary again (an item or
         # a book sheet may use it) and so build_book can create book[0] via
@@ -1349,8 +1605,8 @@ class EstimateBuilder:
             if item["sheet"].casefold() in book_names:
                 raise R.RecipeError(
                     f"item {item['item_no']} ({item['sheet']}): its sheet name "
-                    f"collides with book sheet_name {item['sheet']!r} -- rename "
-                    "one of them"
+                    f"collides with book sheet_name "
+                    f"{book_names[item['sheet'].casefold()]!r} -- rename one of them"
                 )
             self.build_item_sheet(item)
         # Any book sheet_name an item sheet's anchored unit already created
@@ -1358,8 +1614,7 @@ class EstimateBuilder:
         # would otherwise paper over -- `_target` would just reuse that
         # sheet instead of laying the book sheet out on its own.
         existing_by_fold = {s.casefold(): s for s in self.wb.sheetnames}
-        for sdef in book:
-            name = sdef["sheet_name"]
+        for name in titles:
             actual = existing_by_fold.get(name.casefold())
             if actual is not None:
                 origin = self.sheet_origin.get(actual, "an item sheet")
@@ -1503,11 +1758,12 @@ def _write_layout(wb, builder, *, spec_name=None, brand=None) -> None:
     wb.custom_doc_props.append(StringProperty(name="estimate_layout", value=str(LM.LAYOUT_VERSION)))
 
 
-def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None):
+def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None, quotes=None):
     """Render an estimate workbook (openpyxl Workbook) from a config in a format pack.
 
     `pack` defaults to the bundled pack. With `stamp`, the workbook carries the
-    pack's name and version as the custom property `estimate_format`, so any
+    pack lineage stamp (`FormatPack.stamp`, e.g. "arr 1 / fieldbook 2") as the
+    custom property `estimate_format`, so any
     .xlsx traces to the format that produced it, and the spec's own
     fingerprint as `estimate_spec_sha` (`spec_fingerprint`, taken before
     anything reads the config), so read-back can refuse a workbook built
@@ -1519,6 +1775,12 @@ def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None):
     vocabulary refuses (an item_rule, a `false`-schema'd field such as
     fieldbook's `cost_details`/`spreads`) is refused by `build`/the CLI too,
     not only by callers that happen to validate before building.
+
+    A spec with `work_packages` is levelled against `quotes` (CanonicalQuote
+    list; `build` reads them from the spec's quotes directory) into package
+    frames, and the config is replaced by `package_frames.apply_packages`'s
+    transformed copy before anything is laid out -- after validation, so the
+    schema only ever sees the spec as written.
     """
     from openpyxl.packaging.custom import StringProperty
 
@@ -1535,23 +1797,72 @@ def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None):
 
     from estimating_tools.estimate_spec.validate import validate_cross_references
     validate_cross_references(config)
+    if config.get("work_packages"):
+        from estimating_tools.estimate_spec.package_frames import (
+            apply_packages,
+            build_package_frames,
+        )
+        book = (effective_pack.recipes or {}).get("book") or []
+        taken = {sdef["sheet_name"] for sdef in book if "for_each" not in sdef}
+        frames = build_package_frames(
+            config, quotes or [], taken=taken,
+            spare_columns=config.get("work_packages_spare_vendor_columns", 4))
+        config = apply_packages(config, frames, shift_hours=config.get("shift_hours", 8))
     builder = EstimateBuilder(config, pack, navigator=stamp)
-    wb = builder.run()
+    try:
+        wb = builder.run()
+    except (ValueError, KeyError) as exc:
+        _blame_quote_text(exc, quotes if config.get("_packages") else None)
+        raise
     if stamp:
         wb.custom_doc_props.append(StringProperty(
-            name="estimate_format", value=f"{builder.pack.name} {builder.pack.version}"))
+            name="estimate_format", value=builder.pack.stamp))
         wb.custom_doc_props.append(StringProperty(name="estimate_spec_sha", value=fingerprint))
         if builder.pack.layout_map:
             _write_layout(wb, builder, spec_name=spec_name, brand=brand)
     return wb
 
 
+def _quote_texts(q):
+    """Every free text a quote file carries into a package sheet."""
+    yield from (q.quote_ref, q.notes, q.contact_info)
+    for k, v in (q.conditions or {}).items():
+        yield k
+        yield v
+    for ln in q.lines or []:
+        yield from (ln.line_name, ln.exclusion_notes, ln.folded_into)
+
+
+def _blame_quote_text(exc, quotes) -> None:
+    """Re-raise a resolver failure whose placeholder came from a quote file's
+    text as a PackageError naming that file (quote text is bound literally,
+    so this is a guard: no quote text should ever reach the resolver)."""
+    if not quotes:
+        return
+    from estimating_tools.estimate_spec.package_frames import PackageError
+
+    tokens = re.findall(r"\{[^{}]+\}", str(exc))
+    for q in quotes:
+        for text in _quote_texts(q):
+            for token in tokens:
+                if isinstance(text, str) and token in text:
+                    where = getattr(q, "source_file", None) or f"{q.vendor_name}'s quote"
+                    raise PackageError(f"{where}: text {token} cannot be rendered") from exc
+
+
 def build(config_path, out_path=None, pack=None, *, stamp=True, lint=True, brand=None):
     config = yaml.safe_load(Path(config_path).read_text(encoding="utf-8"))
+    quotes = None
+    if config.get("work_packages"):
+        from estimating_tools.quotes.files import load_quotes
+        quotes = load_quotes(Path(config_path).parent
+                             / config.get("work_packages_quotes_dir", "quotes"))
     if lint:
-        for finding in run_config_checks(config):
+        for finding in (run_config_checks(config) if quotes is None
+                        else run_config_checks(config, quotes)):
             print(f"lint: {finding}", file=sys.stderr)
-    wb = generate(config, pack, stamp=stamp, spec_name=Path(config_path).name, brand=brand)
+    wb = generate(config, pack, stamp=stamp, spec_name=Path(config_path).name, brand=brand,
+                  quotes=quotes)
     out = out_path or config.get("output") or (Path(config_path).with_suffix(".xlsx"))
     wb.save(out)
     return out
