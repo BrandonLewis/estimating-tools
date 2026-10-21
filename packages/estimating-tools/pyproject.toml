@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "estimating_tools"
-version = "0.1.92"
+version = "0.1.94"
 description = "Deterministic construction estimating and engineering tools."
 readme = "README.md"
 license = "Apache-2.0"
@@ -93,4 +93,4 @@ exclude = [
 "estimating_tools.profiles" = ["schema/*.json", "trees/*.yaml"]
 "estimating_tools.importers" = ["schema/*.json"]
 "estimating_tools.artifact_app" = ["*.html"]
-"estimating_tools.addin" = ["*.tmpl"]
+"estimating_tools.addin" = ["*.tmpl", "assets/*.svg", "assets/*.png"]

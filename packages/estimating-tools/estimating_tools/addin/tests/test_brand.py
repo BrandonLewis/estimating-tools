@@ -38,6 +38,23 @@ def test_an_empty_profile_is_the_generic_brand(tmp_path):
     assert AB.brand_from_profile(Profile(data={}), tmp_path) == AB.GENERIC
 
 
+def test_generic_brand_build_includes_every_referenced_asset(tmp_path):
+    assert main(["brand", "-o", str(tmp_path)]) == 0
+    brand = json.loads((tmp_path / "brand.json").read_text())
+    for relative in (brand["logo"], *brand["icons"].values()):
+        path = tmp_path / relative
+        assert path.is_file(), relative
+        assert path.stat().st_size > 0
+
+
+def test_branded_profile_without_a_logo_copies_its_generic_fallback(tmp_path):
+    profile = FULL.replace("letterhead: { logo: logo.svg }\n", "")
+    out = tmp_path / "out"
+    assert main(["brand", "--profile", _profile_dir(tmp_path, profile), "-o", str(out)]) == 0
+    brand = json.loads((out / "brand.json").read_text())
+    assert (out / brand["logo"]).is_file()
+
+
 def test_a_profile_brand_overrides_and_copies_its_assets(tmp_path):
     out = tmp_path / "out"
     assert main(["brand", "--profile", _profile_dir(tmp_path, FULL), "-o", str(out)]) == 0

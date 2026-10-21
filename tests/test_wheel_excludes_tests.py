@@ -30,6 +30,7 @@ Lives in the repo-root tests/ on purpose — CI's pytest paths are
 from __future__ import annotations
 
 import fnmatch
+import json
 import sys
 import zipfile
 from pathlib import Path
@@ -146,6 +147,15 @@ def test_the_fresh_wheel_ships_the_manifest_template(freshly_built_wheel):
         f"{freshly_built_wheel.name} does not ship the manifest template — fix the "
         "[tool.setuptools.package-data] globs in "
         "packages/estimating-tools/pyproject.toml")
+
+
+def test_the_fresh_wheel_ships_generic_brand_assets(freshly_built_wheel):
+    brand = json.loads((ROOT / "excel-addin/brand/brand.json").read_text())
+    with zipfile.ZipFile(freshly_built_wheel) as wheel:
+        for relative in (brand["logo"], *brand["icons"].values()):
+            member = f"estimating_tools/addin/{relative}"
+            assert member in wheel.namelist(), f"generic brand is missing {relative}"
+            assert wheel.read(member) == (ROOT / "excel-addin/brand" / relative).read_bytes()
 
 
 def test_the_deleted_format_layout_is_not_resurrected(freshly_built_wheel):
