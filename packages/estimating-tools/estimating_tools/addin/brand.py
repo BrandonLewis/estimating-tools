@@ -11,6 +11,7 @@ import copy
 import json
 import re
 import shutil
+from importlib.resources import files
 from pathlib import Path
 
 ICON_SIZES = (16, 32, 64, 80, 128)
@@ -80,6 +81,12 @@ def _copy(src: str, out_dir: Path, name: str) -> str:
     return f"assets/{name}"
 
 
+def _copy_generic(relative: str, out_dir: Path) -> None:
+    dest = Path(out_dir) / relative
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(files("estimating_tools.addin").joinpath(relative).read_bytes())
+
+
 def _copy_icon(field: str, src: str, out_dir: Path, name: str) -> str:
     try:
         head = Path(src).open("rb").read(len(_PNG_MAGIC))
@@ -102,6 +109,8 @@ def brand_from_profile(profile, out_dir) -> dict:
     sect = profile.section("brand")
     b = copy.deepcopy(GENERIC)
     if not sect:
+        for relative in (b["logo"], *b["icons"].values()):
+            _copy_generic(relative, out_dir)
         return b
     b.update(render_names(sect, profile.data.get("name")))
     for key in ("provider", "description", "support_url"):
@@ -110,6 +119,8 @@ def brand_from_profile(profile, out_dir) -> dict:
     logo = sect.get("logo") or profile.section("letterhead").get("logo")
     if logo:
         b["logo"] = _copy(logo, out_dir, "logo" + Path(logo).suffix.lower())
+    else:
+        _copy_generic(b["logo"], out_dir)
     missing = [f"icon_{n}" for n in ICON_SIZES if not sect.get(f"icon_{n}")]
     if missing:
         raise BrandError(f"a branded build needs its own icons; the profile's brand: "
