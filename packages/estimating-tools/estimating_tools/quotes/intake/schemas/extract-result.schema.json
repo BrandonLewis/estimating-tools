@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Quote intake extract results",
+  "type": "object",
+  "required": ["stage", "schema_version", "results"],
+  "additionalProperties": false,
+  "properties": {
+    "stage": {"const": "extract"},
+    "schema_version": {"type": "integer", "minimum": 1},
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sha256", "doc_type"],
+        "additionalProperties": false,
+        "properties": {
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "doc_type": {"enum": ["quote", "not_quote", "unreadable"]},
+          "reason": {"type": ["string", "null"]},
+          "vendor_name": {"type": ["string", "null"], "minLength": 1},
+          "work_package_name": {"type": ["string", "null"]},
+          "quote_date": {"type": ["string", "null"]},
+          "quote_ref": {"type": ["string", "null"]},
+          "contact_info": {"type": ["string", "null"]},
+          "is_dbe": {"type": ["boolean", "null"]},
+          "surcharge": {"type": ["number", "null"]},
+          "total_amount": {"type": ["number", "null"]},
+          "total_covers_unpriced": {"type": ["boolean", "null"]},
+          "conditions": {"type": "object", "additionalProperties": {"type": "string"}},
+          "needs_review": {"type": "array", "items": {"type": "string"}},
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["description", "item_number"],
+              "additionalProperties": false,
+              "properties": {
+                "description": {"type": "string", "minLength": 1},
+                "item_number": {"type": "string"},
+                "line_name": {"type": ["string", "null"]},
+                "unit_price": {"type": ["number", "null"]},
+                "quantity": {"type": ["number", "null"]},
+                "unit": {"type": ["string", "null"]},
+                "quantity_basis": {"type": ["string", "null"]},
+                "freight_unit_price": {"type": ["number", "null"]},
+                "extension": {"type": ["number", "null"]},
+                "is_included": {"type": ["boolean", "null"]},
+                "exclusion_note": {"type": ["string", "null"], "maxLength": 500},
+                "folded_into": {"type": ["string", "null"]},
+                "is_alternate": {"type": ["boolean", "null"]},
+                "page": {"type": ["integer", "null"], "minimum": 1},
+                "review": {"type": ["string", "null"]}
+              }
+            }
+          },
+          "extras": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["description"],
+              "additionalProperties": false,
+              "properties": {
+                "description": {"type": "string", "minLength": 1},
+                "printed_price": {"type": ["number", "null"]},
+                "printed_unit": {"type": ["string", "null"]},
+                "printed_quantity": {"type": ["number", "null"]},
+                "page": {"type": ["integer", "null"]}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

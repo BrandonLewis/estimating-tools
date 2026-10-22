@@ -49,3 +49,5 @@ The strategy values:
   the split implied.
 - undecided — Haven't decided yet. Flag for the estimator to decide; never
   silently default a package's strategy.
+
+Quotes that arrive as documents (PDF, email, spreadsheet) are turned into the spec's quote files by the `intake-quotes` skill.

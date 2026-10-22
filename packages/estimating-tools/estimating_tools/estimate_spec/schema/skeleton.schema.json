@@ -71,6 +71,7 @@
     },
     "work_packages": { "type": "array", "items": { "$ref": "#/$defs/work_package" }, "description": "Vendor-quote scopes levelled on bid day; task lines join one through line.package." },
     "work_packages_quotes_dir": { "type": "string", "default": "quotes", "description": "Directory holding the vendor quote JSON files, relative to the spec." },
+    "work_packages_inbox_dir": { "type": "string", "default": "../Subquotes/inbox", "description": "Folder the estimator saves quote documents to; est-quotes scans it. Relative to the spec." },
     "work_packages_spare_vendor_columns": { "type": "integer", "minimum": 0, "default": 4, "description": "Empty vendor columns each spread sheet keeps for quotes that arrive late." },
     "crews": {
       "type": "array",

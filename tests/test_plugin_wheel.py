@@ -28,7 +28,7 @@ def test_plugin_core_extra_matches_skill_dependency_union():
     # ruamel.yaml: build-estimate-workbook's read-back flow runs
     # `est-estimate read-back --write`, which rewrites the spec round-trip.
     assert set(extras["plugin-core"]) == {
-        "openpyxl", "jsonschema", "pdfplumber", "mcp>=2,<3", "ruamel.yaml>=0.18,<0.20"
+        "openpyxl", "jsonschema", "pdfplumber", "python-docx", "mcp>=2,<3", "ruamel.yaml>=0.18,<0.20"
     }
 
 

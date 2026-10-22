@@ -1,0 +1,139 @@
+# HeavyCivil sheet look. Structure (which columns exist, their order, the
+# hidden id/v columns) is fixed in heavycivil/columns.py; a style file may
+# rename a heading, change a width, or hide an optional column.
+meta:
+  name: heavycivil
+  version: 1
+sheets:
+  bid_form:
+    tab: Bid Form
+    tab_color: 1747B5
+    freeze: C13
+    print: { orientation: landscape, fit_width: true, title_rows: '12:12' }
+  recap:
+    tab: Recap
+    tab_color: A0702A
+    freeze: C5
+    print: { orientation: landscape, fit_width: true, title_rows: '4:4' }
+  cost_report:
+    tab: Cost Report
+    tab_color: 7A4E12
+    freeze: C5
+    print: { orientation: landscape, fit_width: true, title_rows: '4:4' }
+  crews:
+    tab: Crews
+    tab_color: 5A3A0E
+    freeze: B5
+    print: { orientation: landscape, fit_width: true, title_rows: '4:4' }
+  rates:
+    tab: Rates
+    tab_color: 8C8C84
+    freeze: A3
+    print: { orientation: portrait, fit_width: true, title_rows: '' }
+  schedule:
+    tab: Schedule
+    tab_color: C98A2B
+    freeze: G5
+    print: { orientation: landscape, fit_width: true, title_rows: '4:4' }
+  checks:
+    tab: Checks
+    tab_color: 1D7A46
+    freeze: A5
+    print: { orientation: landscape, fit_width: true, title_rows: '4:4' }
+  flat:
+    tab: Flat
+    tab_color: 4F5A63
+    freeze: A5
+    print: { orientation: portrait, fit_width: true, title_rows: '4:4' }
+columns:
+  bid_form:
+    item: { width: 10 }
+    description: { width: 40 }
+    schedule: { width: 10 }
+    quantity: { width: 12 }
+    unit: { width: 7 }
+    scope: { width: 11 }
+    override: { width: 13 }
+    unit_price: { width: 13 }
+    total: { width: 14 }
+  recap:
+    item: { width: 10 }
+    description: { width: 36 }
+    quantity: { width: 12 }
+    unit: { width: 7 }
+    manhours: { width: 10 }
+    labor: { width: 12 }
+    equipment: { width: 12 }
+    material: { width: 12 }
+    subcontract: { width: 12, show: true }
+    other: { width: 11, show: true }
+    direct: { width: 13 }
+    unit_cost: { width: 11 }
+    bid_unit_price: { width: 13 }
+    bid_total: { width: 14 }
+  cost_report:
+    code: { width: 12 }
+    description: { width: 38 }
+    quantity: { width: 12 }
+    unit: { width: 7 }
+    unit_cost: { width: 11 }
+    production: { width: 10 }
+    production_unit: { width: 9 }
+    hours_per_shift: { width: 8, show: true }
+    crew_factor: { width: 8, show: true }
+    shifts: { width: 8 }
+    count: { width: 7 }
+    manhours: { width: 10 }
+    labor: { width: 12 }
+    equipment: { width: 12 }
+    material: { width: 12 }
+    subcontract: { width: 12, show: true }
+    other: { width: 11, show: true }
+    total: { width: 13 }
+    type: { width: 12 }
+    labor_basis: { width: 10, show: true }
+    burden_pct: { width: 8, show: true }
+    burden_included: { width: 8, show: true }
+  crews:
+    code: { width: 14 }
+    name: { width: 30 }
+    count: { width: 8 }
+    library_rate: { width: 11 }
+    override: { width: 11 }
+    effective: { width: 11 }
+    hours_per_shift: { width: 9 }
+    crew_factor: { width: 9 }
+    headcount: { width: 10 }
+    hourly_rate: { width: 12 }
+  rates:
+    id: { width: 8 }
+    name: { width: 34 }
+    unit: { width: 8 }
+    rate: { width: 12 }
+  checks:
+    kind: { width: 11 }
+    code: { width: 12 }
+    description: { width: 36 }
+    measure: { width: 11 }
+    excel: { width: 14 }
+    bidsheet: { width: 14 }
+    difference: { width: 12 }
+    tolerance: { width: 10 }
+    status: { width: 9 }
+  schedule:
+    code: { width: 12 }
+    activity: { width: 32 }
+    item: { width: 10 }
+    start: { width: 11 }
+    duration: { width: 7 }
+    finish: { width: 11 }
+  flat:
+    item: { width: 10 }
+    code: { width: 12 }
+    activity: { width: 28 }
+    line: { width: 30 }
+    type: { width: 12 }
+    quantity: { width: 12 }
+    unit: { width: 7 }
+    manhours: { width: 10 }
+    cost: { width: 13 }
