@@ -149,6 +149,14 @@ def test_the_fresh_wheel_ships_the_manifest_template(freshly_built_wheel):
         "packages/estimating-tools/pyproject.toml")
 
 
+def test_the_fresh_wheel_ships_quote_intake_contract(freshly_built_wheel):
+    with zipfile.ZipFile(freshly_built_wheel) as wheel:
+        for relative in ("prompts/extract.md", "schemas/extract-result.schema.json"):
+            member = f"estimating_tools/quotes/intake/{relative}"
+            assert wheel.read(member) == (
+                PACKAGE_DIR / member).read_bytes()
+
+
 def test_the_fresh_wheel_ships_generic_brand_assets(freshly_built_wheel):
     brand = json.loads((ROOT / "excel-addin/brand/brand.json").read_text())
     with zipfile.ZipFile(freshly_built_wheel) as wheel:

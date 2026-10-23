@@ -28,7 +28,7 @@ docgen = ["docxtpl", "python-docx", "markdown-it-py", "openpyxl"]
 profiles = ["jsonschema", "pyyaml"]
 intake = ["pyyaml"]
 importers = ["openpyxl", "jsonschema"]
-plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "mcp>=2,<3", "ruamel.yaml>=0.18,<0.20"]
+plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "python-docx", "mcp>=2,<3", "ruamel.yaml>=0.18,<0.20"]
 # Test-only: pycel evaluates the workbooks the test suite builds. Never in
 # `all` -- pycel 1.0b30 carries CVE-2024-53924 (evaluating an untrusted
 # workbook runs code), and `all` is what users install. Pinned to 1.0b30.x:
@@ -59,6 +59,7 @@ est-scaffold = "estimating_tools.profiles.scaffold:main"
 est-intake = "estimating_tools.intake.cli:main"
 est-rebar = "estimating_tools.rebar.cli:main"
 est-quotespace = "estimating_tools.quotespace.cli:main"
+est-quotes = "estimating_tools.quotes.intake.cli:main"
 profile-init = "estimating_tools.profiles.cli:main"
 est-import = "estimating_tools.importers.cli:main"
 rate-import = "estimating_tools.rates.cli:main"
@@ -91,6 +92,8 @@ exclude = [
                                     "packs/*/*.yaml", "packs/*/examples/*.yaml",
                                     "packs/*/examples/quotes/*.json"]
 "estimating_tools.profiles" = ["schema/*.json", "trees/*.yaml"]
+"estimating_tools.heavycivil" = ["style/*.yaml"]
+"estimating_tools.quotes.intake" = ["prompts/*.md", "schemas/*.json"]
 "estimating_tools.importers" = ["schema/*.json"]
 "estimating_tools.artifact_app" = ["*.html"]
 "estimating_tools.addin" = ["*.tmpl", "assets/*.svg", "assets/*.png"]

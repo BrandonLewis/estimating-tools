@@ -32,6 +32,7 @@ def test_a_packaged_spec_validates_against_the_fieldbook_schema():
     spec["work_packages"][0].update(strategy="hybrid", selected="ARR", picks={"2": "ARR"},
                                     carry={"2": 100.0}, surcharge={"2": 5})
     spec["work_packages_quotes_dir"] = "quotes"
+    spec["work_packages_inbox_dir"] = "../Subquotes/inbox"
     spec["work_packages_spare_vendor_columns"] = 4
     next(b for i in spec["items"] if i["item_no"] == "2" for b in i["labor"])["carry"] = "self_perform"
     scaffold.validate_spec(spec, pack=fieldbook_pack())

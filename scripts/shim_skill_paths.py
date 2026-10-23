@@ -42,7 +42,7 @@ BIN = "~/.estimating/bin/"
 #: Every console script our two wheels declare, plus the runtime's own shims.
 SCRIPTS = ["est-bim", "est-sheets", "est-estimate", "est-takeoff", "est-import",
            "est-hist", "est-gantt", "est-schedule",
-           "est-scaffold", "est-intake", "est-rebar", "est-quotespace",
+           "est-scaffold", "est-intake", "est-rebar", "est-quotespace", "est-quotes",
            "est-letterhead", "est-artifact-app", "asm-import", "asm-load",
            "dir-import", "dir-sync", "rate-import", "costcode-import",
            "profile-init", "m2m-token", "est-feedback", "est-python", "ensure-extra"]

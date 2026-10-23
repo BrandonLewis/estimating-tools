@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 from datetime import date, datetime, timezone
@@ -36,7 +37,7 @@ from pathlib import Path
 import yaml
 
 _SUBCOMMANDS = ("build", "scaffold", "apply-takeoff", "scaffold-save",
-                "cip-buildup", "summarize", "read-back", "packages")
+                "cip-buildup", "summarize", "read-back", "packages", "heavycivil")
 
 
 def cmd_build(args) -> int:
@@ -114,6 +115,60 @@ def cmd_cip(args) -> int:
     return 0
 
 
+def cmd_heavycivil_build(args) -> int:
+    """Render a get_estimate_workbook JSON (BidSheet.ai) to a HeavyCivil
+    workbook. Writes nothing on any refusal."""
+    from datetime import datetime, timezone
+
+    from estimating_tools.heavycivil import build as hc_build
+    from estimating_tools.heavycivil.model import PayloadError, merge_pages
+    from estimating_tools.heavycivil.style import StyleError, resolve_style
+
+    srcs = [Path(p) for p in args.workbook_json]
+    docs = []
+    for src in srcs:
+        try:
+            docs.append(json.loads(src.read_text(encoding="utf-8")))
+        except FileNotFoundError:
+            print(f"no such file: {src}", file=sys.stderr)
+            return 1
+        except json.JSONDecodeError as exc:
+            print(f"invalid JSON in {src}: {exc}", file=sys.stderr)
+            return 1
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"could not read {src}: {exc}", file=sys.stderr)
+            return 1
+    src = srcs[0]
+    from estimating_tools.estimate_spec.format_pack import FormatPackError
+    try:
+        # Strict, like --format: a profile that names a style but fails to
+        # load is an error, never a silent fall back to the bundled style.
+        profile = None if args.style else _profile_for_pack("heavycivil_style")
+        style = resolve_style(args.style, profile)
+    except FormatPackError as exc:
+        print(f"org profile refused: {exc}", file=sys.stderr)
+        return 1
+    except StyleError as exc:
+        print(f"style pack refused: {exc}", file=sys.stderr)
+        return 1
+    stem = src.name[:-len(".json")] if src.name.endswith(".json") else src.stem
+    stem = re.sub(r"\.p\d+$", "", stem)
+    out = Path(args.output) if args.output else src.with_name(stem + ".xlsx")
+    exported_at = args.exported_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        book = hc_build.build(merge_pages(docs), style=style, exported_at=exported_at, host=args.host)
+    except PayloadError as exc:
+        print(f"payload refused: {exc}", file=sys.stderr)
+        return 1
+    try:
+        hc_build.save(book, out)
+    except OSError as exc:
+        print(f"could not write the workbook: {exc}", file=sys.stderr)
+        return 1
+    print("WROTE:", out)
+    return 0
+
+
 def cmd_summarize(args) -> int:
     from estimating_tools.estimate_spec.format_pack import FormatPackError, require_support
     from estimating_tools.estimate_spec.summarize import (
@@ -155,14 +210,15 @@ def _load_profile():
         return Profile(data={})
 
 
-def _profile_for_pack():
+def _profile_for_pack(field="format"):
     """The org profile, loaded strictly for pack resolution (Decision 5).
 
     With no profile directory configured this is the empty profile. When
     ESTIMATING_PROFILES names at least one directory, a profile that fails to
-    load, or one whose raw profile.yaml sets `estimating.format` that field
+    load, or one whose raw profile.yaml sets `estimating.<field>` that field
     validation then dropped, raises FormatPackError — a pack the org named is
-    never silently replaced by the bundled one.
+    never silently replaced by the bundled one. ``field`` is `format` for
+    format packs and `heavycivil_style` for HeavyCivil style packs.
     """
     from estimating_tools.estimate_spec.format_pack import FormatPackError
     from estimating_tools.profiles.model import Profile
@@ -181,10 +237,10 @@ def _profile_for_pack():
             # masked by another layer's valid one.
             raw = yaml.safe_load((Path(d) / "profile.yaml").read_text(encoding="utf-8"))
             est = raw.get("estimating") if isinstance(raw, dict) else None
-            if (isinstance(est, dict) and est.get("format")
-                    and not (load_one(d).get("estimating") or {}).get("format")):
+            if (isinstance(est, dict) and est.get(field)
+                    and not (load_one(d).get("estimating") or {}).get(field)):
                 raise FormatPackError(
-                    f"profile {d} sets estimating.format but its estimating "
+                    f"profile {d} sets estimating.{field} but its estimating "
                     "section failed validation and was dropped (see the warning)")
     except FormatPackError:
         raise
@@ -702,6 +758,24 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("-o", "--output",
                    help='output .xlsx path (overrides config "output")')
     p.set_defaults(func=cmd_cip)
+
+    p = sub.add_parser("heavycivil",
+                       help="HeavyCivil workbook: render BidSheet.ai's estimate "
+                            "workbook payload (get_estimate_workbook JSON).")
+    hsub = p.add_subparsers(dest="heavycivil_command", required=True)
+    q = hsub.add_parser("build", help="Render a get_estimate_workbook JSON to .xlsx.")
+    q.add_argument("workbook_json", nargs="+",
+                   help="one or more saved get_estimate_workbook responses "
+                        "(pages of one estimate)")
+    q.add_argument("-o", "--output", help="output .xlsx (default: next to the JSON)")
+    q.add_argument("--style", default=None,
+                   help="style pack directory (tokens.yaml and/or sheets.yaml; default: the "
+                        "org profile's estimating.heavycivil_style, else the bundled style)")
+    q.add_argument("--exported-at", default=None,
+                   help="export timestamp to stamp (default: now, UTC)")
+    q.add_argument("--host", default="www.bidsheet.ai",
+                   help="BidSheet.ai host the payload came from (stamped for read-back)")
+    q.set_defaults(func=cmd_heavycivil_build)
 
     p = sub.add_parser("summarize",
                        help="Price a *.estimate.yaml in pure Python and print "

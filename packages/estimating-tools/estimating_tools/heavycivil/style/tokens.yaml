@@ -1,0 +1,103 @@
+# HeavyCivil's palette, "Haul road": ochre bands, slate type, inputs blue on
+# pale yellow (the same input convention as fieldbook, so an estimator moving
+# between the two books reads inputs the same way). Same schema as
+# estimate_spec/packs/fieldbook/tokens.yaml; rendered by StyleFactory.
+meta:
+  name: heavycivil
+  version: 1
+  base_font: { name: Arial, size: 10 }
+
+fills:
+  band:     '7A4E12'   # title band, crew header
+  colhead:  'EADFC8'   # column heads
+  item:     'F3EBDA'   # item rows
+  activity: 'FAF6EE'   # activity rows
+  group:    'D9CBAE'   # "Unassigned elements" group
+  input:    'FFF8DC'   # every input cell
+  export:   'F2F2F0'   # a BidSheet.ai figure shown as of export
+  note:     'FBF9F4'
+  ok_bg:    'E3F1E8'
+  bad_bg:   'FBE4E2'
+  bar:      'C98A2B'   # a schedule bar's working days
+  section:  'EFE6D2'   # a Bid Form section heading
+
+font_colors:
+  white:   'FFFFFF'
+  ink:     '23272B'
+  heading: '5A3A0E'
+  input:   '1747B5'
+  muted:   '6B7075'
+  ok:      '1D7A46'
+  bad:     'B42318'
+
+font_sizes:
+  title: 13
+  body:  10
+  small:  8
+
+borders:
+  top_rule:  { style: thin,   sides: [top] }
+  total_box: { style: double, sides: [top] }
+
+number_formats:
+  money:  '#,##0.00;(#,##0.00);""'
+  qty:    '#,##0.00'
+  hours:  '#,##0.0'
+  rate:   '#,##0.00'
+  factor: '0.000'
+  factor_fine: '0.0000000000'   # Checks: a bid factor to BidSheet.ai's 10 places
+  pct:    '0.00'
+  count:  'General'
+  date:   'yyyy-mm-dd'
+
+alignments:
+  center: { horizontal: center }
+  right:  { horizontal: right }
+  left:   { horizontal: left }
+
+styles:
+  title:          { fill: band, font_color: white, bold: true, size: title }
+  subtitle:       { font_color: muted, italic: true }
+  head:           { fill: colhead, font_color: heading, bold: true, align: center }
+  label:          { font_color: ink }
+  label_bold:     { font_color: ink, bold: true }
+  note:           { fill: note, italic: true, font_color: muted }
+  banner:         { fill: note, italic: true, font_color: heading }
+  group:          { fill: group, font_color: heading, bold: true }
+  item_text:      { fill: item, font_color: ink, bold: true }
+  item_money:     { fill: item, bold: true, number_format: money }
+  item_qty:       { fill: item, number_format: qty }
+  activity_text:  { fill: activity, font_color: heading, bold: true }
+  activity_money: { fill: activity, bold: true, number_format: money }
+  activity_hours: { fill: activity, number_format: hours }
+  crew_head:      { fill: band, font_color: white, bold: true }
+  crew_money:     { fill: band, font_color: white, bold: true, number_format: rate }
+  input_text:     { fill: input, font_color: input }
+  input_qty:      { fill: input, font_color: input, number_format: qty }
+  input_money:    { fill: input, font_color: input, number_format: rate }
+  input_factor:   { fill: input, font_color: input, number_format: factor }
+  input_pct:      { fill: input, font_color: input, number_format: pct }
+  input_count:    { fill: input, font_color: input, number_format: count, align: center }
+  input_flag:     { fill: input, font_color: input, align: center }
+  export_value:   { fill: export, italic: true, font_color: muted, number_format: qty }
+  export_money:   { fill: export, italic: true, font_color: muted, number_format: money }
+  calc_qty:       { number_format: qty }
+  calc_money:     { number_format: money }
+  calc_rate:      { number_format: rate }
+  calc_factor:    { number_format: factor }
+  calc_hours:     { number_format: hours }
+  calc_text:      { font_color: muted, align: center }
+  tag:            { font_color: muted, size: small }
+  status:         { bold: true, align: center }
+  status_ok:      { font_color: ok, fill: ok_bg, bold: true }
+  status_bad:     { font_color: bad, fill: bad_bg, bold: true }
+  section_text:   { fill: section, font_color: heading, bold: true }
+  schedule_bar:   { fill: bar }
+  calc_date:      { number_format: date, align: center }
+  export_date:    { fill: export, italic: true, font_color: muted, number_format: date, align: center }
+  total_label:    { fill: band, font_color: white, bold: true, border: total_box }
+  total_money:    { fill: band, font_color: white, bold: true, border: total_box, number_format: money }
+  total_hours:    { fill: band, font_color: white, bold: true, border: total_box, number_format: hours }
+  calc_factor_fine:   { number_format: factor_fine }
+  export_factor_fine: { fill: export, italic: true, font_color: muted, number_format: factor_fine }
+  input_select:   { fill: input, font_color: input, bold: true, align: center }

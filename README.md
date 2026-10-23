@@ -29,6 +29,7 @@ Level a work package's subcontractor quotes into a spread with the best price pe
 ```bash
 pip install 'estimating_tools[all]'
 est-quotespace --help          # the quote board and leveling tools
+est-quotes --help              # quote documents in a folder -> vendor quote files
 ```
 
 **As an MCP tool call** from any agent runtime connected to BidSheet.ai:
@@ -100,6 +101,7 @@ templates/                   starting points: an org profile, a calculator plugi
 data/caltrans-2025/          transcribed Caltrans 2025 standard-plan tables (public-agency source)
 scripts/                     wheel bundling, drift guards, the provenance scanner, Caltrans tooling
 tests/                       repository-level guards
+docs/tutorials/              worked examples, start to finish
 ```
 
 `ARCHITECTURE.md` explains the layers and why the boundaries sit where they do.
@@ -114,7 +116,7 @@ A bid runs through the skills roughly in this order; every one is also a CLI.
 | start | `intake-project`, `project-briefing`, `scaffold-project` | `est-intake`, `est-scaffold` |
 | quantities | `quantity-takeoff`, `measure-plans`, `read-station-plans`, `earthwork-takeoff`, `rebar-schedule`, `dxf-to-bim`, `bim-to-takeoff`, `audit-quantities`, `push-takeoff` | `est-takeoff`, `est-rebar`, `est-bim` |
 | estimate | `estimate-project`, `build-estimate-workbook`, `build-assemblies`, `price-estimate`, `bm-sync`, `save-scaffolds`, `estimate-template` | `est-estimate`, `est-hist` |
-| quotes | `solicit-quotes`, `capture-quote`, `compare-quotes`, `compare-item-quotes`, `quote-coverage`, `apply-quotes`, `manage-work-packages` | `est-quotespace` |
+| quotes | `solicit-quotes`, `capture-quote`, `compare-quotes`, `compare-item-quotes`, `quote-coverage`, `apply-quotes`, `manage-work-packages` | `est-quotespace`, `est-quotes` |
 | schedule | `schedule-export`, `cost-load-schedule`, `stage-model` | `est-schedule`, `est-gantt` |
 | documents | `draft-an-rfi`, `subcontract-risk-review`, `pdf-extraction`, `excel-automation` | `est-letterhead` |
 | onboarding | `import-estimate`, `import-assemblies`, `import-rates`, `import-cost-codes`, `import-directory`, `import-historicals`, `create-assemblies`, `create-org-profile`, `sync-directory` | `est-import`, `asm-import`, `rate-import`, `costcode-import`, `dir-import`, `dir-sync`, `profile-init` |
@@ -122,6 +124,10 @@ A bid runs through the skills roughly in this order; every one is also a CLI.
 `estimating-reference` is the vocabulary the others assume: the domain model, the MCP
 tools, agency bid-schedule semantics, and the conflict ledger for when documents
 disagree.
+
+For a worked example of the BIM leg — a plan DXF to an IFC model to a takeoff,
+checked by hand in Blender with Bonsai, then out to a spreadsheet — see
+[`docs/tutorials/model-to-takeoff.md`](docs/tutorials/model-to-takeoff.md).
 
 ## Importers: data liberation
 

@@ -49,3 +49,4 @@ vendor was even solicited for.
 ## Notes
 - Read-only: no BM writes, no journal writes.
 - "leveled" is caller-decided (step 5) — the CLI does not guess.
+- Quotes that arrive as documents (PDF, email, spreadsheet) are turned into the spec's quote files by the `intake-quotes` skill.

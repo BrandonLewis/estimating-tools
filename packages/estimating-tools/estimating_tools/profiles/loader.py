@@ -18,6 +18,7 @@ SCHEMA_PATH = Path(__file__).parent / "schema" / "profile.schema.json"
 # (section, field) references that name a file inside the profile directory.
 _ASSET_FIELDS = [("letterhead", "template"), ("letterhead", "logo"),
                  ("folder_conventions", "tree"), ("estimating", "format"),
+                 ("estimating", "heavycivil_style"),
                  ("brand", "logo"), ("brand", "icon_16"), ("brand", "icon_32"),
                  ("brand", "icon_64"), ("brand", "icon_80"), ("brand", "icon_128")]
 
