@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "estimating_tools"
-version = "0.1.94"
+version = "0.1.95"
 description = "Deterministic construction estimating and engineering tools."
 readme = "README.md"
 license = "Apache-2.0"

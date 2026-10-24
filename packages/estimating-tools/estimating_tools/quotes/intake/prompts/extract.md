@@ -113,8 +113,13 @@ Hauling and Valves is two results with the same `sha256` and different
   states keep the vendor's own key.
 - `needs_review` — a list of reasons, set whenever you are unsure, whenever the
   document covers more than one project, or whenever something about the pricing
-  does not add up. Add a per-line `review` note on the line concerned. Flagging
-  costs a human a minute; a wrong price taken silently costs a bid.
+  does not add up. Flagging costs a human a minute; a wrong price taken silently
+  costs a bid.
+- A note belongs in one place. Something about one line (its quantity, its
+  unit, a doubtful mapping) goes in that line's `review`; something about the
+  document (another project named, a total that does not add up, a date you
+  could not read) goes in `needs_review`. Do not repeat a line's note in
+  `needs_review`: both land on the sheet, and a repeated note is read twice.
 
 ## Fields
 

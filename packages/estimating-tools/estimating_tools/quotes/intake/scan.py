@@ -122,7 +122,14 @@ def unpack_eml(path: Path, out_dir: Path) -> list[Path]:
     return written
 
 
+# Windows marks a downloaded file with a Zone.Identifier alternate data stream;
+# copying it into WSL leaves it beside the file as "<name>:Zone.Identifier".
+SIDECAR_SUFFIX = ":Zone.Identifier"
+
+
 def _hidden(rel: Path) -> bool:
+    if rel.name.casefold().endswith(SIDECAR_SUFFIX.casefold()):
+        return True
     return any(p == "_intake" or p.startswith(".") for p in rel.parts)
 
 
