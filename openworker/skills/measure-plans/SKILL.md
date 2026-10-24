@@ -163,6 +163,17 @@ layer) but the linework is exact CAD geometry. The discipline:
   Pass `--review-dir DIR --pdf plans.pdf` for an overlay crop of every
   finding (the traced lines drawn over the sheet with their ids and values)
   and look at each before classifying it.
+  A conflict chain at more than one interval per hop usually means a
+  roadway cut or other grading interrupts the contours, so lines either
+  side of the gap face each other as one hop. Pass the proposed-grading
+  layer with `--barrier-layers`, or draw a `breaks:` line across the gap
+  in the anchors file (page points, like the labels; it survives
+  re-extraction); `--no-face A,B` sets aside one pair for a one-off. A
+  barrier or break line must reach the ends of the interrupted contours;
+  where it stops short the pair is kept and reported as a partial
+  `barrier` finding. Each pair set aside is a `barrier` finding: confirm
+  the contours really are missing there (only partial ones fail
+  `--strict`).
 - **Spot elevations are the scorecard, never TIN vertices.** By default
   they are held out and score the TIN (`--spots`); the RMSE is the
   surface's credibility number and rides its provenance into the model.
