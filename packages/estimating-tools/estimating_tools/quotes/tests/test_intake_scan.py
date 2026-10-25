@@ -52,6 +52,16 @@ def test_scan_skips_intake_and_dot_folders(tmp_path):
     assert list(inv) == []
 
 
+def test_a_windows_zone_identifier_sidecar_is_ignored_silently(tmp_path):
+    inbox, state, inv = _setup(tmp_path)
+    pdf = make_pdf(inbox / "Rebar quote.pdf", ["hello"])
+    (inbox / "Rebar quote.pdf:Zone.Identifier").write_bytes(b"[ZoneTransfer]\r\nZoneId=3\r\n")
+    report = scan_inbox(inv, inbox, state)
+    assert report.new == 1
+    assert report.unsupported == {}
+    assert [d.paths for d in inv] == [[str(pdf)]]
+
+
 def test_a_resaved_file_is_a_new_record_that_supersedes_the_old(tmp_path):
     inbox, state, inv = _setup(tmp_path)
     path = make_pdf(inbox / "q.pdf", ["one"])
