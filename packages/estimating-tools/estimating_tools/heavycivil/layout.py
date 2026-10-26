@@ -8,9 +8,9 @@ never disagree about where an id, a ``v`` or an input cell sits.
 
 Cost Report order, per item (payload order): the ITEM row; the ELEMENT_QTY
 rows of quantities paying it (element display order, then key); then its
-root activities (sort_order, id), each as ACTIVITY, its STEPs, a START
-marker row, its RESOURCEs, an END marker row, then its child activities,
-depth-first.
+root activities (sort_order, id), each as ACTIVITY, a STEPS marker row and
+its STEPs (a stepped activity only), a START marker row, its RESOURCEs, an
+END marker row, then its child activities, depth-first.
 Quantities paying no item close the sheet under a GROUP row.
 
 **Read-back contract.** Read-back identifies rows by the hidden W/X/Y/AD
@@ -29,14 +29,31 @@ over the span -- even for an activity with no resources. Markers carry the
 kind (W) and the activity id (Z) only: no id, no ``v``, nothing in the cost
 columns, so they add nothing to a sum. They are not editable.
 
+A stepped activity's STEPS and START rows bracket its steps the same way:
+``step_span`` is (STEPS row, START row), and its Shifts formula sums that
+range, so a step inserted anywhere between them counts. An unstepped
+activity has no STEPS row (its Shifts is a typed input).
+
+Every Cost Report data row carries AJ, the row of the nearest ACTIVITY at
+or above (``formulas.activity_row``); resource formulas read their
+activity's cells through it, so a copied resource row prices against the
+activity it lands in.
+
+Crews: each crew block is its CREW row, a NOTE row (a library crew's
+banner: kind in K, crew id in N), its MEMBERs, then a CREW_END marker
+(kind, crew id, a cue). ``crew_span`` is (CREW row, CREW_END row): the
+headcount and crew rate sum it, so a member inserted anywhere in the block
+counts.
+
 Hidden helper cells by kind (Cost Report): ITEM -- AE scope, AF schedule
 qty, AG effective qty, AH breakdown total, AI calculated unit price (as of
 export for an item excluded at export), AB
 total at export. ELEMENT_QTY -- Z paying item, AD key, AE element id, AG
 effective qty, AH override at export. ACTIVITY -- AA multiplier, AB/AC
 cost/MH at export, AE crew id, AF in-bid fraction, AH/AI a missing crew's
-per-shift labour/MH at export. RESOURCE -- AB cost at export, AF units, AG
-per-unit cost.
+per-shift labour/MH at export. RESOURCE -- AB cost at export, AE rate link
+(``labor:<id>``, ``equipment:<id>`` or ``material:<id>``; empty when
+unlinked), AF units, AG per-unit cost. Every row -- AJ activity row.
 
 Bid Form estimate rows (``BF.ROWS``): each carries its name (a
 ``BF.ROWS`` key) in the hidden T and a kind in J -- ESTIMATE on the first
@@ -60,7 +77,7 @@ from estimating_tools.heavycivil import FORMAT_NAME
 from estimating_tools.heavycivil import columns as C
 from estimating_tools.heavycivil.model import PayloadError, parse_iso_date
 
-LAYOUT_VERSION = 1
+LAYOUT_VERSION = 2
 HEADER_ROW = 4
 FIRST_ROW = 5
 SHARES_FIRST_ROW = 2
@@ -90,6 +107,10 @@ class Plan:
     activity_rows: dict = field(default_factory=dict)
     resource_rows: dict = field(default_factory=dict)
     step_rows: dict = field(default_factory=dict)
+    #: stepped activity id -> its STEPS marker Row.
+    steps_rows: dict = field(default_factory=dict)
+    #: stepped activity id -> (STEPS row, START row): the rows Shifts sums.
+    step_span: dict = field(default_factory=dict)
     quantity_rows: dict = field(default_factory=dict)
     #: activity id -> (START row, END row): the rows its formulas sum.
     resource_span: dict = field(default_factory=dict)
@@ -100,6 +121,10 @@ class Plan:
     crew_rows: dict = field(default_factory=dict)
     member_rows: dict = field(default_factory=dict)
     member_span: dict = field(default_factory=dict)
+    #: crew id -> its CREW_END marker Row.
+    crew_end_rows: dict = field(default_factory=dict)
+    #: crew id -> (CREW row, CREW_END row): the rows headcount and rate sum.
+    crew_span: dict = field(default_factory=dict)
     rates: list = field(default_factory=list)
     labor_rate_rows: dict = field(default_factory=dict)
     labor_span: tuple | None = None
@@ -134,9 +159,13 @@ def _cost_report(p, wb):
     def activity(a, depth):
         r = add("ACTIVITY", id=a.id, v=a.v, parent_id=a.parent_id, level=1 + depth, obj=a)
         p.activity_rows[a.id] = r
+        if a.steps:
+            p.steps_rows[a.id] = add("STEPS", parent_id=a.id, level=depth + 2)
         for s in a.steps:
             p.step_rows[s.id] = add("STEP", id=s.id, v=s.v, parent_id=a.id, level=depth + 2, obj=s)
         start = p.start_rows[a.id] = add("START", parent_id=a.id, level=depth + 2)
+        if a.steps:
+            p.step_span[a.id] = (p.steps_rows[a.id].row, start.row)
         for res in wb.resources_of(a.id):
             p.resource_rows[res.id] = add("RESOURCE", id=res.id, v=res.v, parent_id=a.id,
                                           level=depth + 2, obj=res)
@@ -168,6 +197,7 @@ def _crews(p, wb):
     for crew in wb.crews:
         p.crew_rows[crew.id] = Row(row=r, kind="CREW", id=crew.id, v=crew.v, obj=crew)
         p.crews.append(p.crew_rows[crew.id])
+        head = r
         r += 1
         if crew.scope == "library":
             p.crews.append(Row(row=r, kind="NOTE", parent_id=crew.id))
@@ -178,7 +208,11 @@ def _crews(p, wb):
             p.crews.append(p.member_rows[m.id])
             r += 1
         p.member_span[crew.id] = (first, r - 1)
-        r += 1  # blank row between crews
+        # The marker takes the place of the old blank row between crews.
+        p.crew_end_rows[crew.id] = Row(row=r, kind="CREW_END", parent_id=crew.id)
+        p.crews.append(p.crew_end_rows[crew.id])
+        p.crew_span[crew.id] = (head, r)
+        r += 1
 
 
 def _rates(p, wb):
@@ -365,6 +399,7 @@ def _row_kinds():
         ("ACTIVITY", {"id": C.CR.ID, "v": C.CR.V, "parent_id": C.CR.PARENT}),
         ("STEP", {"id": C.CR.ID, "v": C.CR.V, "activity_id": C.CR.PARENT}),
         ("RESOURCE", {"id": C.CR.ID, "v": C.CR.V, "activity_id": C.CR.PARENT}),
+        ("STEPS", {"activity_id": C.CR.PARENT}),
         ("START", {"activity_id": C.CR.PARENT}),
         ("END", {"activity_id": C.CR.PARENT}),
         ("GROUP", {}),
@@ -372,6 +407,8 @@ def _row_kinds():
     crews = [
         ("CREW", {"id": C.CW.ID, "v": C.CW.V}),
         ("MEMBER", {"id": C.CW.ID, "crew_id": C.CW.CREW}),
+        ("NOTE", {"crew_id": C.CW.CREW}),
+        ("CREW_END", {"crew_id": C.CW.CREW}),
     ]
     bid = [
         # The markup % row: the estimate's id/v, and its input name.
@@ -384,17 +421,19 @@ def _row_kinds():
         ("GROUP", {}),
     ]
     return ([{"sheet": "cost_report", "kind": k, "kind_cell": C.CR.KIND, "identified_by": ids,
-              "editable": k not in ("START", "END", "GROUP")} for k, ids in cr]
+              "editable": k not in ("STEPS", "START", "END", "GROUP")} for k, ids in cr]
             + [{"sheet": "crews", "kind": k, "kind_cell": C.CW.KIND, "identified_by": ids,
-                "editable": True} for k, ids in crews]
+                "editable": k in ("CREW", "MEMBER")} for k, ids in crews]
             + [{"sheet": "bid_form", "kind": k, "kind_cell": C.BF.KIND, "identified_by": ids,
                 "editable": k in ("ESTIMATE", "BID_INPUT", "ITEM_BID")} for k, ids in bid])
 
 
-def layout_json(p, wb, style) -> dict:
-    """What ``_wb!A1`` carries: the format, the column letters and how each
-    row kind is identified. Its size does not grow with the estimate (Excel
-    caps a cell at 32,767 characters)."""
+def layout_json(p, wb, style, baseline) -> dict:
+    """What ``_wb!A1`` carries: the format, the column letters, how each row
+    kind is identified, and ``baseline`` -- how the payload the book was
+    built from is stored in ``_wb`` column B (``baseline.encode``'s meta).
+    Its size does not grow with the estimate (Excel caps a cell at 32,767
+    characters)."""
     return {
         "format": FORMAT_NAME, "layout_version": LAYOUT_VERSION,
         "style": {"name": style.name, "version": style.version},
@@ -409,4 +448,5 @@ def layout_json(p, wb, style) -> dict:
                        "inputs": [n for n in C.BF.ROWS if n in C.BF.INPUTS],
                        "figures": [n for n in C.BF.ROWS if n not in C.BF.INPUTS]},
         "row_kinds": _row_kinds(),
+        "baseline": dict(baseline),
     }

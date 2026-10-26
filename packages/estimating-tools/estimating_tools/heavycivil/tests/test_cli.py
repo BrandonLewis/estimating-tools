@@ -116,6 +116,25 @@ def test_build_merges_pages(tmp_path):
     assert cli.main(["heavycivil", "build", str(pa), str(pb), "-o", str(out),
                      "--exported-at", "x"]) == 0
     assert out.exists()
+    # The book carries the merged payload, not either page.
+    from openpyxl import load_workbook
+
+    from estimating_tools.heavycivil import baseline
+    from estimating_tools.heavycivil.model import merge_pages
+    ws = load_workbook(out)["_wb"]
+    meta = json.loads(ws["A1"].value)["baseline"]
+    chunks = [ws[f"B{n}"].value for n in range(1, meta["chunks"] + 1)]
+    assert baseline.decode(chunks, meta) == merge_pages([a, b])
+
+
+def test_a_non_json_value_the_model_ignores_is_refused_cleanly(tmp_path, capsys):
+    doc = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    doc["unread_field"] = float("nan")              # json.dumps writes NaN; json.loads reads it
+    src, out = tmp_path / "e.json", tmp_path / "e.xlsx"
+    src.write_text(json.dumps(doc), encoding="utf-8")
+    assert cli.main(["heavycivil", "build", str(src), "-o", str(out), "--exported-at", "x"]) == 1
+    assert "payload refused" in capsys.readouterr().err
+    assert not out.exists()
 
 
 def test_default_output_drops_the_page_suffix(tmp_path):

@@ -348,7 +348,22 @@ class Resource:
     sort_order: int
     cost: Decimal
     managed_by: str | None
+    labor_rate_id: int | None
+    equipment_rate_id: int | None
+    material_cost_id: int | None
     v: str
+
+    @property
+    def rate_link(self):
+        """The library rate this line was priced from, as the Cost Report's
+        hidden AE cell carries it: ``labor:<id>``, ``equipment:<id>`` or
+        ``material:<id>`` -- labour first, then equipment, then material --
+        or None when the line is unlinked."""
+        for kind, rid in (("labor", self.labor_rate_id), ("equipment", self.equipment_rate_id),
+                          ("material", self.material_cost_id)):
+            if rid not in (None, ""):
+                return f"{kind}:{rid}"
+        return None
 
 
 @dataclass(frozen=True)
@@ -578,7 +593,13 @@ def _resource(row, n):
         burden_percentage=d("burden_percentage"),
         labor_cost_basis=row.get("labor_cost_basis") or "production",
         sort_order=_int(row.get("sort_order"), f"{where}.sort_order"),
-        cost=d("cost") or Decimal(0), managed_by=row.get("managed_by"), v=v)
+        cost=d("cost") or Decimal(0), managed_by=row.get("managed_by"),
+        labor_rate_id=_id(row.get("labor_rate_id"), f"{where}.labor_rate_id", nullable=True),
+        equipment_rate_id=_id(row.get("equipment_rate_id"), f"{where}.equipment_rate_id",
+                              nullable=True),
+        material_cost_id=_id(row.get("material_cost_id"), f"{where}.material_cost_id",
+                             nullable=True),
+        v=v)
 
 
 def _crew(row, n):

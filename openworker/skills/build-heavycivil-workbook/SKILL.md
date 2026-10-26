@@ -56,5 +56,6 @@ profile. Structure (columns, hidden id/`v` cells) cannot be restyled.
 
 Inputs are tinted: resource lines, production, shifts, counts and crew members
 on the Cost Report and Crews sheets; markup, item scope and bid price
-overrides on the Bid Form. Totals follow live. Edits are not yet sent back to
-BidSheet.ai by this skill — say so if asked.
+overrides on the Bid Form. Totals follow live. To send the edits back to
+BidSheet.ai, use the `apply-heavycivil-workbook` skill: it reads the book,
+dry-runs the change set, and applies it only on the estimator's yes.

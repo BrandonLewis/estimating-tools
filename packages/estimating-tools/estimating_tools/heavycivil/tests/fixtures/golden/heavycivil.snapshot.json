@@ -3,7 +3,7 @@
   "hc.bid_form": "'Bid Form'!$A$12:$T$19",
   "hc.bid_totals": "'Bid Form'!$A$22:$I$23",
   "hc.checks": "'Checks'!$A$4:$I$61",
-  "hc.cost_report": "'Cost Report'!$A$4:$AI$45",
+  "hc.cost_report": "'Cost Report'!$A$4:$AJ$46",
   "hc.layout": "'_wb'!$A$1",
   "hc.schedule": "'Schedule'!$A$4:$K$6"
  },
@@ -3334,7 +3334,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$R$35"
+     "v": "='Cost Report'!$R$36"
     },
     "N17": {
      "align": [
@@ -3360,7 +3360,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$R$30"
+     "v": "='Cost Report'!$R$31"
     },
     "N18": {
      "align": [
@@ -3386,7 +3386,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$R$40"
+     "v": "='Cost Report'!$R$41"
     },
     "N19": {
      "align": [
@@ -3412,7 +3412,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$R$41"
+     "v": "='Cost Report'!$R$42"
     },
     "O12": {
      "align": [
@@ -3654,7 +3654,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(OR('Cost Report'!$E$35<>\"\",'Cost Report'!$AI$35<>\"\"),1,0)"
+     "v": "=IF(OR('Cost Report'!$E$36<>\"\",'Cost Report'!$AI$36<>\"\"),1,0)"
     },
     "P17": {
      "align": [
@@ -3680,7 +3680,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(OR('Cost Report'!$E$30<>\"\",'Cost Report'!$AI$30<>\"\"),1,0)"
+     "v": "=IF(OR('Cost Report'!$E$31<>\"\",'Cost Report'!$AI$31<>\"\"),1,0)"
     },
     "P18": {
      "align": [
@@ -3706,7 +3706,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(OR('Cost Report'!$E$40<>\"\",'Cost Report'!$AI$40<>\"\"),1,0)"
+     "v": "=IF(OR('Cost Report'!$E$41<>\"\",'Cost Report'!$AI$41<>\"\"),1,0)"
     },
     "P19": {
      "align": [
@@ -3732,7 +3732,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(OR('Cost Report'!$E$41<>\"\",'Cost Report'!$AI$41<>\"\"),1,0)"
+     "v": "=IF(OR('Cost Report'!$E$42<>\"\",'Cost Report'!$AI$42<>\"\"),1,0)"
     },
     "Q12": {
      "align": [
@@ -10728,7 +10728,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$R$26=\"\",0,'Cost Report'!$R$26)"
+     "v": "=IF('Cost Report'!$R$27=\"\",0,'Cost Report'!$R$27)"
     },
     "E15": {
      "align": [
@@ -10754,7 +10754,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$L$26=\"\",0,'Cost Report'!$L$26)"
+     "v": "=IF('Cost Report'!$L$27=\"\",0,'Cost Report'!$L$27)"
     },
     "E16": {
      "align": [
@@ -10780,7 +10780,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$R$37=\"\",0,'Cost Report'!$R$37)"
+     "v": "=IF('Cost Report'!$R$38=\"\",0,'Cost Report'!$R$38)"
     },
     "E17": {
      "align": [
@@ -10806,7 +10806,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$L$37=\"\",0,'Cost Report'!$L$37)"
+     "v": "=IF('Cost Report'!$L$38=\"\",0,'Cost Report'!$L$38)"
     },
     "E18": {
      "align": [
@@ -10832,7 +10832,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$R$31=\"\",0,'Cost Report'!$R$31)"
+     "v": "=IF('Cost Report'!$R$32=\"\",0,'Cost Report'!$R$32)"
     },
     "E19": {
      "align": [
@@ -10858,7 +10858,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$L$31=\"\",0,'Cost Report'!$L$31)"
+     "v": "=IF('Cost Report'!$L$32=\"\",0,'Cost Report'!$L$32)"
     },
     "E21": {
      "align": [
@@ -10884,7 +10884,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$L$42=\"\",0,'Cost Report'!$L$42)"
+     "v": "=IF('Cost Report'!$L$43=\"\",0,'Cost Report'!$L$43)"
     },
     "E22": {
      "align": [
@@ -11014,7 +11014,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AG$23=\"\",0,'Cost Report'!$AG$23)"
+     "v": "=IF('Cost Report'!$AG$24=\"\",0,'Cost Report'!$AG$24)"
     },
     "E27": {
      "align": [
@@ -11040,7 +11040,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AG$24=\"\",0,'Cost Report'!$AG$24)"
+     "v": "=IF('Cost Report'!$AG$25=\"\",0,'Cost Report'!$AG$25)"
     },
     "E28": {
      "align": [
@@ -11066,7 +11066,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AG$28=\"\",0,'Cost Report'!$AG$28)"
+     "v": "=IF('Cost Report'!$AG$29=\"\",0,'Cost Report'!$AG$29)"
     },
     "E29": {
      "align": [
@@ -11092,7 +11092,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AG$33=\"\",0,'Cost Report'!$AG$33)"
+     "v": "=IF('Cost Report'!$AG$34=\"\",0,'Cost Report'!$AG$34)"
     },
     "E3": {
      "align": [
@@ -11144,7 +11144,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AG$44=\"\",0,'Cost Report'!$AG$44)"
+     "v": "=IF('Cost Report'!$AG$45=\"\",0,'Cost Report'!$AG$45)"
     },
     "E31": {
      "align": [
@@ -11222,7 +11222,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AI$30=\"\",0,'Cost Report'!$AI$30)"
+     "v": "=IF('Cost Report'!$AI$31=\"\",0,'Cost Report'!$AI$31)"
     },
     "E34": {
      "align": [
@@ -11248,7 +11248,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$R$30=\"\",0,'Cost Report'!$R$30)"
+     "v": "=IF('Cost Report'!$R$31=\"\",0,'Cost Report'!$R$31)"
     },
     "E35": {
      "align": [
@@ -11274,7 +11274,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AI$35=\"\",0,'Cost Report'!$AI$35)"
+     "v": "=IF('Cost Report'!$AI$36=\"\",0,'Cost Report'!$AI$36)"
     },
     "E36": {
      "align": [
@@ -11300,7 +11300,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$R$35=\"\",0,'Cost Report'!$R$35)"
+     "v": "=IF('Cost Report'!$R$36=\"\",0,'Cost Report'!$R$36)"
     },
     "E37": {
      "align": [
@@ -11326,7 +11326,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$AI$40=\"\",0,'Cost Report'!$AI$40)"
+     "v": "=IF('Cost Report'!$AI$41=\"\",0,'Cost Report'!$AI$41)"
     },
     "E38": {
      "align": [
@@ -11352,7 +11352,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF('Cost Report'!$R$40=\"\",0,'Cost Report'!$R$40)"
+     "v": "=IF('Cost Report'!$R$41=\"\",0,'Cost Report'!$R$41)"
     },
     "E4": {
      "align": [
@@ -12006,7 +12006,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "=IF('Cost Report'!$C$36=\"\",\"\",'Cost Report'!$C$36)"
+     "v": "=IF('Cost Report'!$C$37=\"\",\"\",'Cost Report'!$C$37)"
     },
     "E7": {
      "align": [
@@ -18462,7 +18462,7 @@
      "nf": "General",
      "v": ""
     },
-    "A21": {
+    "A22": {
      "align": [
       null,
       null,
@@ -18488,7 +18488,7 @@
      "nf": "General",
      "v": "step"
     },
-    "A26": {
+    "A27": {
      "align": [
       null,
       null,
@@ -18518,7 +18518,7 @@
      "nf": "General",
      "v": ""
     },
-    "A30": {
+    "A31": {
      "align": [
       null,
       null,
@@ -18548,7 +18548,7 @@
      "nf": "General",
      "v": "A1"
     },
-    "A31": {
+    "A32": {
      "align": [
       null,
       null,
@@ -18578,7 +18578,7 @@
      "nf": "General",
      "v": ""
     },
-    "A35": {
+    "A36": {
      "align": [
       null,
       null,
@@ -18608,7 +18608,7 @@
      "nf": "General",
      "v": "B3"
     },
-    "A36": {
+    "A37": {
      "align": [
       null,
       null,
@@ -18634,7 +18634,7 @@
      "nf": "General",
      "v": "concrete_cy"
     },
-    "A37": {
+    "A38": {
      "align": [
       null,
       null,
@@ -18694,7 +18694,7 @@
      "nf": "General",
      "v": "Code"
     },
-    "A40": {
+    "A41": {
      "align": [
       null,
       null,
@@ -18724,7 +18724,7 @@
      "nf": "General",
      "v": "M1"
     },
-    "A41": {
+    "A42": {
      "align": [
       null,
       null,
@@ -18754,7 +18754,7 @@
      "nf": "General",
      "v": "X1"
     },
-    "A42": {
+    "A43": {
      "align": [
       null,
       null,
@@ -18948,7 +18948,7 @@
      "nf": "General",
      "v": "=K20"
     },
-    "AA26": {
+    "AA27": {
      "align": [
       null,
       null,
@@ -18972,9 +18972,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=K26"
+     "v": "=K27"
     },
-    "AA31": {
+    "AA32": {
      "align": [
       null,
       null,
@@ -18998,9 +18998,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=K31"
+     "v": "=K32"
     },
-    "AA37": {
+    "AA38": {
      "align": [
       null,
       null,
@@ -19024,7 +19024,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=K37"
+     "v": "=K38"
     },
     "AA4": {
      "align": [
@@ -19056,7 +19056,7 @@
      "nf": "General",
      "v": "multiplier"
     },
-    "AA42": {
+    "AA43": {
      "align": [
       null,
       null,
@@ -19080,7 +19080,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=K42"
+     "v": "=K43"
     },
     "AA7": {
      "align": [
@@ -19264,7 +19264,7 @@
      "nf": "General",
      "v": "420.00000"
     },
-    "AB23": {
+    "AB24": {
      "align": [
       null,
       null,
@@ -19290,7 +19290,7 @@
      "nf": "General",
      "v": "150.00000"
     },
-    "AB24": {
+    "AB25": {
      "align": [
       null,
       null,
@@ -19316,7 +19316,7 @@
      "nf": "General",
      "v": "270.00000"
     },
-    "AB26": {
+    "AB27": {
      "align": [
       null,
       null,
@@ -19342,7 +19342,7 @@
      "nf": "General",
      "v": "1000.01"
     },
-    "AB28": {
+    "AB29": {
      "align": [
       null,
       null,
@@ -19368,7 +19368,7 @@
      "nf": "General",
      "v": "1000.01000"
     },
-    "AB30": {
+    "AB31": {
      "align": [
       null,
       null,
@@ -19394,7 +19394,7 @@
      "nf": "General",
      "v": "500.00"
     },
-    "AB31": {
+    "AB32": {
      "align": [
       null,
       null,
@@ -19420,7 +19420,7 @@
      "nf": "General",
      "v": "500.00000"
     },
-    "AB33": {
+    "AB34": {
      "align": [
       null,
       null,
@@ -19446,7 +19446,7 @@
      "nf": "General",
      "v": "500.00000"
     },
-    "AB35": {
+    "AB36": {
      "align": [
       null,
       null,
@@ -19472,7 +19472,7 @@
      "nf": "General",
      "v": "3337.63"
     },
-    "AB37": {
+    "AB38": {
      "align": [
       null,
       null,
@@ -19528,32 +19528,6 @@
      "nf": "General",
      "v": "export_cost"
     },
-    "AB40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "100.00"
-    },
     "AB41": {
      "align": [
       null,
@@ -19604,9 +19578,35 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
+     "v": "100.00"
+    },
+    "AB43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
      "v": "0"
     },
-    "AB44": {
+    "AB45": {
      "align": [
       null,
       null,
@@ -19788,7 +19788,7 @@
      "nf": "General",
      "v": "11.000"
     },
-    "AC26": {
+    "AC27": {
      "align": [
       null,
       null,
@@ -19814,7 +19814,7 @@
      "nf": "General",
      "v": "0"
     },
-    "AC31": {
+    "AC32": {
      "align": [
       null,
       null,
@@ -19840,7 +19840,7 @@
      "nf": "General",
      "v": "0"
     },
-    "AC37": {
+    "AC38": {
      "align": [
       null,
       null,
@@ -19896,7 +19896,7 @@
      "nf": "General",
      "v": "export_mh"
     },
-    "AC42": {
+    "AC43": {
      "align": [
       null,
       null,
@@ -19948,7 +19948,7 @@
      "nf": "General",
      "v": "90.000000"
     },
-    "AD36": {
+    "AD37": {
      "align": [
       null,
       null,
@@ -20030,33 +20030,7 @@
      "nf": "General",
      "v": "concrete_cy"
     },
-    "AE30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "included"
-    },
-    "AE35": {
+    "AE31": {
      "align": [
       null,
       null,
@@ -20106,9 +20080,35 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 2
+     "v": "included"
     },
     "AE37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "AE38": {
      "align": [
       null,
       null,
@@ -20164,7 +20164,7 @@
      "nf": "General",
      "v": "ref"
     },
-    "AE40": {
+    "AE41": {
      "align": [
       null,
       null,
@@ -20190,7 +20190,7 @@
      "nf": "General",
      "v": "included"
     },
-    "AE41": {
+    "AE42": {
      "align": [
       null,
       null,
@@ -20215,6 +20215,32 @@
      "locked": true,
      "nf": "General",
      "v": "excluded"
+    },
+    "AE45": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "material:1"
     },
     "AE5": {
      "align": [
@@ -20344,7 +20370,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F13<>\"\",IF(IF(G13=\"\",IF(G11=\"\",\"DAYS\",G11),G13)=IF(G11=\"\",\"DAYS\",G11),F13,IF(IF(G11=\"\",\"DAYS\",G11)=\"DAYS\",F13/H11,F13*H11)),IF(F11<>\"\",F11,\"\"))"
+     "v": "=IF(F13<>\"\",IF(IF(G13=\"\",IF(INDEX($G:$G,MAX(AJ13,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ13,1))),G13)=IF(INDEX($G:$G,MAX(AJ13,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ13,1))),F13,IF(IF(INDEX($G:$G,MAX(AJ13,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ13,1)))=\"DAYS\",F13/INDEX($H:$H,MAX(AJ13,1)),F13*INDEX($H:$H,MAX(AJ13,1)))),IF(INDEX($F:$F,MAX(AJ13,1))<>\"\",INDEX($F:$F,MAX(AJ13,1)),\"\"))"
     },
     "AF14": {
      "align": [
@@ -20370,7 +20396,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F14<>\"\",IF(IF(G14=\"\",IF(G11=\"\",\"DAYS\",G11),G14)=IF(G11=\"\",\"DAYS\",G11),F14,IF(IF(G11=\"\",\"DAYS\",G11)=\"DAYS\",F14/H11,F14*H11)),IF(F11<>\"\",F11,\"\"))"
+     "v": "=IF(F14<>\"\",IF(IF(G14=\"\",IF(INDEX($G:$G,MAX(AJ14,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ14,1))),G14)=IF(INDEX($G:$G,MAX(AJ14,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ14,1))),F14,IF(IF(INDEX($G:$G,MAX(AJ14,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ14,1)))=\"DAYS\",F14/INDEX($H:$H,MAX(AJ14,1)),F14*INDEX($H:$H,MAX(AJ14,1)))),IF(INDEX($F:$F,MAX(AJ14,1))<>\"\",INDEX($F:$F,MAX(AJ14,1)),\"\"))"
     },
     "AF16": {
      "align": [
@@ -20422,7 +20448,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F18<>\"\",IF(IF(G18=\"\",IF(G16=\"\",\"DAYS\",G16),G18)=IF(G16=\"\",\"DAYS\",G16),F18,IF(IF(G16=\"\",\"DAYS\",G16)=\"DAYS\",F18/H16,F18*H16)),IF(F16<>\"\",F16,\"\"))"
+     "v": "=IF(F18<>\"\",IF(IF(G18=\"\",IF(INDEX($G:$G,MAX(AJ18,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ18,1))),G18)=IF(INDEX($G:$G,MAX(AJ18,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ18,1))),F18,IF(IF(INDEX($G:$G,MAX(AJ18,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ18,1)))=\"DAYS\",F18/INDEX($H:$H,MAX(AJ18,1)),F18*INDEX($H:$H,MAX(AJ18,1)))),IF(INDEX($F:$F,MAX(AJ18,1))<>\"\",INDEX($F:$F,MAX(AJ18,1)),\"\"))"
     },
     "AF20": {
      "align": [
@@ -20450,32 +20476,6 @@
      "nf": "General",
      "v": "1"
     },
-    "AF23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "=IF(F23<>\"\",IF(IF(G23=\"\",IF(G20=\"\",\"DAYS\",G20),G23)=IF(G20=\"\",\"DAYS\",G20),F23,IF(IF(G20=\"\",\"DAYS\",G20)=\"DAYS\",F23/H20,F23*H20)),IF(F20<>\"\",F20,\"\"))"
-    },
     "AF24": {
      "align": [
       null,
@@ -20500,9 +20500,35 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F24<>\"\",IF(IF(G24=\"\",IF(G20=\"\",\"DAYS\",G20),G24)=IF(G20=\"\",\"DAYS\",G20),F24,IF(IF(G20=\"\",\"DAYS\",G20)=\"DAYS\",F24/H20,F24*H20)),IF(F20<>\"\",F20,\"\"))"
+     "v": "=IF(F24<>\"\",IF(IF(G24=\"\",IF(INDEX($G:$G,MAX(AJ24,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ24,1))),G24)=IF(INDEX($G:$G,MAX(AJ24,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ24,1))),F24,IF(IF(INDEX($G:$G,MAX(AJ24,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ24,1)))=\"DAYS\",F24/INDEX($H:$H,MAX(AJ24,1)),F24*INDEX($H:$H,MAX(AJ24,1)))),IF(INDEX($F:$F,MAX(AJ24,1))<>\"\",INDEX($F:$F,MAX(AJ24,1)),\"\"))"
     },
-    "AF26": {
+    "AF25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(F25<>\"\",IF(IF(G25=\"\",IF(INDEX($G:$G,MAX(AJ25,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ25,1))),G25)=IF(INDEX($G:$G,MAX(AJ25,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ25,1))),F25,IF(IF(INDEX($G:$G,MAX(AJ25,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ25,1)))=\"DAYS\",F25/INDEX($H:$H,MAX(AJ25,1)),F25*INDEX($H:$H,MAX(AJ25,1)))),IF(INDEX($F:$F,MAX(AJ25,1))<>\"\",INDEX($F:$F,MAX(AJ25,1)),\"\"))"
+    },
+    "AF27": {
      "align": [
       null,
       null,
@@ -20528,7 +20554,7 @@
      "nf": "General",
      "v": "1"
     },
-    "AF28": {
+    "AF29": {
      "align": [
       null,
       null,
@@ -20552,33 +20578,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F28<>\"\",IF(IF(G28=\"\",IF(G26=\"\",\"DAYS\",G26),G28)=IF(G26=\"\",\"DAYS\",G26),F28,IF(IF(G26=\"\",\"DAYS\",G26)=\"DAYS\",F28/H26,F28*H26)),IF(F26<>\"\",F26,\"\"))"
-    },
-    "AF30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "5.00"
+     "v": "=IF(F29<>\"\",IF(IF(G29=\"\",IF(INDEX($G:$G,MAX(AJ29,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ29,1))),G29)=IF(INDEX($G:$G,MAX(AJ29,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ29,1))),F29,IF(IF(INDEX($G:$G,MAX(AJ29,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ29,1)))=\"DAYS\",F29/INDEX($H:$H,MAX(AJ29,1)),F29*INDEX($H:$H,MAX(AJ29,1)))),IF(INDEX($F:$F,MAX(AJ29,1))<>\"\",INDEX($F:$F,MAX(AJ29,1)),\"\"))"
     },
     "AF31": {
      "align": [
@@ -20604,9 +20604,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "1"
+     "v": "5.00"
     },
-    "AF33": {
+    "AF32": {
      "align": [
       null,
       null,
@@ -20630,9 +20630,35 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F33<>\"\",IF(IF(G33=\"\",IF(G31=\"\",\"DAYS\",G31),G33)=IF(G31=\"\",\"DAYS\",G31),F33,IF(IF(G31=\"\",\"DAYS\",G31)=\"DAYS\",F33/H31,F33*H31)),IF(F31<>\"\",F31,\"\"))"
+     "v": "1"
     },
-    "AF35": {
+    "AF34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(F34<>\"\",IF(IF(G34=\"\",IF(INDEX($G:$G,MAX(AJ34,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ34,1))),G34)=IF(INDEX($G:$G,MAX(AJ34,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ34,1))),F34,IF(IF(INDEX($G:$G,MAX(AJ34,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ34,1)))=\"DAYS\",F34/INDEX($H:$H,MAX(AJ34,1)),F34*INDEX($H:$H,MAX(AJ34,1)))),IF(INDEX($F:$F,MAX(AJ34,1))<>\"\",INDEX($F:$F,MAX(AJ34,1)),\"\"))"
+    },
+    "AF36": {
      "align": [
       null,
       null,
@@ -20658,7 +20684,7 @@
      "nf": "General",
      "v": "20.00"
     },
-    "AF37": {
+    "AF38": {
      "align": [
       null,
       null,
@@ -20714,7 +20740,7 @@
      "nf": "General",
      "v": "h1"
     },
-    "AF40": {
+    "AF41": {
      "align": [
       null,
       null,
@@ -20740,7 +20766,7 @@
      "nf": "General",
      "v": "4.00"
     },
-    "AF41": {
+    "AF42": {
      "align": [
       null,
       null,
@@ -20766,7 +20792,7 @@
      "nf": "General",
      "v": "1.00"
     },
-    "AF42": {
+    "AF43": {
      "align": [
       null,
       null,
@@ -20792,7 +20818,7 @@
      "nf": "General",
      "v": "0"
     },
-    "AF44": {
+    "AF45": {
      "align": [
       null,
       null,
@@ -20816,7 +20842,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F44<>\"\",IF(IF(G44=\"\",IF(G42=\"\",\"DAYS\",G42),G44)=IF(G42=\"\",\"DAYS\",G42),F44,IF(IF(G42=\"\",\"DAYS\",G42)=\"DAYS\",F44/H42,F44*H42)),IF(F42<>\"\",F42,\"\"))"
+     "v": "=IF(F45<>\"\",IF(IF(G45=\"\",IF(INDEX($G:$G,MAX(AJ45,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ45,1))),G45)=IF(INDEX($G:$G,MAX(AJ45,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ45,1))),F45,IF(IF(INDEX($G:$G,MAX(AJ45,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ45,1)))=\"DAYS\",F45/INDEX($H:$H,MAX(AJ45,1)),F45*INDEX($H:$H,MAX(AJ45,1)))),IF(INDEX($F:$F,MAX(AJ45,1))<>\"\",INDEX($F:$F,MAX(AJ45,1)),\"\"))"
     },
     "AF5": {
      "align": [
@@ -20894,7 +20920,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(F9<>\"\",IF(IF(G9=\"\",IF(G7=\"\",\"DAYS\",G7),G9)=IF(G7=\"\",\"DAYS\",G7),F9,IF(IF(G7=\"\",\"DAYS\",G7)=\"DAYS\",F9/H7,F9*H7)),IF(F7<>\"\",F7,\"\"))"
+     "v": "=IF(F9<>\"\",IF(IF(G9=\"\",IF(INDEX($G:$G,MAX(AJ9,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ9,1))),G9)=IF(INDEX($G:$G,MAX(AJ9,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ9,1))),F9,IF(IF(INDEX($G:$G,MAX(AJ9,1))=\"\",\"DAYS\",INDEX($G:$G,MAX(AJ9,1)))=\"DAYS\",F9/INDEX($H:$H,MAX(AJ9,1)),F9*INDEX($H:$H,MAX(AJ9,1)))),IF(INDEX($F:$F,MAX(AJ9,1))<>\"\",INDEX($F:$F,MAX(AJ9,1)),\"\"))"
     },
     "AG13": {
      "align": [
@@ -20920,7 +20946,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S13=\"labor\",IF(OR(T13=\"flat\",AF13=\"\"),C13*E13,C13*E13*AF13*IF(I11=\"\",1,I11))*IF(AND(V13<>\"Y\",U13<>\"\",U13<>0),1+U13/100,1),C13*E13)"
+     "v": "=IF(S13=\"labor\",IF(OR(T13=\"flat\",AF13=\"\"),C13*E13,C13*E13*AF13*IF(INDEX($I:$I,MAX(AJ13,1))=\"\",1,INDEX($I:$I,MAX(AJ13,1))))*IF(AND(V13<>\"Y\",U13<>\"\",U13<>0),1+U13/100,1),C13*E13)"
     },
     "AG14": {
      "align": [
@@ -20946,7 +20972,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S14=\"labor\",IF(OR(T14=\"flat\",AF14=\"\"),C14*E14,C14*E14*AF14*IF(I11=\"\",1,I11))*IF(AND(V14<>\"Y\",U14<>\"\",U14<>0),1+U14/100,1),C14*E14)"
+     "v": "=IF(S14=\"labor\",IF(OR(T14=\"flat\",AF14=\"\"),C14*E14,C14*E14*AF14*IF(INDEX($I:$I,MAX(AJ14,1))=\"\",1,INDEX($I:$I,MAX(AJ14,1))))*IF(AND(V14<>\"Y\",U14<>\"\",U14<>0),1+U14/100,1),C14*E14)"
     },
     "AG18": {
      "align": [
@@ -20972,33 +20998,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S18=\"labor\",IF(OR(T18=\"flat\",AF18=\"\"),C18*E18,C18*E18*AF18*IF(I16=\"\",1,I16))*IF(AND(V18<>\"Y\",U18<>\"\",U18<>0),1+U18/100,1),C18*E18)"
-    },
-    "AG23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "=IF(S23=\"labor\",IF(OR(T23=\"flat\",AF23=\"\"),C23*E23,C23*E23*AF23*IF(I20=\"\",1,I20))*IF(AND(V23<>\"Y\",U23<>\"\",U23<>0),1+U23/100,1),C23*E23)"
+     "v": "=IF(S18=\"labor\",IF(OR(T18=\"flat\",AF18=\"\"),C18*E18,C18*E18*AF18*IF(INDEX($I:$I,MAX(AJ18,1))=\"\",1,INDEX($I:$I,MAX(AJ18,1))))*IF(AND(V18<>\"Y\",U18<>\"\",U18<>0),1+U18/100,1),C18*E18)"
     },
     "AG24": {
      "align": [
@@ -21024,9 +21024,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S24=\"labor\",IF(OR(T24=\"flat\",AF24=\"\"),C24*E24,C24*E24*AF24*IF(I20=\"\",1,I20))*IF(AND(V24<>\"Y\",U24<>\"\",U24<>0),1+U24/100,1),C24*E24)"
+     "v": "=IF(S24=\"labor\",IF(OR(T24=\"flat\",AF24=\"\"),C24*E24,C24*E24*AF24*IF(INDEX($I:$I,MAX(AJ24,1))=\"\",1,INDEX($I:$I,MAX(AJ24,1))))*IF(AND(V24<>\"Y\",U24<>\"\",U24<>0),1+U24/100,1),C24*E24)"
     },
-    "AG28": {
+    "AG25": {
      "align": [
       null,
       null,
@@ -21050,9 +21050,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S28=\"labor\",IF(OR(T28=\"flat\",AF28=\"\"),C28*E28,C28*E28*AF28*IF(I26=\"\",1,I26))*IF(AND(V28<>\"Y\",U28<>\"\",U28<>0),1+U28/100,1),C28*E28)"
+     "v": "=IF(S25=\"labor\",IF(OR(T25=\"flat\",AF25=\"\"),C25*E25,C25*E25*AF25*IF(INDEX($I:$I,MAX(AJ25,1))=\"\",1,INDEX($I:$I,MAX(AJ25,1))))*IF(AND(V25<>\"Y\",U25<>\"\",U25<>0),1+U25/100,1),C25*E25)"
     },
-    "AG30": {
+    "AG29": {
      "align": [
       null,
       null,
@@ -21076,9 +21076,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(C30=\"\",AF30,C30)"
+     "v": "=IF(S29=\"labor\",IF(OR(T29=\"flat\",AF29=\"\"),C29*E29,C29*E29*AF29*IF(INDEX($I:$I,MAX(AJ29,1))=\"\",1,INDEX($I:$I,MAX(AJ29,1))))*IF(AND(V29<>\"Y\",U29<>\"\",U29<>0),1+U29/100,1),C29*E29)"
     },
-    "AG33": {
+    "AG31": {
      "align": [
       null,
       null,
@@ -21102,9 +21102,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S33=\"labor\",IF(OR(T33=\"flat\",AF33=\"\"),C33*E33,C33*E33*AF33*IF(I31=\"\",1,I31))*IF(AND(V33<>\"Y\",U33<>\"\",U33<>0),1+U33/100,1),C33*E33)"
+     "v": "=IF(C31=\"\",AF31,C31)"
     },
-    "AG35": {
+    "AG34": {
      "align": [
       null,
       null,
@@ -21128,7 +21128,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(C35=\"\",AF35,C35)"
+     "v": "=IF(S34=\"labor\",IF(OR(T34=\"flat\",AF34=\"\"),C34*E34,C34*E34*AF34*IF(INDEX($I:$I,MAX(AJ34,1))=\"\",1,INDEX($I:$I,MAX(AJ34,1))))*IF(AND(V34<>\"Y\",U34<>\"\",U34<>0),1+U34/100,1),C34*E34)"
     },
     "AG36": {
      "align": [
@@ -21154,7 +21154,33 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(C36=\"\",E36,C36)"
+     "v": "=IF(C36=\"\",AF36,C36)"
+    },
+    "AG37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(C37=\"\",E37,C37)"
     },
     "AG4": {
      "align": [
@@ -21186,32 +21212,6 @@
      "nf": "General",
      "v": "h2"
     },
-    "AG40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "=IF(C40=\"\",AF40,C40)"
-    },
     "AG41": {
      "align": [
       null,
@@ -21238,7 +21238,7 @@
      "nf": "General",
      "v": "=IF(C41=\"\",AF41,C41)"
     },
-    "AG44": {
+    "AG42": {
      "align": [
       null,
       null,
@@ -21262,7 +21262,33 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S44=\"labor\",IF(OR(T44=\"flat\",AF44=\"\"),C44*E44,C44*E44*AF44*IF(I42=\"\",1,I42))*IF(AND(V44<>\"Y\",U44<>\"\",U44<>0),1+U44/100,1),C44*E44)"
+     "v": "=IF(C42=\"\",AF42,C42)"
+    },
+    "AG45": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(S45=\"labor\",IF(OR(T45=\"flat\",AF45=\"\"),C45*E45,C45*E45*AF45*IF(INDEX($I:$I,MAX(AJ45,1))=\"\",1,INDEX($I:$I,MAX(AJ45,1))))*IF(AND(V45<>\"Y\",U45<>\"\",U45<>0),1+U45/100,1),C45*E45)"
     },
     "AG5": {
      "align": [
@@ -21340,9 +21366,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(S9=\"labor\",IF(OR(T9=\"flat\",AF9=\"\"),C9*E9,C9*E9*AF9*IF(I7=\"\",1,I7))*IF(AND(V9<>\"Y\",U9<>\"\",U9<>0),1+U9/100,1),C9*E9)"
+     "v": "=IF(S9=\"labor\",IF(OR(T9=\"flat\",AF9=\"\"),C9*E9,C9*E9*AF9*IF(INDEX($I:$I,MAX(AJ9,1))=\"\",1,INDEX($I:$I,MAX(AJ9,1))))*IF(AND(V9<>\"Y\",U9<>\"\",U9<>0),1+U9/100,1),C9*E9)"
     },
-    "AH30": {
+    "AH31": {
      "align": [
       null,
       null,
@@ -21366,35 +21392,35 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X30,'_shares'!$J$2:$J$9)"
-    },
-    "AH35": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X35,'_shares'!$J$2:$J$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X31,'_shares'!$J$2:$J$9)"
     },
     "AH36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X36,'_shares'!$J$2:$J$9)"
+    },
+    "AH37": {
      "align": [
       null,
       null,
@@ -21450,32 +21476,6 @@
      "nf": "General",
      "v": "h3"
     },
-    "AH40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X40,'_shares'!$J$2:$J$9)"
-    },
     "AH41": {
      "align": [
       null,
@@ -21501,6 +21501,32 @@
      "locked": true,
      "nf": "General",
      "v": "=SUMIF('_shares'!$B$2:$B$9,X41,'_shares'!$J$2:$J$9)"
+    },
+    "AH42": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X42,'_shares'!$J$2:$J$9)"
     },
     "AH5": {
      "align": [
@@ -21554,7 +21580,7 @@
      "nf": "General",
      "v": "64.0000"
     },
-    "AI30": {
+    "AI31": {
      "align": [
       null,
       null,
@@ -21578,9 +21604,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(AG30<>\"\",AG30>0,AH30>0),ROUND(AH30/AG30,2),\"\")"
+     "v": "=IF(AND(AG31<>\"\",AG31>0,AH31>0),ROUND(AH31/AG31,2),\"\")"
     },
-    "AI35": {
+    "AI36": {
      "align": [
       null,
       null,
@@ -21604,7 +21630,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(AG35<>\"\",AG35>0,AH35>0),ROUND(AH35/AG35,2),\"\")"
+     "v": "=IF(AND(AG36<>\"\",AG36>0,AH36>0),ROUND(AH36/AG36,2),\"\")"
     },
     "AI4": {
      "align": [
@@ -21636,7 +21662,7 @@
      "nf": "General",
      "v": "h4"
     },
-    "AI40": {
+    "AI41": {
      "align": [
       null,
       null,
@@ -21660,9 +21686,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=IF(AND(AG40<>\"\",AG40>0,AH40>0),ROUND(AH40/AG40,2),\"\")"
+     "v": "=IF(AND(AG41<>\"\",AG41>0,AH41>0),ROUND(AH41/AG41,2),\"\")"
     },
-    "AI41": {
+    "AI42": {
      "align": [
       null,
       null,
@@ -21713,6 +21739,1128 @@
      "locked": true,
      "nf": "General",
      "v": "=IF(AND(AG5<>\"\",AG5>0,AH5>0),ROUND(AH5/AG5,2),\"\")"
+    },
+    "AJ10": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W10=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ9))"
+    },
+    "AJ11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W11=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ10))"
+    },
+    "AJ12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W12=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ11))"
+    },
+    "AJ13": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W13=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ12))"
+    },
+    "AJ14": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W14=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ13))"
+    },
+    "AJ15": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W15=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ14))"
+    },
+    "AJ16": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W16=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ15))"
+    },
+    "AJ17": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W17=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ16))"
+    },
+    "AJ18": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W18=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ17))"
+    },
+    "AJ19": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W19=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ18))"
+    },
+    "AJ20": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W20=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ19))"
+    },
+    "AJ21": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W21=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ20))"
+    },
+    "AJ22": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W22=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ21))"
+    },
+    "AJ23": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W23=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ22))"
+    },
+    "AJ24": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W24=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ23))"
+    },
+    "AJ25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W25=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ24))"
+    },
+    "AJ26": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W26=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ25))"
+    },
+    "AJ27": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W27=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ26))"
+    },
+    "AJ28": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W28=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ27))"
+    },
+    "AJ29": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W29=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ28))"
+    },
+    "AJ30": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W30=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ29))"
+    },
+    "AJ31": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W31=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ30))"
+    },
+    "AJ32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W32=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ31))"
+    },
+    "AJ33": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W33=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ32))"
+    },
+    "AJ34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W34=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ33))"
+    },
+    "AJ35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W35=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ34))"
+    },
+    "AJ36": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W36=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ35))"
+    },
+    "AJ37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W37=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ36))"
+    },
+    "AJ38": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W38=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ37))"
+    },
+    "AJ39": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W39=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ38))"
+    },
+    "AJ4": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFEADFC8",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF5A3A0E",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "activity_row"
+    },
+    "AJ40": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W40=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ39))"
+    },
+    "AJ41": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W41=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ40))"
+    },
+    "AJ42": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W42=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ41))"
+    },
+    "AJ43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W43=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ42))"
+    },
+    "AJ44": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W44=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ43))"
+    },
+    "AJ45": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W45=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ44))"
+    },
+    "AJ46": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W46=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ45))"
+    },
+    "AJ5": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W5=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ4))"
+    },
+    "AJ6": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W6=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ5))"
+    },
+    "AJ7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W7=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ6))"
+    },
+    "AJ8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W8=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ7))"
+    },
+    "AJ9": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "=IF(W9=\"ACTIVITY\",ROW(),MAX(AJ$4:AJ8))"
     },
     "B10": {
      "align": [
@@ -21984,7 +23132,7 @@
      "nf": "General",
      "v": "Prep"
     },
-    "B21": {
+    "B22": {
      "align": [
       null,
       null,
@@ -22014,7 +23162,7 @@
      "nf": "General",
      "v": "Set out"
     },
-    "B23": {
+    "B24": {
      "align": [
       null,
       null,
@@ -22044,7 +23192,7 @@
      "nf": "General",
      "v": "Flat crew"
     },
-    "B24": {
+    "B25": {
      "align": [
       null,
       null,
@@ -22074,7 +23222,7 @@
      "nf": "General",
      "v": "Hours entered"
     },
-    "B25": {
+    "B26": {
      "align": [
       null,
       null,
@@ -22104,7 +23252,7 @@
      "nf": "General",
      "v": "insert lines above"
     },
-    "B26": {
+    "B27": {
      "align": [
       null,
       null,
@@ -22134,7 +23282,7 @@
      "nf": "General",
      "v": "Pour"
     },
-    "B28": {
+    "B29": {
      "align": [
       null,
       null,
@@ -22164,7 +23312,7 @@
      "nf": "General",
      "v": "Concrete"
     },
-    "B29": {
+    "B30": {
      "align": [
       null,
       null,
@@ -22194,7 +23342,7 @@
      "nf": "General",
      "v": "insert lines above"
     },
-    "B30": {
+    "B31": {
      "align": [
       null,
       null,
@@ -22224,7 +23372,7 @@
      "nf": "General",
      "v": "A1"
     },
-    "B31": {
+    "B32": {
      "align": [
       null,
       null,
@@ -22254,7 +23402,7 @@
      "nf": "General",
      "v": "Fence"
     },
-    "B33": {
+    "B34": {
      "align": [
       null,
       null,
@@ -22284,7 +23432,7 @@
      "nf": "General",
      "v": "Fence sub"
     },
-    "B34": {
+    "B35": {
      "align": [
       null,
       null,
@@ -22314,7 +23462,7 @@
      "nf": "General",
      "v": "insert lines above"
     },
-    "B35": {
+    "B36": {
      "align": [
       null,
       null,
@@ -22344,7 +23492,7 @@
      "nf": "General",
      "v": "B3"
     },
-    "B36": {
+    "B37": {
      "align": [
       null,
       null,
@@ -22370,7 +23518,7 @@
      "nf": "General",
      "v": "Wall B -- Concrete"
     },
-    "B37": {
+    "B38": {
      "align": [
       null,
       null,
@@ -22399,36 +23547,6 @@
      "locked": true,
      "nf": "General",
      "v": "Finish"
-    },
-    "B39": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFBF9F4",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      true,
-      "FF6B7075",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "insert lines above"
     },
     "B4": {
      "align": [
@@ -22472,15 +23590,15 @@
      "border": {},
      "fill": [
       "solid",
-      "FFF3EBDA",
+      "FFFBF9F4",
       "00000000"
      ],
      "font": [
       "Arial",
       10.0,
-      true,
       false,
-      "FF23272B",
+      true,
+      "FF6B7075",
       null,
       false,
       null
@@ -22488,7 +23606,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "M1"
+     "v": "insert lines above"
     },
     "B41": {
      "align": [
@@ -22518,7 +23636,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "X1"
+     "v": "M1"
     },
     "B42": {
      "align": [
@@ -22532,15 +23650,15 @@
      "border": {},
      "fill": [
       "solid",
-      "FFFFF8DC",
+      "FFF3EBDA",
       "00000000"
      ],
      "font": [
       "Arial",
       10.0,
+      true,
       false,
-      false,
-      "FF1747B5",
+      "FF23272B",
       null,
       false,
       null
@@ -22548,9 +23666,9 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "Extra"
+     "v": "X1"
     },
-    "B44": {
+    "B43": {
      "align": [
       null,
       null,
@@ -22581,6 +23699,36 @@
      "v": "Extra"
     },
     "B45": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Extra"
+    },
+    "B46": {
      "align": [
       null,
       null,
@@ -22906,7 +24054,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "C21": {
+    "C22": {
      "align": [
       null,
       null,
@@ -22936,7 +24084,7 @@
      "nf": "#,##0.00",
      "v": "2.00"
     },
-    "C23": {
+    "C24": {
      "align": [
       null,
       null,
@@ -22966,7 +24114,7 @@
      "nf": "#,##0.00",
      "v": "5.000"
     },
-    "C24": {
+    "C25": {
      "align": [
       null,
       null,
@@ -22996,7 +24144,7 @@
      "nf": "#,##0.00",
      "v": "6.000"
     },
-    "C26": {
+    "C27": {
      "align": [
       null,
       null,
@@ -23026,7 +24174,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "C28": {
+    "C29": {
      "align": [
       null,
       null,
@@ -23055,36 +24203,6 @@
      "locked": true,
      "nf": "#,##0.00",
      "v": "1.000"
-    },
-    "C30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00",
-     "v": null
     },
     "C31": {
      "align": [
@@ -23098,6 +24216,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00",
+     "v": null
+    },
+    "C32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFF2F2F0",
       "00000000"
      ],
@@ -23116,7 +24264,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "C33": {
+    "C34": {
      "align": [
       null,
       null,
@@ -23145,36 +24293,6 @@
      "locked": true,
      "nf": "#,##0.00",
      "v": "1.000"
-    },
-    "C35": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00",
-     "v": null
     },
     "C36": {
      "align": [
@@ -23204,9 +24322,39 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "54.0000"
+     "v": null
     },
     "C37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00",
+     "v": "54.0000"
+    },
+    "C38": {
      "align": [
       null,
       null,
@@ -23266,36 +24414,6 @@
      "nf": "General",
      "v": "Quantity"
     },
-    "C40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00",
-     "v": null
-    },
     "C41": {
      "align": [
       null,
@@ -23338,6 +24456,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00",
+     "v": null
+    },
+    "C43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFF2F2F0",
       "00000000"
      ],
@@ -23356,7 +24504,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "C44": {
+    "C45": {
      "align": [
       null,
       null,
@@ -23674,7 +24822,7 @@
      "nf": "General",
      "v": ""
     },
-    "D21": {
+    "D22": {
      "align": [
       null,
       null,
@@ -23703,36 +24851,6 @@
      "locked": true,
      "nf": "General",
      "v": "DAYS"
-    },
-    "D23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": ""
     },
     "D24": {
      "align": [
@@ -23764,33 +24882,7 @@
      "nf": "General",
      "v": ""
     },
-    "D26": {
-     "align": [
-      "center",
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF6B7075",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": ""
-    },
-    "D28": {
+    "D25": {
      "align": [
       null,
       null,
@@ -23820,7 +24912,33 @@
      "nf": "General",
      "v": ""
     },
-    "D30": {
+    "D27": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF6B7075",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": ""
+    },
+    "D29": {
      "align": [
       null,
       null,
@@ -23832,15 +24950,15 @@
      "border": {},
      "fill": [
       "solid",
-      "FFF3EBDA",
+      "FFFFF8DC",
       "00000000"
      ],
      "font": [
       "Arial",
       10.0,
-      true,
       false,
-      "FF23272B",
+      false,
+      "FF1747B5",
       null,
       false,
       null
@@ -23848,10 +24966,40 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "CY"
+     "v": ""
     },
     "D31": {
      "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF23272B",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "CY"
+    },
+    "D32": {
+     "align": [
       "center",
       null,
       null,
@@ -23876,7 +25024,7 @@
      "nf": "General",
      "v": ""
     },
-    "D33": {
+    "D34": {
      "align": [
       null,
       null,
@@ -23906,7 +25054,7 @@
      "nf": "General",
      "v": ""
     },
-    "D35": {
+    "D36": {
      "align": [
       null,
       null,
@@ -23927,32 +25075,6 @@
       true,
       false,
       "FF23272B",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "CY"
-    },
-    "D36": {
-     "align": [
-      "center",
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF6B7075",
       null,
       false,
       null
@@ -23963,6 +25085,32 @@
      "v": "CY"
     },
     "D37": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF6B7075",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "CY"
+    },
+    "D38": {
      "align": [
       "center",
       null,
@@ -24018,36 +25166,6 @@
      "nf": "General",
      "v": "Unit"
     },
-    "D40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      "FF23272B",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "CY"
-    },
     "D41": {
      "align": [
       null,
@@ -24080,6 +25198,36 @@
     },
     "D42": {
      "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      "FF23272B",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "CY"
+    },
+    "D43": {
+     "align": [
       "center",
       null,
       null,
@@ -24104,7 +25252,7 @@
      "nf": "General",
      "v": ""
     },
-    "D44": {
+    "D45": {
      "align": [
       null,
       null,
@@ -24336,7 +25484,7 @@
      "nf": "#,##0.00",
      "v": "2.50"
     },
-    "E23": {
+    "E24": {
      "align": [
       null,
       null,
@@ -24366,7 +25514,7 @@
      "nf": "#,##0.00",
      "v": "30.00"
     },
-    "E24": {
+    "E25": {
      "align": [
       null,
       null,
@@ -24396,7 +25544,7 @@
      "nf": "#,##0.00",
      "v": "45.00"
     },
-    "E28": {
+    "E29": {
      "align": [
       null,
       null,
@@ -24426,7 +25574,7 @@
      "nf": "#,##0.00",
      "v": "1000.01"
     },
-    "E30": {
+    "E31": {
      "align": [
       null,
       null,
@@ -24456,7 +25604,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "E33": {
+    "E34": {
      "align": [
       null,
       null,
@@ -24486,7 +25634,7 @@
      "nf": "#,##0.00",
      "v": "500.00"
     },
-    "E35": {
+    "E36": {
      "align": [
       null,
       null,
@@ -24516,7 +25664,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "E36": {
+    "E37": {
      "align": [
       null,
       null,
@@ -24576,7 +25724,7 @@
      "nf": "General",
      "v": "Unit cost"
     },
-    "E40": {
+    "E41": {
      "align": [
       null,
       null,
@@ -24606,7 +25754,7 @@
      "nf": "#,##0.00",
      "v": "25.00"
     },
-    "E41": {
+    "E42": {
      "align": [
       null,
       null,
@@ -24636,7 +25784,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "E44": {
+    "E45": {
      "align": [
       null,
       null,
@@ -24936,36 +26084,6 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "F23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00",
-     "v": null
-    },
     "F24": {
      "align": [
       null,
@@ -24996,7 +26114,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "F26": {
+    "F25": {
      "align": [
       null,
       null,
@@ -25026,7 +26144,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "F28": {
+    "F27": {
      "align": [
       null,
       null,
@@ -25056,7 +26174,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "F31": {
+    "F29": {
      "align": [
       null,
       null,
@@ -25086,7 +26204,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "F33": {
+    "F32": {
      "align": [
       null,
       null,
@@ -25116,7 +26234,37 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "F37": {
+    "F34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00",
+     "v": null
+    },
+    "F38": {
      "align": [
       null,
       null,
@@ -25176,7 +26324,7 @@
      "nf": "General",
      "v": "Production"
     },
-    "F42": {
+    "F43": {
      "align": [
       null,
       null,
@@ -25206,7 +26354,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "F44": {
+    "F45": {
      "align": [
       null,
       null,
@@ -25476,36 +26624,6 @@
      "nf": "General",
      "v": "DAYS"
     },
-    "G23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": null
-    },
     "G24": {
      "align": [
       null,
@@ -25536,37 +26654,7 @@
      "nf": "General",
      "v": null
     },
-    "G26": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "DAYS"
-    },
-    "G28": {
+    "G25": {
      "align": [
       null,
       null,
@@ -25596,7 +26684,7 @@
      "nf": "General",
      "v": null
     },
-    "G31": {
+    "G27": {
      "align": [
       null,
       null,
@@ -25626,7 +26714,7 @@
      "nf": "General",
      "v": "DAYS"
     },
-    "G33": {
+    "G29": {
      "align": [
       null,
       null,
@@ -25656,7 +26744,67 @@
      "nf": "General",
      "v": null
     },
-    "G37": {
+    "G32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "DAYS"
+    },
+    "G34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": null
+    },
+    "G38": {
      "align": [
       null,
       null,
@@ -25716,7 +26864,7 @@
      "nf": "General",
      "v": "Prod unit"
     },
-    "G42": {
+    "G43": {
      "align": [
       null,
       null,
@@ -25746,7 +26894,7 @@
      "nf": "General",
      "v": "DAYS"
     },
-    "G44": {
+    "G45": {
      "align": [
       null,
       null,
@@ -25926,7 +27074,7 @@
      "nf": "#,##0.00",
      "v": "8.0"
     },
-    "H26": {
+    "H27": {
      "align": [
       null,
       null,
@@ -25956,7 +27104,7 @@
      "nf": "#,##0.00",
      "v": "8.0"
     },
-    "H31": {
+    "H32": {
      "align": [
       null,
       null,
@@ -25986,7 +27134,7 @@
      "nf": "#,##0.00",
      "v": "8.0"
     },
-    "H37": {
+    "H38": {
      "align": [
       null,
       null,
@@ -26046,7 +27194,7 @@
      "nf": "General",
      "v": "Hrs/shift"
     },
-    "H42": {
+    "H43": {
      "align": [
       null,
       null,
@@ -26196,7 +27344,7 @@
      "nf": "0.000",
      "v": "1.000"
     },
-    "I26": {
+    "I27": {
      "align": [
       null,
       null,
@@ -26226,7 +27374,7 @@
      "nf": "0.000",
      "v": "1.000"
     },
-    "I31": {
+    "I32": {
      "align": [
       null,
       null,
@@ -26256,7 +27404,7 @@
      "nf": "0.000",
      "v": "1.000"
     },
-    "I37": {
+    "I38": {
      "align": [
       null,
       null,
@@ -26316,7 +27464,7 @@
      "nf": "General",
      "v": "Crew factor"
     },
-    "I42": {
+    "I43": {
      "align": [
       null,
       null,
@@ -26460,9 +27608,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "=IF(ABS(MOD((C21*IF(D21=\"HOURS\",1/IF(OR(H20=\"\",H20=0),8,H20),1))*100,1)-0.5)<1E-9,(INT((C21*IF(D21=\"HOURS\",1/IF(OR(H20=\"\",H20=0),8,H20),1))*100)+MOD(INT((C21*IF(D21=\"HOURS\",1/IF(OR(H20=\"\",H20=0),8,H20),1))*100),2))/100,ROUND(C21*IF(D21=\"HOURS\",1/IF(OR(H20=\"\",H20=0),8,H20),1),2))"
+     "v": "=IF(ABS(MOD((SUMIF(D21:D23,\"HOURS\",C21:C23)/IF(OR(H20=\"\",H20=0),8,H20)+SUMIF(D21:D23,\"<>HOURS\",C21:C23))*100,1)-0.5)<1E-9,(INT((SUMIF(D21:D23,\"HOURS\",C21:C23)/IF(OR(H20=\"\",H20=0),8,H20)+SUMIF(D21:D23,\"<>HOURS\",C21:C23))*100)+MOD(INT((SUMIF(D21:D23,\"HOURS\",C21:C23)/IF(OR(H20=\"\",H20=0),8,H20)+SUMIF(D21:D23,\"<>HOURS\",C21:C23))*100),2))/100,ROUND(SUMIF(D21:D23,\"HOURS\",C21:C23)/IF(OR(H20=\"\",H20=0),8,H20)+SUMIF(D21:D23,\"<>HOURS\",C21:C23),2))"
     },
-    "J26": {
+    "J27": {
      "align": [
       null,
       null,
@@ -26492,7 +27640,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "J31": {
+    "J32": {
      "align": [
       null,
       null,
@@ -26522,7 +27670,7 @@
      "nf": "#,##0.00",
      "v": null
     },
-    "J37": {
+    "J38": {
      "align": [
       null,
       null,
@@ -26582,7 +27730,7 @@
      "nf": "General",
      "v": "Shifts"
     },
-    "J42": {
+    "J43": {
      "align": [
       null,
       null,
@@ -26732,7 +27880,7 @@
      "nf": "General",
      "v": 1
     },
-    "K26": {
+    "K27": {
      "align": [
       "center",
       null,
@@ -26762,7 +27910,7 @@
      "nf": "General",
      "v": 1
     },
-    "K31": {
+    "K32": {
      "align": [
       "center",
       null,
@@ -26792,7 +27940,7 @@
      "nf": "General",
      "v": 1
     },
-    "K37": {
+    "K38": {
      "align": [
       "center",
       null,
@@ -26852,7 +28000,7 @@
      "nf": "General",
      "v": "Count"
     },
-    "K42": {
+    "K43": {
      "align": [
       "center",
       null,
@@ -27078,33 +28226,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=SUMIF(S22:S25,\"labor\",C22:C25)*AA20"
-    },
-    "L23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.0",
-     "v": "=IF(S23=\"labor\",C23,0)"
+     "v": "=SUMIF(S23:S26,\"labor\",C23:C26)*AA20"
     },
     "L24": {
      "align": [
@@ -27132,37 +28254,7 @@
      "nf": "#,##0.0",
      "v": "=IF(S24=\"labor\",C24,0)"
     },
-    "L26": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFAF6EE",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.0",
-     "v": "=SUMIF(S27:S29,\"labor\",C27:C29)*AA26"
-    },
-    "L28": {
+    "L25": {
      "align": [
       null,
       null,
@@ -27186,9 +28278,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(S28=\"labor\",C28,0)"
+     "v": "=IF(S25=\"labor\",C25,0)"
     },
-    "L31": {
+    "L27": {
      "align": [
       null,
       null,
@@ -27216,9 +28308,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=SUMIF(S32:S34,\"labor\",C32:C34)*AA31"
+     "v": "=SUMIF(S28:S30,\"labor\",C28:C30)*AA27"
     },
-    "L33": {
+    "L29": {
      "align": [
       null,
       null,
@@ -27242,9 +28334,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(S33=\"labor\",C33,0)"
+     "v": "=IF(S29=\"labor\",C29,0)"
     },
-    "L37": {
+    "L32": {
      "align": [
       null,
       null,
@@ -27272,7 +28364,63 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(J37<>\"\",'Crews'!$I$9*J37*'Crews'!$G$9,SUMIF(S38:S39,\"labor\",C38:C39))*AA37"
+     "v": "=SUMIF(S33:S35,\"labor\",C33:C35)*AA32"
+    },
+    "L34": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.0",
+     "v": "=IF(S34=\"labor\",C34,0)"
+    },
+    "L38": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFAF6EE",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.0",
+     "v": "=IF(J38<>\"\",'Crews'!$I$9*J38*'Crews'!$G$9,SUMIF(S39:S40,\"labor\",C39:C40))*AA38"
     },
     "L4": {
      "align": [
@@ -27304,7 +28452,7 @@
      "nf": "General",
      "v": "Man-hours"
     },
-    "L42": {
+    "L43": {
      "align": [
       null,
       null,
@@ -27332,9 +28480,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=SUMIF(S43:S45,\"labor\",C43:C45)*AA42"
+     "v": "=SUMIF(S44:S46,\"labor\",C44:C46)*AA43"
     },
-    "L44": {
+    "L45": {
      "align": [
       null,
       null,
@@ -27358,7 +28506,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(S44=\"labor\",C44,0)"
+     "v": "=IF(S45=\"labor\",C45,0)"
     },
     "L7": {
      "align": [
@@ -27582,33 +28730,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M22:M25)*AA20"
-    },
-    "M23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S23=\"labor\",AG23,0)"
+     "v": "=SUM(M23:M26)*AA20"
     },
     "M24": {
      "align": [
@@ -27636,7 +28758,33 @@
      "nf": "#,##0.00;(#,##0.00);\"\"",
      "v": "=IF(S24=\"labor\",AG24,0)"
     },
-    "M26": {
+    "M25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=IF(S25=\"labor\",AG25,0)"
+    },
+    "M27": {
      "align": [
       null,
       null,
@@ -27664,9 +28812,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M27:M29)*AA26"
+     "v": "=SUM(M28:M30)*AA27"
     },
-    "M28": {
+    "M29": {
      "align": [
       null,
       null,
@@ -27690,37 +28838,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S28=\"labor\",AG28,0)"
-    },
-    "M30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X30,'_shares'!$E$2:$E$9)"
+     "v": "=IF(S29=\"labor\",AG29,0)"
     },
     "M31": {
      "align": [
@@ -27734,6 +28852,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X31,'_shares'!$E$2:$E$9)"
+    },
+    "M32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -27750,9 +28898,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M32:M34)*AA31"
+     "v": "=SUM(M33:M35)*AA32"
     },
-    "M33": {
+    "M34": {
      "align": [
       null,
       null,
@@ -27776,9 +28924,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S33=\"labor\",AG33,0)"
+     "v": "=IF(S34=\"labor\",AG34,0)"
     },
-    "M35": {
+    "M36": {
      "align": [
       null,
       null,
@@ -27806,9 +28954,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X35,'_shares'!$E$2:$E$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X36,'_shares'!$E$2:$E$9)"
     },
-    "M37": {
+    "M38": {
      "align": [
       null,
       null,
@@ -27836,7 +28984,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(J37<>\"\",'Crews'!$J$9*J37*'Crews'!$G$9*'Crews'!$H$9,SUM(M38:M39))*AA37"
+     "v": "=IF(J38<>\"\",'Crews'!$J$9*J38*'Crews'!$G$9*'Crews'!$H$9,SUM(M39:M40))*AA38"
     },
     "M4": {
      "align": [
@@ -27867,36 +29015,6 @@
      "locked": true,
      "nf": "General",
      "v": "Labor"
-    },
-    "M40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X40,'_shares'!$E$2:$E$9)"
     },
     "M41": {
      "align": [
@@ -27940,6 +29058,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X42,'_shares'!$E$2:$E$9)"
+    },
+    "M43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -27956,9 +29104,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M43:M45)*AA42"
+     "v": "=SUM(M44:M46)*AA43"
     },
-    "M44": {
+    "M45": {
      "align": [
       null,
       null,
@@ -27982,7 +29130,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S44=\"labor\",AG44,0)"
+     "v": "=IF(S45=\"labor\",AG45,0)"
     },
     "M5": {
      "align": [
@@ -28236,33 +29384,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(N22:N25)*AA20"
-    },
-    "N23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S23=\"equipment\",AG23,0)"
+     "v": "=SUM(N23:N26)*AA20"
     },
     "N24": {
      "align": [
@@ -28290,7 +29412,33 @@
      "nf": "#,##0.00;(#,##0.00);\"\"",
      "v": "=IF(S24=\"equipment\",AG24,0)"
     },
-    "N26": {
+    "N25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=IF(S25=\"equipment\",AG25,0)"
+    },
+    "N27": {
      "align": [
       null,
       null,
@@ -28318,9 +29466,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(N27:N29)*AA26"
+     "v": "=SUM(N28:N30)*AA27"
     },
-    "N28": {
+    "N29": {
      "align": [
       null,
       null,
@@ -28344,37 +29492,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S28=\"equipment\",AG28,0)"
-    },
-    "N30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X30,'_shares'!$F$2:$F$9)"
+     "v": "=IF(S29=\"equipment\",AG29,0)"
     },
     "N31": {
      "align": [
@@ -28388,6 +29506,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X31,'_shares'!$F$2:$F$9)"
+    },
+    "N32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -28404,9 +29552,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(N32:N34)*AA31"
+     "v": "=SUM(N33:N35)*AA32"
     },
-    "N33": {
+    "N34": {
      "align": [
       null,
       null,
@@ -28430,9 +29578,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S33=\"equipment\",AG33,0)"
+     "v": "=IF(S34=\"equipment\",AG34,0)"
     },
-    "N35": {
+    "N36": {
      "align": [
       null,
       null,
@@ -28460,9 +29608,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X35,'_shares'!$F$2:$F$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X36,'_shares'!$F$2:$F$9)"
     },
-    "N37": {
+    "N38": {
      "align": [
       null,
       null,
@@ -28490,7 +29638,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(N38:N39)*AA37"
+     "v": "=SUM(N39:N40)*AA38"
     },
     "N4": {
      "align": [
@@ -28521,36 +29669,6 @@
      "locked": true,
      "nf": "General",
      "v": "Equipment"
-    },
-    "N40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X40,'_shares'!$F$2:$F$9)"
     },
     "N41": {
      "align": [
@@ -28594,6 +29712,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X42,'_shares'!$F$2:$F$9)"
+    },
+    "N43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -28610,9 +29758,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(N43:N45)*AA42"
+     "v": "=SUM(N44:N46)*AA43"
     },
-    "N44": {
+    "N45": {
      "align": [
       null,
       null,
@@ -28636,7 +29784,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S44=\"equipment\",AG44,0)"
+     "v": "=IF(S45=\"equipment\",AG45,0)"
     },
     "N5": {
      "align": [
@@ -28890,33 +30038,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(O22:O25)*AA20"
-    },
-    "O23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S23=\"material\",AG23,0)"
+     "v": "=SUM(O23:O26)*AA20"
     },
     "O24": {
      "align": [
@@ -28944,7 +30066,33 @@
      "nf": "#,##0.00;(#,##0.00);\"\"",
      "v": "=IF(S24=\"material\",AG24,0)"
     },
-    "O26": {
+    "O25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=IF(S25=\"material\",AG25,0)"
+    },
+    "O27": {
      "align": [
       null,
       null,
@@ -28972,9 +30120,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(O27:O29)*AA26"
+     "v": "=SUM(O28:O30)*AA27"
     },
-    "O28": {
+    "O29": {
      "align": [
       null,
       null,
@@ -28998,37 +30146,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S28=\"material\",AG28,0)"
-    },
-    "O30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X30,'_shares'!$G$2:$G$9)"
+     "v": "=IF(S29=\"material\",AG29,0)"
     },
     "O31": {
      "align": [
@@ -29042,6 +30160,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X31,'_shares'!$G$2:$G$9)"
+    },
+    "O32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -29058,9 +30206,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(O32:O34)*AA31"
+     "v": "=SUM(O33:O35)*AA32"
     },
-    "O33": {
+    "O34": {
      "align": [
       null,
       null,
@@ -29084,9 +30232,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S33=\"material\",AG33,0)"
+     "v": "=IF(S34=\"material\",AG34,0)"
     },
-    "O35": {
+    "O36": {
      "align": [
       null,
       null,
@@ -29114,9 +30262,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X35,'_shares'!$G$2:$G$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X36,'_shares'!$G$2:$G$9)"
     },
-    "O37": {
+    "O38": {
      "align": [
       null,
       null,
@@ -29144,7 +30292,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(O38:O39)*AA37"
+     "v": "=SUM(O39:O40)*AA38"
     },
     "O4": {
      "align": [
@@ -29175,36 +30323,6 @@
      "locked": true,
      "nf": "General",
      "v": "Material"
-    },
-    "O40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X40,'_shares'!$G$2:$G$9)"
     },
     "O41": {
      "align": [
@@ -29248,6 +30366,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X42,'_shares'!$G$2:$G$9)"
+    },
+    "O43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -29264,9 +30412,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(O43:O45)*AA42"
+     "v": "=SUM(O44:O46)*AA43"
     },
-    "O44": {
+    "O45": {
      "align": [
       null,
       null,
@@ -29290,7 +30438,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S44=\"material\",AG44,0)"
+     "v": "=IF(S45=\"material\",AG45,0)"
     },
     "O5": {
      "align": [
@@ -29544,33 +30692,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(P22:P25)*AA20"
-    },
-    "P23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S23=\"subcontractor\",AG23,0)"
+     "v": "=SUM(P23:P26)*AA20"
     },
     "P24": {
      "align": [
@@ -29598,7 +30720,33 @@
      "nf": "#,##0.00;(#,##0.00);\"\"",
      "v": "=IF(S24=\"subcontractor\",AG24,0)"
     },
-    "P26": {
+    "P25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=IF(S25=\"subcontractor\",AG25,0)"
+    },
+    "P27": {
      "align": [
       null,
       null,
@@ -29626,9 +30774,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(P27:P29)*AA26"
+     "v": "=SUM(P28:P30)*AA27"
     },
-    "P28": {
+    "P29": {
      "align": [
       null,
       null,
@@ -29652,37 +30800,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S28=\"subcontractor\",AG28,0)"
-    },
-    "P30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X30,'_shares'!$H$2:$H$9)"
+     "v": "=IF(S29=\"subcontractor\",AG29,0)"
     },
     "P31": {
      "align": [
@@ -29696,6 +30814,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X31,'_shares'!$H$2:$H$9)"
+    },
+    "P32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -29712,9 +30860,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(P32:P34)*AA31"
+     "v": "=SUM(P33:P35)*AA32"
     },
-    "P33": {
+    "P34": {
      "align": [
       null,
       null,
@@ -29738,9 +30886,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S33=\"subcontractor\",AG33,0)"
+     "v": "=IF(S34=\"subcontractor\",AG34,0)"
     },
-    "P35": {
+    "P36": {
      "align": [
       null,
       null,
@@ -29768,9 +30916,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X35,'_shares'!$H$2:$H$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X36,'_shares'!$H$2:$H$9)"
     },
-    "P37": {
+    "P38": {
      "align": [
       null,
       null,
@@ -29798,7 +30946,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(P38:P39)*AA37"
+     "v": "=SUM(P39:P40)*AA38"
     },
     "P4": {
      "align": [
@@ -29829,36 +30977,6 @@
      "locked": true,
      "nf": "General",
      "v": "Subcontract"
-    },
-    "P40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X40,'_shares'!$H$2:$H$9)"
     },
     "P41": {
      "align": [
@@ -29902,6 +31020,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X42,'_shares'!$H$2:$H$9)"
+    },
+    "P43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -29918,9 +31066,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(P43:P45)*AA42"
+     "v": "=SUM(P44:P46)*AA43"
     },
-    "P44": {
+    "P45": {
      "align": [
       null,
       null,
@@ -29944,7 +31092,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(S44=\"subcontractor\",AG44,0)"
+     "v": "=IF(S45=\"subcontractor\",AG45,0)"
     },
     "P5": {
      "align": [
@@ -30198,33 +31346,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(Q22:Q25)*AA20"
-    },
-    "Q23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG23-(M23+N23+O23+P23)"
+     "v": "=SUM(Q23:Q26)*AA20"
     },
     "Q24": {
      "align": [
@@ -30252,7 +31374,33 @@
      "nf": "#,##0.00;(#,##0.00);\"\"",
      "v": "=AG24-(M24+N24+O24+P24)"
     },
-    "Q26": {
+    "Q25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=AG25-(M25+N25+O25+P25)"
+    },
+    "Q27": {
      "align": [
       null,
       null,
@@ -30280,9 +31428,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(Q27:Q29)*AA26"
+     "v": "=SUM(Q28:Q30)*AA27"
     },
-    "Q28": {
+    "Q29": {
      "align": [
       null,
       null,
@@ -30306,37 +31454,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG28-(M28+N28+O28+P28)"
-    },
-    "Q30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X30,'_shares'!$I$2:$I$9)"
+     "v": "=AG29-(M29+N29+O29+P29)"
     },
     "Q31": {
      "align": [
@@ -30350,6 +31468,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X31,'_shares'!$I$2:$I$9)"
+    },
+    "Q32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -30366,9 +31514,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(Q32:Q34)*AA31"
+     "v": "=SUM(Q33:Q35)*AA32"
     },
-    "Q33": {
+    "Q34": {
      "align": [
       null,
       null,
@@ -30392,9 +31540,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG33-(M33+N33+O33+P33)"
+     "v": "=AG34-(M34+N34+O34+P34)"
     },
-    "Q35": {
+    "Q36": {
      "align": [
       null,
       null,
@@ -30422,9 +31570,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X35,'_shares'!$I$2:$I$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X36,'_shares'!$I$2:$I$9)"
     },
-    "Q37": {
+    "Q38": {
      "align": [
       null,
       null,
@@ -30452,7 +31600,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(Q38:Q39)*AA37"
+     "v": "=SUM(Q39:Q40)*AA38"
     },
     "Q4": {
      "align": [
@@ -30483,36 +31631,6 @@
      "locked": true,
      "nf": "General",
      "v": "Other"
-    },
-    "Q40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,X40,'_shares'!$I$2:$I$9)"
     },
     "Q41": {
      "align": [
@@ -30556,6 +31674,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=SUMIF('_shares'!$B$2:$B$9,X42,'_shares'!$I$2:$I$9)"
+    },
+    "Q43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -30572,9 +31720,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(Q43:Q45)*AA42"
+     "v": "=SUM(Q44:Q46)*AA43"
     },
-    "Q44": {
+    "Q45": {
      "align": [
       null,
       null,
@@ -30598,7 +31746,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG44-(M44+N44+O44+P44)"
+     "v": "=AG45-(M45+N45+O45+P45)"
     },
     "Q5": {
      "align": [
@@ -30854,32 +32002,6 @@
      "nf": "#,##0.00;(#,##0.00);\"\"",
      "v": "=SUM(M20:Q20)"
     },
-    "R23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG23"
-    },
     "R24": {
      "align": [
       null,
@@ -30906,7 +32028,33 @@
      "nf": "#,##0.00;(#,##0.00);\"\"",
      "v": "=AG24"
     },
-    "R26": {
+    "R25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=AG25"
+    },
+    "R27": {
      "align": [
       null,
       null,
@@ -30934,9 +32082,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M26:Q26)"
+     "v": "=SUM(M27:Q27)"
     },
-    "R28": {
+    "R29": {
      "align": [
       null,
       null,
@@ -30960,37 +32108,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG28"
-    },
-    "R30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(OR(AG30=\"\",AG30=0),0,IF(E30<>\"\",E30*AG30,IF(AI30<>\"\",AI30*AG30,0)))"
+     "v": "=AG29"
     },
     "R31": {
      "align": [
@@ -31004,6 +32122,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=IF(OR(AG31=\"\",AG31=0),0,IF(E31<>\"\",E31*AG31,IF(AI31<>\"\",AI31*AG31,0)))"
+    },
+    "R32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -31020,9 +32168,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M31:Q31)"
+     "v": "=SUM(M32:Q32)"
     },
-    "R33": {
+    "R34": {
      "align": [
       null,
       null,
@@ -31046,9 +32194,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG33"
+     "v": "=AG34"
     },
-    "R35": {
+    "R36": {
      "align": [
       null,
       null,
@@ -31076,9 +32224,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(OR(AG35=\"\",AG35=0),0,IF(E35<>\"\",E35*AG35,IF(AI35<>\"\",AI35*AG35,0)))"
+     "v": "=IF(OR(AG36=\"\",AG36=0),0,IF(E36<>\"\",E36*AG36,IF(AI36<>\"\",AI36*AG36,0)))"
     },
-    "R37": {
+    "R38": {
      "align": [
       null,
       null,
@@ -31106,7 +32254,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M37:Q37)"
+     "v": "=SUM(M38:Q38)"
     },
     "R4": {
      "align": [
@@ -31137,36 +32285,6 @@
      "locked": true,
      "nf": "General",
      "v": "Total"
-    },
-    "R40": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFF3EBDA",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      true,
-      false,
-      null,
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(OR(AG40=\"\",AG40=0),0,IF(E40<>\"\",E40*AG40,IF(AI40<>\"\",AI40*AG40,0)))"
     },
     "R41": {
      "align": [
@@ -31210,6 +32328,36 @@
      "border": {},
      "fill": [
       "solid",
+      "FFF3EBDA",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      true,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00;(#,##0.00);\"\"",
+     "v": "=IF(OR(AG42=\"\",AG42=0),0,IF(E42<>\"\",E42*AG42,IF(AI42<>\"\",AI42*AG42,0)))"
+    },
+    "R43": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
       "FFFAF6EE",
       "00000000"
      ],
@@ -31226,9 +32374,9 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=SUM(M42:Q42)"
+     "v": "=SUM(M43:Q43)"
     },
-    "R44": {
+    "R45": {
      "align": [
       null,
       null,
@@ -31252,7 +32400,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=AG44"
+     "v": "=AG45"
     },
     "R5": {
      "align": [
@@ -31430,36 +32578,6 @@
      "nf": "General",
      "v": "material"
     },
-    "S23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "labor"
-    },
     "S24": {
      "align": [
       null,
@@ -31490,7 +32608,37 @@
      "nf": "General",
      "v": "labor"
     },
-    "S28": {
+    "S25": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "labor"
+    },
+    "S29": {
      "align": [
       null,
       null,
@@ -31520,7 +32668,7 @@
      "nf": "General",
      "v": "material"
     },
-    "S33": {
+    "S34": {
      "align": [
       null,
       null,
@@ -31580,7 +32728,7 @@
      "nf": "General",
      "v": "Type"
     },
-    "S44": {
+    "S45": {
      "align": [
       null,
       null,
@@ -31730,7 +32878,7 @@
      "nf": "General",
      "v": "production"
     },
-    "T23": {
+    "T24": {
      "align": [
       null,
       null,
@@ -31760,7 +32908,7 @@
      "nf": "General",
      "v": "flat"
     },
-    "T24": {
+    "T25": {
      "align": [
       null,
       null,
@@ -31790,7 +32938,7 @@
      "nf": "General",
      "v": "production"
     },
-    "T28": {
+    "T29": {
      "align": [
       null,
       null,
@@ -31820,7 +32968,7 @@
      "nf": "General",
      "v": "production"
     },
-    "T33": {
+    "T34": {
      "align": [
       null,
       null,
@@ -31880,7 +33028,7 @@
      "nf": "General",
      "v": "Labor basis"
     },
-    "T44": {
+    "T45": {
      "align": [
       null,
       null,
@@ -32030,36 +33178,6 @@
      "nf": "0.00",
      "v": null
     },
-    "U23": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "0.00",
-     "v": null
-    },
     "U24": {
      "align": [
       null,
@@ -32090,7 +33208,7 @@
      "nf": "0.00",
      "v": null
     },
-    "U28": {
+    "U25": {
      "align": [
       null,
       null,
@@ -32120,7 +33238,37 @@
      "nf": "0.00",
      "v": null
     },
-    "U33": {
+    "U29": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "0.00",
+     "v": null
+    },
+    "U34": {
      "align": [
       null,
       null,
@@ -32180,7 +33328,7 @@
      "nf": "General",
      "v": "Burden %"
     },
-    "U44": {
+    "U45": {
      "align": [
       null,
       null,
@@ -32330,36 +33478,6 @@
      "nf": "General",
      "v": "N"
     },
-    "V23": {
-     "align": [
-      "center",
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": [
-      "solid",
-      "FFFFF8DC",
-      "00000000"
-     ],
-     "font": [
-      "Arial",
-      10.0,
-      false,
-      false,
-      "FF1747B5",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": "N"
-    },
     "V24": {
      "align": [
       "center",
@@ -32390,7 +33508,7 @@
      "nf": "General",
      "v": "N"
     },
-    "V28": {
+    "V25": {
      "align": [
       "center",
       null,
@@ -32420,7 +33538,37 @@
      "nf": "General",
      "v": "N"
     },
-    "V33": {
+    "V29": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFFF8DC",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF1747B5",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "N"
+    },
+    "V34": {
      "align": [
       "center",
       null,
@@ -32480,7 +33628,7 @@
      "nf": "General",
      "v": "Burden incl."
     },
-    "V44": {
+    "V45": {
      "align": [
       "center",
       null,
@@ -32850,7 +33998,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "STEP"
+     "v": "STEPS"
     },
     "W22": {
      "align": [
@@ -32876,7 +34024,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "START"
+     "v": "STEP"
     },
     "W23": {
      "align": [
@@ -32902,7 +34050,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "RESOURCE"
+     "v": "START"
     },
     "W24": {
      "align": [
@@ -32954,7 +34102,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "END"
+     "v": "RESOURCE"
     },
     "W26": {
      "align": [
@@ -32980,7 +34128,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ACTIVITY"
+     "v": "END"
     },
     "W27": {
      "align": [
@@ -33006,7 +34154,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "START"
+     "v": "ACTIVITY"
     },
     "W28": {
      "align": [
@@ -33032,7 +34180,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "RESOURCE"
+     "v": "START"
     },
     "W29": {
      "align": [
@@ -33058,7 +34206,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "END"
+     "v": "RESOURCE"
     },
     "W30": {
      "align": [
@@ -33084,7 +34232,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ITEM"
+     "v": "END"
     },
     "W31": {
      "align": [
@@ -33110,7 +34258,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ACTIVITY"
+     "v": "ITEM"
     },
     "W32": {
      "align": [
@@ -33136,7 +34284,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "START"
+     "v": "ACTIVITY"
     },
     "W33": {
      "align": [
@@ -33162,7 +34310,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "RESOURCE"
+     "v": "START"
     },
     "W34": {
      "align": [
@@ -33188,7 +34336,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "END"
+     "v": "RESOURCE"
     },
     "W35": {
      "align": [
@@ -33214,7 +34362,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ITEM"
+     "v": "END"
     },
     "W36": {
      "align": [
@@ -33240,7 +34388,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ELEMENT_QTY"
+     "v": "ITEM"
     },
     "W37": {
      "align": [
@@ -33266,7 +34414,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ACTIVITY"
+     "v": "ELEMENT_QTY"
     },
     "W38": {
      "align": [
@@ -33292,7 +34440,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "START"
+     "v": "ACTIVITY"
     },
     "W39": {
      "align": [
@@ -33318,7 +34466,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "END"
+     "v": "START"
     },
     "W4": {
      "align": [
@@ -33374,7 +34522,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ITEM"
+     "v": "END"
     },
     "W41": {
      "align": [
@@ -33426,7 +34574,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "ACTIVITY"
+     "v": "ITEM"
     },
     "W43": {
      "align": [
@@ -33452,7 +34600,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "START"
+     "v": "ACTIVITY"
     },
     "W44": {
      "align": [
@@ -33478,9 +34626,35 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "RESOURCE"
+     "v": "START"
     },
     "W45": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "RESOURCE"
+    },
+    "W46": {
      "align": [
       null,
       null,
@@ -33792,7 +34966,7 @@
      "nf": "General",
      "v": 4
     },
-    "X21": {
+    "X22": {
      "align": [
       null,
       null,
@@ -33818,7 +34992,7 @@
      "nf": "General",
      "v": 1
     },
-    "X23": {
+    "X24": {
      "align": [
       null,
       null,
@@ -33844,7 +35018,7 @@
      "nf": "General",
      "v": 5
     },
-    "X24": {
+    "X25": {
      "align": [
       null,
       null,
@@ -33870,7 +35044,7 @@
      "nf": "General",
      "v": 6
     },
-    "X26": {
+    "X27": {
      "align": [
       null,
       null,
@@ -33896,7 +35070,7 @@
      "nf": "General",
      "v": 5
     },
-    "X28": {
+    "X29": {
      "align": [
       null,
       null,
@@ -33921,32 +35095,6 @@
      "locked": true,
      "nf": "General",
      "v": 7
-    },
-    "X30": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": 4
     },
     "X31": {
      "align": [
@@ -33972,9 +35120,35 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
+     "v": 4
+    },
+    "X32": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
      "v": 7
     },
-    "X33": {
+    "X34": {
      "align": [
       null,
       null,
@@ -33999,32 +35173,6 @@
      "locked": true,
      "nf": "General",
      "v": 8
-    },
-    "X35": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": 2
     },
     "X36": {
      "align": [
@@ -34053,6 +35201,32 @@
      "v": 2
     },
     "X37": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "X38": {
      "align": [
       null,
       null,
@@ -34108,7 +35282,7 @@
      "nf": "General",
      "v": "id"
     },
-    "X40": {
+    "X41": {
      "align": [
       null,
       null,
@@ -34134,7 +35308,7 @@
      "nf": "General",
      "v": 3
     },
-    "X41": {
+    "X42": {
      "align": [
       null,
       null,
@@ -34160,7 +35334,7 @@
      "nf": "General",
      "v": 5
     },
-    "X42": {
+    "X43": {
      "align": [
       null,
       null,
@@ -34186,7 +35360,7 @@
      "nf": "General",
      "v": 8
     },
-    "X44": {
+    "X45": {
      "align": [
       null,
       null,
@@ -34472,7 +35646,7 @@
      "nf": "General",
      "v": "94f2390d96e48a48"
     },
-    "Y21": {
+    "Y22": {
      "align": [
       null,
       null,
@@ -34498,7 +35672,7 @@
      "nf": "General",
      "v": "128bba9d35b48338"
     },
-    "Y23": {
+    "Y24": {
      "align": [
       null,
       null,
@@ -34524,7 +35698,7 @@
      "nf": "General",
      "v": "b8d4011c5b92ce2d"
     },
-    "Y24": {
+    "Y25": {
      "align": [
       null,
       null,
@@ -34550,7 +35724,7 @@
      "nf": "General",
      "v": "88f593617778a10c"
     },
-    "Y26": {
+    "Y27": {
      "align": [
       null,
       null,
@@ -34576,7 +35750,7 @@
      "nf": "General",
      "v": "927a7aef00122903"
     },
-    "Y28": {
+    "Y29": {
      "align": [
       null,
       null,
@@ -34602,7 +35776,7 @@
      "nf": "General",
      "v": "bab71daf430b3e97"
     },
-    "Y30": {
+    "Y31": {
      "align": [
       null,
       null,
@@ -34628,7 +35802,7 @@
      "nf": "General",
      "v": "6f62a4969a672961"
     },
-    "Y31": {
+    "Y32": {
      "align": [
       null,
       null,
@@ -34654,7 +35828,7 @@
      "nf": "General",
      "v": "9fbd68ff68b2ba28"
     },
-    "Y33": {
+    "Y34": {
      "align": [
       null,
       null,
@@ -34680,7 +35854,7 @@
      "nf": "General",
      "v": "0f73ba4359f3aead"
     },
-    "Y35": {
+    "Y36": {
      "align": [
       null,
       null,
@@ -34706,7 +35880,7 @@
      "nf": "General",
      "v": "973354cc8099ae7e"
     },
-    "Y36": {
+    "Y37": {
      "align": [
       null,
       null,
@@ -34732,7 +35906,7 @@
      "nf": "General",
      "v": "163fe7e03f4fa7a5"
     },
-    "Y37": {
+    "Y38": {
      "align": [
       null,
       null,
@@ -34788,7 +35962,7 @@
      "nf": "General",
      "v": "v"
     },
-    "Y40": {
+    "Y41": {
      "align": [
       null,
       null,
@@ -34814,7 +35988,7 @@
      "nf": "General",
      "v": "7940f1306f4b1b78"
     },
-    "Y41": {
+    "Y42": {
      "align": [
       null,
       null,
@@ -34840,7 +36014,7 @@
      "nf": "General",
      "v": "ee87a6fbf9270423"
     },
-    "Y42": {
+    "Y43": {
      "align": [
       null,
       null,
@@ -34866,7 +36040,7 @@
      "nf": "General",
      "v": "3a4733f2858ff95c"
     },
-    "Y44": {
+    "Y45": {
      "align": [
       null,
       null,
@@ -34890,7 +36064,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "d55f3a187c82425d"
+     "v": "4ea482eca57eddaf"
     },
     "Y5": {
      "align": [
@@ -35360,7 +36534,7 @@
      "nf": "General",
      "v": 4
     },
-    "Z27": {
+    "Z26": {
      "align": [
       null,
       null,
@@ -35384,7 +36558,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 5
+     "v": 4
     },
     "Z28": {
      "align": [
@@ -35438,7 +36612,7 @@
      "nf": "General",
      "v": 5
     },
-    "Z32": {
+    "Z30": {
      "align": [
       null,
       null,
@@ -35462,7 +36636,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 7
+     "v": 5
     },
     "Z33": {
      "align": [
@@ -35516,7 +36690,33 @@
      "nf": "General",
      "v": 7
     },
-    "Z36": {
+    "Z35": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 7
+    },
+    "Z37": {
      "align": [
       null,
       null,
@@ -35541,32 +36741,6 @@
      "locked": true,
      "nf": "General",
      "v": 2
-    },
-    "Z38": {
-     "align": [
-      null,
-      null,
-      null,
-      0.0,
-      null,
-      0
-     ],
-     "border": {},
-     "fill": null,
-     "font": [
-      "Calibri",
-      11.0,
-      false,
-      false,
-      "theme:1",
-      null,
-      false,
-      null
-     ],
-     "hidden": false,
-     "locked": true,
-     "nf": "General",
-     "v": 6
     },
     "Z39": {
      "align": [
@@ -35624,7 +36798,7 @@
      "nf": "General",
      "v": "parent_id"
     },
-    "Z43": {
+    "Z40": {
      "align": [
       null,
       null,
@@ -35648,7 +36822,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 8
+     "v": 6
     },
     "Z44": {
      "align": [
@@ -35677,6 +36851,32 @@
      "v": 8
     },
     "Z45": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 8
+    },
+    "Z46": {
      "align": [
       null,
       null,
@@ -35784,22 +36984,22 @@
    "conditional": [],
    "data_validations": [
     [
-     "D21 G7:G20 G22:G29 G31:G34 G37:G39 G42:G45",
+     "D21:D22 G7:G20 G23:G30 G32:G35 G38:G40 G43:G46",
      "list",
      "\"DAYS,HOURS\""
     ],
     [
-     "S8:S10 S12:S15 S17:S19 S22:S25 S27:S29 S32:S34 S38:S39 S43:S45",
+     "S8:S10 S12:S15 S17:S19 S23:S26 S28:S30 S33:S35 S39:S40 S44:S46",
      "list",
      "\"labor,equipment,material,subcontractor,other\""
     ],
     [
-     "T8:T10 T12:T15 T17:T19 T22:T25 T27:T29 T32:T34 T38:T39 T43:T45",
+     "T8:T10 T12:T15 T17:T19 T23:T26 T28:T30 T33:T35 T39:T40 T44:T46",
      "list",
      "\"production,flat\""
     ],
     [
-     "V8:V10 V12:V15 V17:V19 V22:V25 V27:V29 V32:V34 V38:V39 V43:V45",
+     "V8:V10 V12:V15 V17:V19 V23:V26 V28:V30 V33:V35 V39:V40 V44:V46",
      "list",
      "\"Y,N\""
     ]
@@ -35815,6 +37015,7 @@
     "AG",
     "AH",
     "AI",
+    "AJ",
     "W",
     "X",
     "Y",
@@ -35843,11 +37044,12 @@
    "row_heights": {
     "12": 6.0,
     "17": 6.0,
-    "22": 6.0,
-    "27": 6.0,
-    "32": 6.0,
-    "38": 6.0,
-    "43": 6.0,
+    "21": 6.0,
+    "23": 6.0,
+    "28": 6.0,
+    "33": 6.0,
+    "39": 6.0,
+    "44": 6.0,
     "8": 6.0
    },
    "sheet_state": "visible",
@@ -35862,6 +37064,7 @@
     "AG": 13.0,
     "AH": 13.0,
     "AI": 13.0,
+    "AJ": 13.0,
     "B": 38.0,
     "C": 12.0,
     "D": 7.0,
@@ -36157,6 +37360,36 @@
      "nf": "General",
      "v": "Library crew -- an edit copies it into this estimate."
     },
+    "B12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFBF9F4",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      true,
+      "FF6B7075",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "insert members above"
+    },
     "B4": {
      "align": [
       "center",
@@ -36216,6 +37449,36 @@
      "locked": true,
      "nf": "General",
      "v": "Excavation crew"
+    },
+    "B8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": [
+      "solid",
+      "FFFBF9F4",
+      "00000000"
+     ],
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      true,
+      "FF6B7075",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "insert members above"
     },
     "B9": {
      "align": [
@@ -36941,7 +38204,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=SUM(C6:C7)"
+     "v": "=SUM(C5:C8)"
     },
     "I9": {
      "align": [
@@ -36971,7 +38234,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=SUM(C11:C11)"
+     "v": "=SUM(C9:C12)"
     },
     "J4": {
      "align": [
@@ -37031,7 +38294,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "=SUM(Q6:Q7)"
+     "v": "=SUM(Q5:Q8)"
     },
     "J9": {
      "align": [
@@ -37061,7 +38324,33 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "=SUM(Q11:Q11)"
+     "v": "=SUM(Q9:Q12)"
+    },
+    "K10": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "NOTE"
     },
     "K11": {
      "align": [
@@ -37088,6 +38377,32 @@
      "locked": true,
      "nf": "General",
      "v": "MEMBER"
+    },
+    "K12": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "CREW_END"
     },
     "K4": {
      "align": [
@@ -37196,6 +38511,32 @@
      "locked": true,
      "nf": "General",
      "v": "MEMBER"
+    },
+    "K8": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "CREW_END"
     },
     "K9": {
      "align": [
@@ -37465,7 +38806,59 @@
      "nf": "General",
      "v": "331a990f8c627d9c"
     },
+    "N10": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
     "N11": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 2
+    },
+    "N12": {
      "align": [
       null,
       null,
@@ -37548,6 +38941,32 @@
      "v": 1
     },
     "N7": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
+    "N8": {
      "align": [
       null,
       null,
@@ -39298,7 +40717,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$S$23"
+     "v": "='Cost Report'!$S$24"
     },
     "E11": {
      "align": [
@@ -39324,7 +40743,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$S$24"
+     "v": "='Cost Report'!$S$25"
     },
     "E12": {
      "align": [
@@ -39350,7 +40769,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$S$28"
+     "v": "='Cost Report'!$S$29"
     },
     "E13": {
      "align": [
@@ -39376,7 +40795,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$S$33"
+     "v": "='Cost Report'!$S$34"
     },
     "E14": {
      "align": [
@@ -39428,7 +40847,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$S$44"
+     "v": "='Cost Report'!$S$45"
     },
     "E4": {
      "align": [
@@ -39614,7 +41033,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$C$23"
+     "v": "='Cost Report'!$C$24"
     },
     "F11": {
      "align": [
@@ -39640,7 +41059,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$C$24"
+     "v": "='Cost Report'!$C$25"
     },
     "F12": {
      "align": [
@@ -39666,7 +41085,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$C$28"
+     "v": "='Cost Report'!$C$29"
     },
     "F13": {
      "align": [
@@ -39692,7 +41111,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$C$33"
+     "v": "='Cost Report'!$C$34"
     },
     "F14": {
      "align": [
@@ -39718,7 +41137,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$J$37"
+     "v": "='Cost Report'!$J$38"
     },
     "F15": {
      "align": [
@@ -39744,7 +41163,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$C$44"
+     "v": "='Cost Report'!$C$45"
     },
     "F4": {
      "align": [
@@ -40246,7 +41665,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(AND('Cost Report'!$S$23=\"labor\",NOT(AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\"))),'Cost Report'!$C$23*'Cost Report'!$AA$20,0)"
+     "v": "=IF(AND('Cost Report'!$S$24=\"labor\",NOT(AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\"))),'Cost Report'!$C$24*'Cost Report'!$AA$20,0)"
     },
     "H11": {
      "align": [
@@ -40272,7 +41691,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(AND('Cost Report'!$S$24=\"labor\",NOT(AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\"))),'Cost Report'!$C$24*'Cost Report'!$AA$20,0)"
+     "v": "=IF(AND('Cost Report'!$S$25=\"labor\",NOT(AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\"))),'Cost Report'!$C$25*'Cost Report'!$AA$20,0)"
     },
     "H12": {
      "align": [
@@ -40298,7 +41717,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(AND('Cost Report'!$S$28=\"labor\",NOT(AND('Cost Report'!$AE$26<>\"\",'Cost Report'!$J$26<>\"\"))),'Cost Report'!$C$28*'Cost Report'!$AA$26,0)"
+     "v": "=IF(AND('Cost Report'!$S$29=\"labor\",NOT(AND('Cost Report'!$AE$27<>\"\",'Cost Report'!$J$27<>\"\"))),'Cost Report'!$C$29*'Cost Report'!$AA$27,0)"
     },
     "H13": {
      "align": [
@@ -40324,7 +41743,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(AND('Cost Report'!$S$33=\"labor\",NOT(AND('Cost Report'!$AE$31<>\"\",'Cost Report'!$J$31<>\"\"))),'Cost Report'!$C$33*'Cost Report'!$AA$31,0)"
+     "v": "=IF(AND('Cost Report'!$S$34=\"labor\",NOT(AND('Cost Report'!$AE$32<>\"\",'Cost Report'!$J$32<>\"\"))),'Cost Report'!$C$34*'Cost Report'!$AA$32,0)"
     },
     "H14": {
      "align": [
@@ -40350,7 +41769,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(AND('Cost Report'!$AE$37<>\"\",'Cost Report'!$J$37<>\"\"),'Cost Report'!$L$37,0)"
+     "v": "=IF(AND('Cost Report'!$AE$38<>\"\",'Cost Report'!$J$38<>\"\"),'Cost Report'!$L$38,0)"
     },
     "H15": {
      "align": [
@@ -40376,7 +41795,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=IF(AND('Cost Report'!$S$44=\"labor\",NOT(AND('Cost Report'!$AE$42<>\"\",'Cost Report'!$J$42<>\"\"))),'Cost Report'!$C$44*'Cost Report'!$AA$42,0)"
+     "v": "=IF(AND('Cost Report'!$S$45=\"labor\",NOT(AND('Cost Report'!$AE$43<>\"\",'Cost Report'!$J$43<>\"\"))),'Cost Report'!$C$45*'Cost Report'!$AA$43,0)"
     },
     "H4": {
      "align": [
@@ -40562,7 +41981,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(AND('Cost Report'!$S$23=\"labor\",AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\")),0,'Cost Report'!$AG$23*'Cost Report'!$AA$20)"
+     "v": "=IF(AND('Cost Report'!$S$24=\"labor\",AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\")),0,'Cost Report'!$AG$24*'Cost Report'!$AA$20)"
     },
     "I11": {
      "align": [
@@ -40588,7 +42007,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(AND('Cost Report'!$S$24=\"labor\",AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\")),0,'Cost Report'!$AG$24*'Cost Report'!$AA$20)"
+     "v": "=IF(AND('Cost Report'!$S$25=\"labor\",AND('Cost Report'!$AE$20<>\"\",'Cost Report'!$J$20<>\"\")),0,'Cost Report'!$AG$25*'Cost Report'!$AA$20)"
     },
     "I12": {
      "align": [
@@ -40614,7 +42033,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(AND('Cost Report'!$S$28=\"labor\",AND('Cost Report'!$AE$26<>\"\",'Cost Report'!$J$26<>\"\")),0,'Cost Report'!$AG$28*'Cost Report'!$AA$26)"
+     "v": "=IF(AND('Cost Report'!$S$29=\"labor\",AND('Cost Report'!$AE$27<>\"\",'Cost Report'!$J$27<>\"\")),0,'Cost Report'!$AG$29*'Cost Report'!$AA$27)"
     },
     "I13": {
      "align": [
@@ -40640,7 +42059,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(AND('Cost Report'!$S$33=\"labor\",AND('Cost Report'!$AE$31<>\"\",'Cost Report'!$J$31<>\"\")),0,'Cost Report'!$AG$33*'Cost Report'!$AA$31)"
+     "v": "=IF(AND('Cost Report'!$S$34=\"labor\",AND('Cost Report'!$AE$32<>\"\",'Cost Report'!$J$32<>\"\")),0,'Cost Report'!$AG$34*'Cost Report'!$AA$32)"
     },
     "I14": {
      "align": [
@@ -40666,7 +42085,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(AND('Cost Report'!$AE$37<>\"\",'Cost Report'!$J$37<>\"\"),'Cost Report'!$M$37,0)"
+     "v": "=IF(AND('Cost Report'!$AE$38<>\"\",'Cost Report'!$J$38<>\"\"),'Cost Report'!$M$38,0)"
     },
     "I15": {
      "align": [
@@ -40692,7 +42111,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "=IF(AND('Cost Report'!$S$44=\"labor\",AND('Cost Report'!$AE$42<>\"\",'Cost Report'!$J$42<>\"\")),0,'Cost Report'!$AG$44*'Cost Report'!$AA$42)"
+     "v": "=IF(AND('Cost Report'!$S$45=\"labor\",AND('Cost Report'!$AE$43<>\"\",'Cost Report'!$J$43<>\"\")),0,'Cost Report'!$AG$45*'Cost Report'!$AA$43)"
     },
     "I4": {
      "align": [
@@ -41558,6 +42977,32 @@
      "nf": "General",
      "v": "Labor rates"
     },
+    "A10": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF23272B",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": 1
+    },
     "A2": {
      "align": [
       "center",
@@ -41726,6 +43171,32 @@
      "nf": "General",
      "v": "Id"
     },
+    "B10": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF23272B",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "Extra"
+    },
     "B2": {
      "align": [
       "center",
@@ -41842,6 +43313,32 @@
      "nf": "General",
      "v": "Name"
     },
+    "C10": {
+     "align": [
+      "center",
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      "FF6B7075",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "EA"
+    },
     "C2": {
      "align": [
       "center",
@@ -41957,6 +43454,32 @@
      "locked": true,
      "nf": "General",
      "v": "Unit"
+    },
+    "D10": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Arial",
+      10.0,
+      false,
+      false,
+      null,
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "#,##0.00",
+     "v": "100.00"
     },
     "D2": {
      "align": [
@@ -42601,7 +44124,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$AG$30"
+     "v": "='Cost Report'!$AG$31"
     },
     "C7": {
      "align": [
@@ -42627,7 +44150,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$AG$35"
+     "v": "='Cost Report'!$AG$36"
     },
     "C8": {
      "align": [
@@ -42653,7 +44176,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$AG$40"
+     "v": "='Cost Report'!$AG$41"
     },
     "C9": {
      "align": [
@@ -42679,7 +44202,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "='Cost Report'!$AG$41"
+     "v": "='Cost Report'!$AG$42"
     },
     "D4": {
      "align": [
@@ -42956,7 +44479,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$30,'_shares'!$K$2:$K$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$31,'_shares'!$K$2:$K$9)"
     },
     "E7": {
      "align": [
@@ -42982,7 +44505,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$35,'_shares'!$K$2:$K$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$36,'_shares'!$K$2:$K$9)"
     },
     "E8": {
      "align": [
@@ -43008,7 +44531,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$40,'_shares'!$K$2:$K$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$41,'_shares'!$K$2:$K$9)"
     },
     "E9": {
      "align": [
@@ -43034,7 +44557,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.0",
-     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$41,'_shares'!$K$2:$K$9)"
+     "v": "=SUMIF('_shares'!$B$2:$B$9,'Cost Report'!$X$42,'_shares'!$K$2:$K$9)"
     },
     "F10": {
      "align": [
@@ -43151,7 +44674,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$M$30"
+     "v": "='Cost Report'!$M$31"
     },
     "F7": {
      "align": [
@@ -43177,7 +44700,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$M$35"
+     "v": "='Cost Report'!$M$36"
     },
     "F8": {
      "align": [
@@ -43203,7 +44726,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$M$40"
+     "v": "='Cost Report'!$M$41"
     },
     "F9": {
      "align": [
@@ -43229,7 +44752,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$M$41"
+     "v": "='Cost Report'!$M$42"
     },
     "G10": {
      "align": [
@@ -43346,7 +44869,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$N$30"
+     "v": "='Cost Report'!$N$31"
     },
     "G7": {
      "align": [
@@ -43372,7 +44895,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$N$35"
+     "v": "='Cost Report'!$N$36"
     },
     "G8": {
      "align": [
@@ -43398,7 +44921,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$N$40"
+     "v": "='Cost Report'!$N$41"
     },
     "G9": {
      "align": [
@@ -43424,7 +44947,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$N$41"
+     "v": "='Cost Report'!$N$42"
     },
     "H10": {
      "align": [
@@ -43541,7 +45064,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$O$30"
+     "v": "='Cost Report'!$O$31"
     },
     "H7": {
      "align": [
@@ -43567,7 +45090,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$O$35"
+     "v": "='Cost Report'!$O$36"
     },
     "H8": {
      "align": [
@@ -43593,7 +45116,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$O$40"
+     "v": "='Cost Report'!$O$41"
     },
     "H9": {
      "align": [
@@ -43619,7 +45142,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$O$41"
+     "v": "='Cost Report'!$O$42"
     },
     "I10": {
      "align": [
@@ -43736,7 +45259,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$P$30"
+     "v": "='Cost Report'!$P$31"
     },
     "I7": {
      "align": [
@@ -43762,7 +45285,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$P$35"
+     "v": "='Cost Report'!$P$36"
     },
     "I8": {
      "align": [
@@ -43788,7 +45311,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$P$40"
+     "v": "='Cost Report'!$P$41"
     },
     "I9": {
      "align": [
@@ -43814,7 +45337,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$P$41"
+     "v": "='Cost Report'!$P$42"
     },
     "J10": {
      "align": [
@@ -43931,7 +45454,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$Q$30"
+     "v": "='Cost Report'!$Q$31"
     },
     "J7": {
      "align": [
@@ -43957,7 +45480,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$Q$35"
+     "v": "='Cost Report'!$Q$36"
     },
     "J8": {
      "align": [
@@ -43983,7 +45506,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$Q$40"
+     "v": "='Cost Report'!$Q$41"
     },
     "J9": {
      "align": [
@@ -44009,7 +45532,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$Q$41"
+     "v": "='Cost Report'!$Q$42"
     },
     "K10": {
      "align": [
@@ -44126,7 +45649,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$R$30"
+     "v": "='Cost Report'!$R$31"
     },
     "K7": {
      "align": [
@@ -44152,7 +45675,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$R$35"
+     "v": "='Cost Report'!$R$36"
     },
     "K8": {
      "align": [
@@ -44178,7 +45701,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$R$40"
+     "v": "='Cost Report'!$R$41"
     },
     "K9": {
      "align": [
@@ -44204,7 +45727,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00;(#,##0.00);\"\"",
-     "v": "='Cost Report'!$R$41"
+     "v": "='Cost Report'!$R$42"
     },
     "L4": {
      "align": [
@@ -45564,7 +47087,7 @@
      "hidden": false,
      "locked": true,
      "nf": "#,##0.00",
-     "v": "=IF('Cost Report'!$J$37<>\"\",'Cost Report'!$J$37,J6)*'Cost Report'!$AA$37"
+     "v": "=IF('Cost Report'!$J$38<>\"\",'Cost Report'!$J$38,J6)*'Cost Report'!$AA$38"
     },
     "F4": {
      "align": [
@@ -54124,7 +55647,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 26
+     "v": 27
     },
     "D7": {
      "align": [
@@ -54150,7 +55673,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 26
+     "v": 27
     },
     "D8": {
      "align": [
@@ -54176,7 +55699,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 37
+     "v": 38
     },
     "D9": {
      "align": [
@@ -54202,7 +55725,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": 31
+     "v": 32
     },
     "E1": {
      "align": [
@@ -54358,7 +55881,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$M$26*C6"
+     "v": "='Cost Report'!$M$27*C6"
     },
     "E7": {
      "align": [
@@ -54384,7 +55907,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$M$26*C7"
+     "v": "='Cost Report'!$M$27*C7"
     },
     "E8": {
      "align": [
@@ -54410,7 +55933,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$M$37*C8"
+     "v": "='Cost Report'!$M$38*C8"
     },
     "E9": {
      "align": [
@@ -54436,7 +55959,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$M$31*C9"
+     "v": "='Cost Report'!$M$32*C9"
     },
     "F1": {
      "align": [
@@ -54592,7 +56115,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$N$26*C6"
+     "v": "='Cost Report'!$N$27*C6"
     },
     "F7": {
      "align": [
@@ -54618,7 +56141,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$N$26*C7"
+     "v": "='Cost Report'!$N$27*C7"
     },
     "F8": {
      "align": [
@@ -54644,7 +56167,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$N$37*C8"
+     "v": "='Cost Report'!$N$38*C8"
     },
     "F9": {
      "align": [
@@ -54670,7 +56193,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$N$31*C9"
+     "v": "='Cost Report'!$N$32*C9"
     },
     "G1": {
      "align": [
@@ -54826,7 +56349,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$O$26*C6"
+     "v": "='Cost Report'!$O$27*C6"
     },
     "G7": {
      "align": [
@@ -54852,7 +56375,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$O$26*C7"
+     "v": "='Cost Report'!$O$27*C7"
     },
     "G8": {
      "align": [
@@ -54878,7 +56401,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$O$37*C8"
+     "v": "='Cost Report'!$O$38*C8"
     },
     "G9": {
      "align": [
@@ -54904,7 +56427,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$O$31*C9"
+     "v": "='Cost Report'!$O$32*C9"
     },
     "H1": {
      "align": [
@@ -55060,7 +56583,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$P$26*C6"
+     "v": "='Cost Report'!$P$27*C6"
     },
     "H7": {
      "align": [
@@ -55086,7 +56609,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$P$26*C7"
+     "v": "='Cost Report'!$P$27*C7"
     },
     "H8": {
      "align": [
@@ -55112,7 +56635,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$P$37*C8"
+     "v": "='Cost Report'!$P$38*C8"
     },
     "H9": {
      "align": [
@@ -55138,7 +56661,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$P$31*C9"
+     "v": "='Cost Report'!$P$32*C9"
     },
     "I1": {
      "align": [
@@ -55294,7 +56817,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$Q$26*C6"
+     "v": "='Cost Report'!$Q$27*C6"
     },
     "I7": {
      "align": [
@@ -55320,7 +56843,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$Q$26*C7"
+     "v": "='Cost Report'!$Q$27*C7"
     },
     "I8": {
      "align": [
@@ -55346,7 +56869,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$Q$37*C8"
+     "v": "='Cost Report'!$Q$38*C8"
     },
     "I9": {
      "align": [
@@ -55372,7 +56895,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$Q$31*C9"
+     "v": "='Cost Report'!$Q$32*C9"
     },
     "J1": {
      "align": [
@@ -55528,7 +57051,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=ROUND('Cost Report'!$R$26*C6,2)"
+     "v": "=ROUND('Cost Report'!$R$27*C6,2)"
     },
     "J7": {
      "align": [
@@ -55554,7 +57077,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "=ROUND('Cost Report'!$R$26*C7,2)"
+     "v": "=ROUND('Cost Report'!$R$27*C7,2)"
     },
     "J8": {
      "align": [
@@ -55580,7 +57103,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$R$37*C8"
+     "v": "='Cost Report'!$R$38*C8"
     },
     "J9": {
      "align": [
@@ -55606,7 +57129,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$R$31*C9"
+     "v": "='Cost Report'!$R$32*C9"
     },
     "K1": {
      "align": [
@@ -55762,7 +57285,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$L$26*C6"
+     "v": "='Cost Report'!$L$27*C6"
     },
     "K7": {
      "align": [
@@ -55788,7 +57311,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$L$26*C7"
+     "v": "='Cost Report'!$L$27*C7"
     },
     "K8": {
      "align": [
@@ -55814,7 +57337,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$L$37*C8"
+     "v": "='Cost Report'!$L$38*C8"
     },
     "K9": {
      "align": [
@@ -55840,7 +57363,7 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "='Cost Report'!$L$31*C9"
+     "v": "='Cost Report'!$L$32*C9"
     },
     "L1": {
      "align": [
@@ -56131,7 +57654,33 @@
      "hidden": false,
      "locked": true,
      "nf": "General",
-     "v": "{\"bid_inputs\":{\"figures\":[\"indirect_cost\",\"direct_cost\",\"markup_total\",\"bid_factor\",\"excluded_cost\"],\"inputs\":[\"markup_percentage\",\"markup_amount\"],\"name_cell\":\"T\",\"value_cell\":\"C\"},\"columns\":{\"bid_form\":{\"cost\":\"N\",\"description\":\"B\",\"export_price\":\"R\",\"export_total\":\"S\",\"id\":\"K\",\"input\":\"T\",\"item\":\"A\",\"kind\":\"J\",\"override\":\"G\",\"priced\":\"P\",\"primary\":\"O\",\"primary_cost\":\"Q\",\"quantity\":\"D\",\"schedule\":\"C\",\"schedule_id\":\"M\",\"scope\":\"F\",\"total\":\"I\",\"unit\":\"E\",\"unit_price\":\"H\",\"v\":\"L\"},\"checks\":{\"bidsheet\":\"F\",\"code\":\"B\",\"description\":\"C\",\"difference\":\"G\",\"excel\":\"E\",\"kind\":\"A\",\"measure\":\"D\",\"status\":\"I\",\"tolerance\":\"H\"},\"cost_report\":{\"burden_included\":\"V\",\"burden_pct\":\"U\",\"code\":\"A\",\"count\":\"K\",\"crew_factor\":\"I\",\"description\":\"B\",\"equipment\":\"N\",\"export_cost\":\"AB\",\"export_mh\":\"AC\",\"h1\":\"AF\",\"h2\":\"AG\",\"h3\":\"AH\",\"h4\":\"AI\",\"hours_per_shift\":\"H\",\"id\":\"X\",\"key\":\"AD\",\"kind\":\"W\",\"labor\":\"M\",\"labor_basis\":\"T\",\"manhours\":\"L\",\"material\":\"O\",\"multiplier\":\"AA\",\"other\":\"Q\",\"parent_id\":\"Z\",\"production\":\"F\",\"production_unit\":\"G\",\"quantity\":\"C\",\"ref\":\"AE\",\"shifts\":\"J\",\"subcontract\":\"P\",\"total\":\"R\",\"type\":\"S\",\"unit\":\"D\",\"unit_cost\":\"E\",\"v\":\"Y\"},\"crews\":{\"code\":\"A\",\"count\":\"C\",\"crew_factor\":\"H\",\"crew_id\":\"N\",\"effective\":\"F\",\"export\":\"P\",\"extended\":\"Q\",\"headcount\":\"I\",\"hourly_rate\":\"J\",\"hours_per_shift\":\"G\",\"id\":\"L\",\"kind\":\"K\",\"labor_rate_id\":\"O\",\"library_rate\":\"D\",\"name\":\"B\",\"override\":\"E\",\"v\":\"M\"},\"flat\":{\"activity\":\"C\",\"code\":\"B\",\"cost\":\"I\",\"id\":\"K\",\"item\":\"A\",\"kind\":\"J\",\"line\":\"D\",\"manhours\":\"H\",\"quantity\":\"F\",\"type\":\"E\",\"unit\":\"G\"},\"rates\":{\"id\":\"A\",\"name\":\"B\",\"rate\":\"D\",\"unit\":\"C\"},\"recap\":{\"bid_total\":\"N\",\"bid_unit_price\":\"M\",\"description\":\"B\",\"direct\":\"K\",\"equipment\":\"G\",\"id\":\"P\",\"item\":\"A\",\"kind\":\"O\",\"labor\":\"F\",\"manhours\":\"E\",\"material\":\"H\",\"other\":\"J\",\"quantity\":\"C\",\"subcontract\":\"I\",\"unit\":\"D\",\"unit_cost\":\"L\"},\"schedule\":{\"activity\":\"B\",\"code\":\"A\",\"duration\":\"E\",\"export_duration\":\"J\",\"export_finish\":\"I\",\"export_multiplier\":\"K\",\"finish\":\"F\",\"id\":\"H\",\"item\":\"C\",\"kind\":\"G\",\"start\":\"D\"}},\"estimate_id\":1,\"estimate_v\":\"ac6cc8eec0e04323\",\"first_row\":5,\"format\":\"heavycivil\",\"layout_version\":1,\"row_kinds\":[{\"editable\":true,\"identified_by\":{\"id\":\"X\",\"v\":\"Y\"},\"kind\":\"ITEM\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"element_id\":\"X\",\"quantity_key\":\"AD\",\"v\":\"Y\"},\"kind\":\"ELEMENT_QTY\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"id\":\"X\",\"parent_id\":\"Z\",\"v\":\"Y\"},\"kind\":\"ACTIVITY\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"activity_id\":\"Z\",\"id\":\"X\",\"v\":\"Y\"},\"kind\":\"STEP\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"activity_id\":\"Z\",\"id\":\"X\",\"v\":\"Y\"},\"kind\":\"RESOURCE\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":false,\"identified_by\":{\"activity_id\":\"Z\"},\"kind\":\"START\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":false,\"identified_by\":{\"activity_id\":\"Z\"},\"kind\":\"END\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":false,\"identified_by\":{},\"kind\":\"GROUP\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"id\":\"L\",\"v\":\"M\"},\"kind\":\"CREW\",\"kind_cell\":\"K\",\"sheet\":\"crews\"},{\"editable\":true,\"identified_by\":{\"crew_id\":\"N\",\"id\":\"L\"},\"kind\":\"MEMBER\",\"kind_cell\":\"K\",\"sheet\":\"crews\"},{\"editable\":true,\"identified_by\":{\"id\":\"K\",\"name\":\"T\",\"v\":\"L\"},\"kind\":\"ESTIMATE\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":true,\"identified_by\":{\"name\":\"T\"},\"kind\":\"BID_INPUT\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{\"name\":\"T\"},\"kind\":\"BID_FIGURE\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{\"id\":\"K\",\"v\":\"L\"},\"kind\":\"SECTION\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":true,\"identified_by\":{\"id\":\"K\",\"v\":\"L\"},\"kind\":\"ITEM_BID\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{\"id\":\"K\"},\"kind\":\"BID_TOTAL\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{},\"kind\":\"GROUP\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"}],\"style\":{\"name\":\"heavycivil\",\"version\":\"1\"},\"tabs\":{\"bid_form\":\"Bid Form\",\"checks\":\"Checks\",\"cost_report\":\"Cost Report\",\"crews\":\"Crews\",\"flat\":\"Flat\",\"rates\":\"Rates\",\"recap\":\"Recap\",\"schedule\":\"Schedule\"}}"
+     "v": "{\"baseline\":{\"chunks\":1,\"encoding\":\"zlib+base64\",\"sha256\":\"73e6306a64fde0522178b51fcf185a1f9037b56ec720ad0b871f69ab67ef087b\"},\"bid_inputs\":{\"figures\":[\"indirect_cost\",\"direct_cost\",\"markup_total\",\"bid_factor\",\"excluded_cost\"],\"inputs\":[\"markup_percentage\",\"markup_amount\"],\"name_cell\":\"T\",\"value_cell\":\"C\"},\"columns\":{\"bid_form\":{\"cost\":\"N\",\"description\":\"B\",\"export_price\":\"R\",\"export_total\":\"S\",\"id\":\"K\",\"input\":\"T\",\"item\":\"A\",\"kind\":\"J\",\"override\":\"G\",\"priced\":\"P\",\"primary\":\"O\",\"primary_cost\":\"Q\",\"quantity\":\"D\",\"schedule\":\"C\",\"schedule_id\":\"M\",\"scope\":\"F\",\"total\":\"I\",\"unit\":\"E\",\"unit_price\":\"H\",\"v\":\"L\"},\"checks\":{\"bidsheet\":\"F\",\"code\":\"B\",\"description\":\"C\",\"difference\":\"G\",\"excel\":\"E\",\"kind\":\"A\",\"measure\":\"D\",\"status\":\"I\",\"tolerance\":\"H\"},\"cost_report\":{\"activity_row\":\"AJ\",\"burden_included\":\"V\",\"burden_pct\":\"U\",\"code\":\"A\",\"count\":\"K\",\"crew_factor\":\"I\",\"description\":\"B\",\"equipment\":\"N\",\"export_cost\":\"AB\",\"export_mh\":\"AC\",\"h1\":\"AF\",\"h2\":\"AG\",\"h3\":\"AH\",\"h4\":\"AI\",\"hours_per_shift\":\"H\",\"id\":\"X\",\"key\":\"AD\",\"kind\":\"W\",\"labor\":\"M\",\"labor_basis\":\"T\",\"manhours\":\"L\",\"material\":\"O\",\"multiplier\":\"AA\",\"other\":\"Q\",\"parent_id\":\"Z\",\"production\":\"F\",\"production_unit\":\"G\",\"quantity\":\"C\",\"ref\":\"AE\",\"shifts\":\"J\",\"subcontract\":\"P\",\"total\":\"R\",\"type\":\"S\",\"unit\":\"D\",\"unit_cost\":\"E\",\"v\":\"Y\"},\"crews\":{\"code\":\"A\",\"count\":\"C\",\"crew_factor\":\"H\",\"crew_id\":\"N\",\"effective\":\"F\",\"export\":\"P\",\"extended\":\"Q\",\"headcount\":\"I\",\"hourly_rate\":\"J\",\"hours_per_shift\":\"G\",\"id\":\"L\",\"kind\":\"K\",\"labor_rate_id\":\"O\",\"library_rate\":\"D\",\"name\":\"B\",\"override\":\"E\",\"v\":\"M\"},\"flat\":{\"activity\":\"C\",\"code\":\"B\",\"cost\":\"I\",\"id\":\"K\",\"item\":\"A\",\"kind\":\"J\",\"line\":\"D\",\"manhours\":\"H\",\"quantity\":\"F\",\"type\":\"E\",\"unit\":\"G\"},\"rates\":{\"id\":\"A\",\"name\":\"B\",\"rate\":\"D\",\"unit\":\"C\"},\"recap\":{\"bid_total\":\"N\",\"bid_unit_price\":\"M\",\"description\":\"B\",\"direct\":\"K\",\"equipment\":\"G\",\"id\":\"P\",\"item\":\"A\",\"kind\":\"O\",\"labor\":\"F\",\"manhours\":\"E\",\"material\":\"H\",\"other\":\"J\",\"quantity\":\"C\",\"subcontract\":\"I\",\"unit\":\"D\",\"unit_cost\":\"L\"},\"schedule\":{\"activity\":\"B\",\"code\":\"A\",\"duration\":\"E\",\"export_duration\":\"J\",\"export_finish\":\"I\",\"export_multiplier\":\"K\",\"finish\":\"F\",\"id\":\"H\",\"item\":\"C\",\"kind\":\"G\",\"start\":\"D\"}},\"estimate_id\":1,\"estimate_v\":\"ac6cc8eec0e04323\",\"first_row\":5,\"format\":\"heavycivil\",\"layout_version\":2,\"row_kinds\":[{\"editable\":true,\"identified_by\":{\"id\":\"X\",\"v\":\"Y\"},\"kind\":\"ITEM\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"element_id\":\"X\",\"quantity_key\":\"AD\",\"v\":\"Y\"},\"kind\":\"ELEMENT_QTY\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"id\":\"X\",\"parent_id\":\"Z\",\"v\":\"Y\"},\"kind\":\"ACTIVITY\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"activity_id\":\"Z\",\"id\":\"X\",\"v\":\"Y\"},\"kind\":\"STEP\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"activity_id\":\"Z\",\"id\":\"X\",\"v\":\"Y\"},\"kind\":\"RESOURCE\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":false,\"identified_by\":{\"activity_id\":\"Z\"},\"kind\":\"STEPS\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":false,\"identified_by\":{\"activity_id\":\"Z\"},\"kind\":\"START\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":false,\"identified_by\":{\"activity_id\":\"Z\"},\"kind\":\"END\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":false,\"identified_by\":{},\"kind\":\"GROUP\",\"kind_cell\":\"W\",\"sheet\":\"cost_report\"},{\"editable\":true,\"identified_by\":{\"id\":\"L\",\"v\":\"M\"},\"kind\":\"CREW\",\"kind_cell\":\"K\",\"sheet\":\"crews\"},{\"editable\":true,\"identified_by\":{\"crew_id\":\"N\",\"id\":\"L\"},\"kind\":\"MEMBER\",\"kind_cell\":\"K\",\"sheet\":\"crews\"},{\"editable\":false,\"identified_by\":{\"crew_id\":\"N\"},\"kind\":\"NOTE\",\"kind_cell\":\"K\",\"sheet\":\"crews\"},{\"editable\":false,\"identified_by\":{\"crew_id\":\"N\"},\"kind\":\"CREW_END\",\"kind_cell\":\"K\",\"sheet\":\"crews\"},{\"editable\":true,\"identified_by\":{\"id\":\"K\",\"name\":\"T\",\"v\":\"L\"},\"kind\":\"ESTIMATE\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":true,\"identified_by\":{\"name\":\"T\"},\"kind\":\"BID_INPUT\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{\"name\":\"T\"},\"kind\":\"BID_FIGURE\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{\"id\":\"K\",\"v\":\"L\"},\"kind\":\"SECTION\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":true,\"identified_by\":{\"id\":\"K\",\"v\":\"L\"},\"kind\":\"ITEM_BID\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{\"id\":\"K\"},\"kind\":\"BID_TOTAL\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"},{\"editable\":false,\"identified_by\":{},\"kind\":\"GROUP\",\"kind_cell\":\"J\",\"sheet\":\"bid_form\"}],\"style\":{\"name\":\"heavycivil\",\"version\":\"1\"},\"tabs\":{\"bid_form\":\"Bid Form\",\"checks\":\"Checks\",\"cost_report\":\"Cost Report\",\"crews\":\"Crews\",\"flat\":\"Flat\",\"rates\":\"Rates\",\"recap\":\"Recap\",\"schedule\":\"Schedule\"}}"
+    },
+    "B1": {
+     "align": [
+      null,
+      null,
+      null,
+      0.0,
+      null,
+      0
+     ],
+     "border": {},
+     "fill": null,
+     "font": [
+      "Calibri",
+      11.0,
+      false,
+      false,
+      "theme:1",
+      null,
+      false,
+      null
+     ],
+     "hidden": false,
+     "locked": true,
+     "nf": "General",
+     "v": "<baseline>"
     }
    },
    "conditional": [],

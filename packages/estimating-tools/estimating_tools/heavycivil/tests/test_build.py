@@ -31,6 +31,8 @@ def test_stamp(book, doc):
 def test_layout_json_cell_and_names(book):
     layout = json.loads(book["_wb"]["A1"].value)
     assert layout["format"] == "heavycivil"
+    assert layout["layout_version"] == 2
+    assert set(layout["baseline"]) == {"encoding", "chunks", "sha256"}
     for name in ("hc.cost_report", "hc.checks", "hc.layout"):
         assert name in book.defined_names
     assert book.defined_names["hc.layout"].attr_text == "'_wb'!$A$1"
@@ -155,3 +157,17 @@ def test_checks_factor_and_schedule_rows_have_their_own_formats(book):
     for col in "EF":
         assert ws[f"{col}{finish}"].number_format == "yyyy-mm-dd", col
     assert ws[f"G{finish}"].number_format == "#,##0.00"            # days apart
+
+
+def test_cost_report_name_reaches_the_activity_row_column(book):
+    assert book.defined_names["hc.cost_report"].attr_text == "'Cost Report'!$A$4:$AJ$46"
+
+
+def test_a_non_json_payload_value_is_refused_before_any_sheet_is_written(doc, monkeypatch):
+    from estimating_tools.heavycivil import baseline, build as hc_build
+    called = []
+    monkeypatch.setattr(hc_build, "write_bid_form", lambda *a, **k: called.append(1))
+    with pytest.raises(baseline.BaselineError):
+        hc_build.build(dict(doc, unread_field=float("nan")), style=style.load_style(),
+                       exported_at="x", host="h")
+    assert called == []

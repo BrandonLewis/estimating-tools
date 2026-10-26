@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 
+from estimating_tools.heavycivil import baseline as B
 from estimating_tools.heavycivil import columns as C
 from estimating_tools.heavycivil import layout as L
 from estimating_tools.heavycivil import model
@@ -105,7 +106,7 @@ def test_layout_json_documents_row_kinds_not_rows(doc):
     """Read-back keys off the hidden kind/id/v cells; stored row numbers go
     stale the moment an estimator inserts or sorts, so none are stored."""
     wb, p = _plan(doc)
-    data = L.layout_json(p, wb, S.load_style())
+    data = L.layout_json(p, wb, S.load_style(), B.encode(doc)[1])
     assert "rows" not in data
     kinds = {(k["sheet"], k["kind"]): k for k in data["row_kinds"]}
     assert {"ITEM", "ACTIVITY", "RESOURCE", "ELEMENT_QTY", "STEP", "START", "END",
@@ -118,8 +119,10 @@ def test_layout_json_documents_row_kinds_not_rows(doc):
         assert kinds[("cost_report", marker)]["identified_by"] == {"activity_id": "Z"}
         assert kinds[("cost_report", marker)]["editable"] is False
     assert kinds[("crews", "CREW")]["identified_by"] == {"id": "L", "v": "M"}
-    assert data["format"] == "heavycivil" and data["layout_version"] == 1
+    assert data["format"] == "heavycivil" and data["layout_version"] == 2
     assert data["first_row"] == L.FIRST_ROW
+    assert data["columns"]["cost_report"]["activity_row"] == "AJ"
+    assert data["baseline"] == B.encode(doc)[1]
 
 
 def test_plan_refuses_an_activity_without_a_row(doc):
@@ -181,7 +184,7 @@ def test_flat_has_a_line_per_resource_and_crew_charge(doc):
 
 def test_layout_json_documents_bid_form_kinds_and_inputs(doc):
     wb, p = _plan(doc)
-    data = L.layout_json(p, wb, S.load_style())
+    data = L.layout_json(p, wb, S.load_style(), B.encode(doc)[1])
     kinds = {(k["sheet"], k["kind"]): k for k in data["row_kinds"]}
     assert kinds[("bid_form", "ITEM_BID")] == {
         "sheet": "bid_form", "kind": "ITEM_BID", "kind_cell": "J",
@@ -250,3 +253,63 @@ def test_working_day_matches_a_compact_iso_holiday():
     conf = {"working_weekdays": None, "holidays": ["20261126"]}
     assert not L._working_day(conf, date(2026, 11, 26))
     assert L._working_day(conf, date(2026, 11, 27))
+
+
+def test_stepped_activity_has_a_steps_marker_before_its_steps(doc):
+    """STEPS sits right after the ACTIVITY row and before its first step;
+    the step span runs STEPS..START, so a step inserted anywhere in it is
+    summed. An unstepped activity has no STEPS row."""
+    wb, p = _plan(doc)
+    stepped = [a for a in wb.activities if a.steps]
+    assert stepped
+    assert set(p.steps_rows) == set(p.step_span) == {a.id for a in stepped}
+    for a in stepped:
+        marker = p.steps_rows[a.id]
+        assert marker.kind == "STEPS" and marker.parent_id == a.id
+        assert marker.id is None and marker.v is None
+        assert marker.row == p.activity_rows[a.id].row + 1
+        assert marker.level == p.start_rows[a.id].level
+        assert p.step_span[a.id] == (marker.row, p.start_rows[a.id].row)
+        steps = [p.step_rows[s.id].row for s in a.steps]
+        assert steps == list(range(marker.row + 1, p.start_rows[a.id].row))
+
+
+def test_every_crew_ends_with_a_crew_end_marker(doc):
+    """CREW_END takes the old blank row between crews: the crew span runs
+    CREW..CREW_END, so a member inserted anywhere in the block counts."""
+    wb, p = _plan(doc)
+    for crew in wb.crews:
+        head, end = p.crew_rows[crew.id], p.crew_end_rows[crew.id]
+        assert end.kind == "CREW_END" and end.parent_id == crew.id and end.id is None
+        assert p.crew_span[crew.id] == (head.row, end.row)
+        first, last = p.member_span[crew.id]
+        assert end.row == last + 1
+    rows = [r.row for r in p.crews]
+    assert rows == list(range(L.FIRST_ROW, L.FIRST_ROW + len(rows)))
+    assert p.crews[-1].kind == "CREW_END"
+
+
+def test_library_crew_banner_is_a_note_row(doc):
+    wb, p = _plan(doc)
+    for crew in wb.crews:
+        notes = [r for r in p.crews if r.kind == "NOTE" and r.parent_id == crew.id]
+        if crew.scope == "library":
+            (note,) = notes
+            assert note.row == p.crew_rows[crew.id].row + 1
+        else:
+            assert not notes
+
+
+def test_row_kinds_list_the_new_markers(doc):
+    wb, p = _plan(doc)
+    data = L.layout_json(p, wb, S.load_style(), B.encode(doc)[1])
+    kinds = {(k["sheet"], k["kind"]): k for k in data["row_kinds"]}
+    assert kinds[("cost_report", "STEPS")] == {
+        "sheet": "cost_report", "kind": "STEPS", "kind_cell": "W",
+        "identified_by": {"activity_id": "Z"}, "editable": False}
+    for kind in ("NOTE", "CREW_END"):
+        assert kinds[("crews", kind)] == {
+            "sheet": "crews", "kind": kind, "kind_cell": "K",
+            "identified_by": {"crew_id": "N"}, "editable": False}
+    assert kinds[("crews", "CREW")]["editable"] is True
+    assert kinds[("crews", "MEMBER")]["editable"] is True

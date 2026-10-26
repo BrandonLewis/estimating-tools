@@ -20,8 +20,9 @@ figure in the fixture. Sources (BidManager origin/master, 2026-10-20):
 Every builder returns a :class:`Formula`; a writer's own inline formula is
 wrapped in one too.
 
-Same-sheet references are relative (``M7``); cross-sheet ones are absolute
-and quoted (``qualified``).
+Same-sheet references are relative (``M7``), except a resource's lookups of
+its activity, which are whole-column ``INDEX($F:$F,AJ7)`` (``_act``);
+cross-sheet ones are absolute and quoted (``qualified``).
 """
 from __future__ import annotations
 
@@ -107,13 +108,24 @@ def activity_manhours(row, span, *, crew_cells, missing_crew):
 
 
 @_formula
-def step_shifts(row, step_rows):
+def step_shifts(row, span):
     """``sum_step_shifts``: the step durations in shifts (an HOURS step
-    divided by the activity's hours/shift, 8 when blank or zero; a blank unit
-    is DAYS), summed and quantized to 0.01 the way ``Decimal.quantize``
-    rounds by default -- half to even -- not Excel's half-up ``ROUND``."""
+    divided by the activity's hours/shift, 8 when blank or zero; every other
+    unit, blank included, is DAYS), summed and quantized to 0.01 the way
+    ``Decimal.quantize`` rounds by default -- half to even -- not Excel's
+    half-up ``ROUND``.
+
+    ``span`` is (STEPS row, START row): the markers bracket the steps and
+    carry nothing in C, so a step inserted anywhere between them counts and
+    a deleted one leaves no ``#REF!``. ``SUMIF`` rather than
+    ``SUMPRODUCT(...IF...)``, which needs array evaluation. ``SUMIF`` skips a
+    duration typed as text; read-back refuses non-numbers."""
+    first, last = span
     hps = f'IF(OR({CR.HPS}{row}="",{CR.HPS}{row}=0),8,{CR.HPS}{row})'
-    total = "+".join(f'{CR.QTY}{s}*IF({CR.UNIT}{s}="HOURS",1/{hps},1)' for s in step_rows)
+    units = f"{CR.UNIT}{first}:{CR.UNIT}{last}"
+    durations = f"{CR.QTY}{first}:{CR.QTY}{last}"
+    total = (f'SUMIF({units},"HOURS",{durations})/{hps}'
+             f'+SUMIF({units},"<>HOURS",{durations})')
     cents = f"({total})*100"
     return (f"=IF(ABS(MOD({cents},1)-0.5)<1E-9,"
             f"(INT({cents})+MOD(INT({cents}),2))/100,ROUND({total},2))")
@@ -124,27 +136,61 @@ def row_total(row):
     return f"=SUM({CR.LAB}{row}:{CR.OTH}{row})"
 
 
+# -- activity row ----------------------------------------------------------------
+
+@_formula
+def activity_row(row, header):
+    """AJ: the row of the nearest ACTIVITY at or above -- this row when it is
+    one, else the largest AJ above (0 above the first activity). A resource's
+    nearest ACTIVITY above is its own (its resources come before its child
+    activities). The fallback is ``MAX`` over the AJ cells from the header
+    row down to the row above, not a bare reference to the row above: AJ
+    never decreases down the sheet, so the MAX is the row above's value, but
+    a range shrinks when a row is deleted where a single-cell reference to
+    the deleted row becomes ``#REF!`` and poisons every AJ below it. The
+    range starts at the header row (its text is ignored by ``MAX``) for
+    every data row, the first included, so deleting or inserting at the
+    first data row cannot break or loop it. A copied row brings this
+    formula, so the chain holds wherever it lands. The chain is quadratic
+    (row n reads n cells) -- trivial in Excel, slow in pycel on a very large
+    book."""
+    return (f'=IF({CR.KIND}{row}="ACTIVITY",ROW(),'
+            f'MAX({CR.ACT}${header}:{CR.ACT}{row - 1}))')
+
+
+def _act(col, row):
+    """A cell of this row's activity, found by position (AJ), not by a fixed
+    row: a whole-column ``INDEX``, which no row insert or delete shifts. AJ
+    is 0 above the first activity and ``INDEX(.., 0)`` is the whole column,
+    so the lookup clamps to row 1 (a blank cell, so the line prices flat)."""
+    return f"INDEX(${col}:${col},MAX({CR.ACT}{row},1))"
+
+
 # -- resource ------------------------------------------------------------------
 
 @_formula
-def resource_units(row, act):
+def resource_units(row):
     """``effective_labor_units``: the line's own time (converted between
     HOURS and DAYS with the activity's hours/shift when its unit differs from
     the activity's production unit), else the activity's production rate,
-    else blank ("no production": ``has_missing_production_data``)."""
-    pu = f'IF({CR.PUNIT}{act}="","DAYS",{CR.PUNIT}{act})'
+    else blank ("no production": ``has_missing_production_data``). The
+    activity is the one the row sits under (AJ)."""
+    a_pu, a_hps, a_prod = _act(CR.PUNIT, row), _act(CR.HPS, row), _act(CR.PROD, row)
+    pu = f'IF({a_pu}="","DAYS",{a_pu})'
     tu = f'IF({CR.PUNIT}{row}="",{pu},{CR.PUNIT}{row})'
-    own = (f'IF({tu}={pu},{CR.PROD}{row},IF({pu}="DAYS",{CR.PROD}{row}/{CR.HPS}{act},'
-           f'{CR.PROD}{row}*{CR.HPS}{act}))')
+    own = (f'IF({tu}={pu},{CR.PROD}{row},IF({pu}="DAYS",{CR.PROD}{row}/{a_hps},'
+           f'{CR.PROD}{row}*{a_hps}))')
     return (f'=IF({CR.PROD}{row}<>"",{own},'
-            f'IF({CR.PROD}{act}<>"",{CR.PROD}{act},""))')
+            f'IF({a_prod}<>"",{a_prod},""))')
 
 
 @_formula
-def resource_cost(row, act):
-    """``Component.calculate_cost``, per unit (not extended)."""
+def resource_cost(row):
+    """``Component.calculate_cost``, per unit (not extended), with the crew
+    factor of the activity the row sits under (AJ)."""
     qe = f"{CR.QTY}{row}*{CR.UCOST}{row}"
-    factor = f'IF({CR.CFACT}{act}="",1,{CR.CFACT}{act})'
+    a_factor = _act(CR.CFACT, row)
+    factor = f'IF({a_factor}="",1,{a_factor})'
     base = (f'IF(OR({CR.BASIS}{row}="flat",{CR.H1}{row}=""),{qe},'
             f'{qe}*{CR.H1}{row}*{factor})')
     burden = (f'IF(AND({CR.BINC}{row}<>"Y",{CR.BURD}{row}<>"",{CR.BURD}{row}<>0),'
@@ -269,6 +315,9 @@ def member_extended(row):
 
 @_formula
 def crew_sum(col, span):
+    """Over a crew's (CREW row, CREW_END row): the markers bracket the
+    members and carry nothing in the summed columns, so a member inserted
+    anywhere in the block counts, and a crew with none can take one."""
     if span is None or span[1] < span[0]:
         return "=0"
     return f"=SUM({col}{span[0]}:{col}{span[1]})"
