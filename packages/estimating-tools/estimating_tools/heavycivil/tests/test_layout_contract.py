@@ -1,7 +1,7 @@
 """Sub-project 3 reads edits back by these cells; pin them."""
 from __future__ import annotations
 
-from estimating_tools.heavycivil import layout, model, style
+from estimating_tools.heavycivil import build, layout, model, style
 from estimating_tools.heavycivil.columns import BF, CR, CW
 
 
@@ -142,3 +142,102 @@ def test_bid_form_estimate_rows_carry_their_input_marker(doc, book):
     assert ws[f"{BF.ID}{r0}"].value == wb.estimate.id
     assert ws[f"{BF.V}{r0}"].value == wb.estimate.v
     assert ws.column_dimensions[BF.INPUT].hidden
+
+
+def test_steps_rows_are_blank_short_markers(doc, book):
+    wb = model.parse(doc)
+    plan = layout.plan(wb, style.load_style())
+    ws = book["Cost Report"]
+    for a in (a for a in wb.activities if a.steps):
+        r = plan.steps_rows[a.id].row
+        assert ws[f"{CR.KIND}{r}"].value == "STEPS"
+        assert ws[f"{CR.PARENT}{r}"].value == a.id
+        assert ws[f"{CR.ID}{r}"].value is None and ws[f"{CR.V}{r}"].value is None
+        for col in (CR.DESC, CR.QTY, CR.UNIT, CR.MH) + tuple(c for _, c in CR.SPLIT):
+            assert ws[f"{col}{r}"].value is None
+        assert ws.row_dimensions[r].height == 6
+        start = plan.start_rows[a.id].row
+        assert f"SUMIF({CR.UNIT}{r}:{CR.UNIT}{start}," in \
+            ws[f"{CR.SHIFTS}{plan.activity_rows[a.id].row}"].value
+
+
+def test_step_unit_list_covers_the_whole_step_block(doc, book):
+    wb = model.parse(doc)
+    plan = layout.plan(wb, style.load_style())
+    (units,) = [dv for dv in book["Cost Report"].data_validations.dataValidation
+                if dv.formula1 == '"DAYS,HOURS"']
+    ranges = {str(r) for r in units.sqref.ranges}
+    for a in (a for a in wb.activities if a.steps):
+        first, last = plan.step_span[a.id]
+        # STEPS..last step; not START, whose D tops the resource block.
+        for r in range(first, last):
+            assert _covers(ranges, f"{CR.UNIT}{r}"), r
+        assert not _covers(ranges, f"{CR.UNIT}{last}")
+
+
+def test_crew_blocks_carry_their_markers(doc, book):
+    wb = model.parse(doc)
+    plan = layout.plan(wb, style.load_style())
+    ws = book["Crews"]
+    for crew in wb.crews:
+        head, end = plan.crew_span[crew.id]
+        assert ws[f"{CW.KIND}{end}"].value == "CREW_END"
+        assert ws[f"{CW.CREW}{end}"].value == crew.id
+        assert ws[f"{CW.ID}{end}"].value is None
+        assert "insert" in ws[f"{CW.NAME}{end}"].value
+        assert ws[f"{CW.HEADCOUNT}{head}"].value == f"=SUM({CW.COUNT}{head}:{CW.COUNT}{end})"
+        assert ws[f"{CW.RATE}{head}"].value == f"=SUM({CW.EXTENDED}{head}:{CW.EXTENDED}{end})"
+    for note in (r for r in plan.crews if r.kind == "NOTE"):
+        assert ws[f"{CW.KIND}{note.row}"].value == "NOTE"
+        assert ws[f"{CW.CREW}{note.row}"].value == note.parent_id
+        assert ws[f"{CW.ID}{note.row}"].value is None
+
+
+def test_crew_head_and_markers_have_no_count_or_extended(doc, book):
+    """The wider crew span sums C and Q, so CREW, NOTE and CREW_END rows
+    must add nothing to them."""
+    wb = model.parse(doc)
+    plan = layout.plan(wb, style.load_style())
+    ws = book["Crews"]
+    rows = [r.row for r in plan.crews if r.kind in ("CREW", "NOTE", "CREW_END")]
+    assert rows
+    for r in rows:
+        assert ws[f"{CW.COUNT}{r}"].value is None, r
+        assert ws[f"{CW.EXTENDED}{r}"].value is None, r
+
+
+def test_every_data_row_carries_its_activity_row(doc, book):
+    wb = model.parse(doc)
+    plan = layout.plan(wb, style.load_style())
+    ws = book["Cost Report"]
+    assert ws.column_dimensions[CR.ACT].hidden
+    for row in plan.cost_report:
+        assert ws[f"{CR.ACT}{row.row}"].value.startswith(
+            f'=IF({CR.KIND}{row.row}="ACTIVITY",ROW(),')
+    for res in wb.resources:
+        r = plan.resource_rows[res.id].row
+        assert f"AJ{r}" in ws[f"{CR.H1}{r}"].value and f"AJ{r}" in ws[f"{CR.H2}{r}"].value
+
+
+def test_activity_row_evaluates_to_the_owning_activity(doc, evaluated):
+    wb = model.parse(doc)
+    plan = layout.plan(wb, style.load_style())
+    for res in wb.resources:
+        r = plan.resource_rows[res.id].row
+        assert evaluated[f"Cost Report!{CR.ACT}{r}"] == plan.activity_rows[res.activity_id].row
+
+
+def test_resource_rows_carry_their_rate_link(doc):
+    doc["resources"][0]["equipment_rate_id"] = 7
+    doc["resources"][1].update(labor_rate_id=4, material_cost_id=9)
+    wb = model.parse(doc)
+    plan = layout.plan(wb, style.load_style())
+    ws = build.build(doc, style=style.load_style(), exported_at="x", host="h")["Cost Report"]
+    links = {res.id: ws[f"{CR.REF}{plan.resource_rows[res.id].row}"].value for res in wb.resources}
+    assert links[wb.resources[0].id] == "equipment:7"
+    assert links[wb.resources[1].id] == "labor:4"
+    # The fixture links its "Extra" material line; the rest are unlinked.
+    extra = next(r for r in wb.resources if r.name == "Extra")
+    assert links[extra.id] == "material:1"
+    assert all(v is None for rid, v in links.items()
+               if rid not in (wb.resources[0].id, wb.resources[1].id, extra.id))

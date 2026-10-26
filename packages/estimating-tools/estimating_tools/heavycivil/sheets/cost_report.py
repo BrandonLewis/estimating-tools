@@ -9,13 +9,14 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 from estimating_tools.heavycivil import formulas as F
 from estimating_tools.heavycivil.columns import CR, SH
-from estimating_tools.heavycivil.layout import SHARES_FIRST_ROW
+from estimating_tools.heavycivil.layout import HEADER_ROW, SHARES_FIRST_ROW
 from estimating_tools.heavycivil.sheets.common import export_multiplier, factory, put, setup_sheet
 from estimating_tools.heavycivil.sheets.crews import crew_cells
 
 #: The END marker's cue: lines inserted above it join the activity's sums.
 END_CUE = "insert lines above"
-#: The START marker's row height (points): present, but barely visible.
+#: The START (and STEPS) marker's row height (points): present, but barely
+#: visible.
 START_HEIGHT = 6
 
 
@@ -97,9 +98,9 @@ def _activity(ws, sf, plan, wb, row):
     put(ws, sf, f"{CR.CFACT}{r}", a.crew_factor, "input_factor")
     if a.steps:
         # BidSheet.ai restamps a stepped activity's shifts from its steps
-        # (and refuses a direct edit), so here they follow the step rows.
-        steps = [plan.step_rows[s.id].row for s in a.steps]
-        put(ws, sf, f"{CR.SHIFTS}{r}", F.step_shifts(r, steps), "calc_qty")
+        # (and refuses a direct edit), so here they follow the step rows:
+        # the STEPS..START range, so an inserted step counts too.
+        put(ws, sf, f"{CR.SHIFTS}{r}", F.step_shifts(r, plan.step_span[a.id]), "calc_qty")
     else:
         put(ws, sf, f"{CR.SHIFTS}{r}", a.duration_shifts, "input_qty")
     put(ws, sf, f"{CR.COUNT}{r}", a.count, "input_count")
@@ -135,9 +136,8 @@ def _step(ws, sf, row):
     _hidden(ws, r, "STEP", s.id, s.v, row.parent_id)
 
 
-def _resource(ws, sf, plan, row):
+def _resource(ws, sf, row):
     res, r = row.obj, row.row
-    act = plan.activity_rows[res.activity_id].row
     put(ws, sf, f"{CR.DESC}{r}", res.name, "input_text")
     put(ws, sf, f"{CR.QTY}{r}", res.quantity, "input_qty")
     put(ws, sf, f"{CR.UNIT}{r}", res.unit, "input_text")
@@ -154,8 +154,11 @@ def _resource(ws, sf, plan, row):
     put(ws, sf, f"{CR.BINC}{r}", "Y" if res.includes_burden else "N", "input_flag")
     _hidden(ws, r, "RESOURCE", res.id, res.v, res.activity_id)
     put(ws, None, f"{CR.XCOST}{r}", res.cost)
-    put(ws, None, f"{CR.H1}{r}", F.resource_units(r, act))
-    put(ws, None, f"{CR.H2}{r}", F.resource_cost(r, act))
+    # The rate link travels with the row on a copy or a paste into another
+    # book (read-back's resource.create sends it).
+    put(ws, None, f"{CR.REF}{r}", res.rate_link)
+    put(ws, None, f"{CR.H1}{r}", F.resource_units(r))
+    put(ws, None, f"{CR.H2}{r}", F.resource_cost(r))
 
 
 def write_cost_report(ws, plan, wb, style):
@@ -173,7 +176,11 @@ def write_cost_report(ws, plan, wb, style):
         elif row.kind == "STEP":
             _step(ws, sf, row)
         elif row.kind == "RESOURCE":
-            _resource(ws, sf, plan, row)
+            _resource(ws, sf, row)
+        elif row.kind == "STEPS":
+            put(ws, None, f"{CR.KIND}{row.row}", "STEPS")
+            put(ws, None, f"{CR.PARENT}{row.row}", row.parent_id)
+            ws.row_dimensions[row.row].height = START_HEIGHT
         elif row.kind == "START":
             put(ws, None, f"{CR.KIND}{row.row}", "START")
             put(ws, None, f"{CR.PARENT}{row.row}", row.parent_id)
@@ -185,6 +192,7 @@ def write_cost_report(ws, plan, wb, style):
         else:
             put(ws, sf, f"{CR.DESC}{row.row}", "Unassigned elements", "group")
             put(ws, None, f"{CR.KIND}{row.row}", "GROUP")
+        put(ws, None, f"{CR.ACT}{row.row}", F.activity_row(row.row, HEADER_ROW))
         if row.level:
             ws.row_dimensions[row.row].outline_level = min(row.level, 7)
     _validations(ws, plan)
@@ -225,12 +233,16 @@ def _validations(ws, plan):
     resources = (by_kind.get("RESOURCE", []) + by_kind.get("START", [])
                  + by_kind.get("END", []))
     activities = by_kind.get("ACTIVITY", [])
+    # STEPS..last step, so a step inserted anywhere in the block inherits
+    # the unit list. Not START: its D tops the resource block, and a
+    # resource row inserted below it must not inherit DAYS/HOURS.
+    steps = by_kind.get("STEP", []) + by_kind.get("STEPS", [])
     cells = {
         "type": _ranges(CR.TYPE, resources),
         "basis": _ranges(CR.BASIS, resources),
         "flag": _ranges(CR.BINC, resources),
         "unit": (_ranges(CR.PUNIT, resources + activities)
-                 + _ranges(CR.UNIT, by_kind.get("STEP", []))),
+                 + _ranges(CR.UNIT, steps)),
     }
     for key, values in LISTS.items():
         if not cells[key]:

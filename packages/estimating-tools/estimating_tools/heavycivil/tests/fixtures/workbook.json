@@ -694,7 +694,14 @@
         "unit": "HR"
       }
     ],
-    "material": []
+    "material": [
+      {
+        "cost": "100.00",
+        "id": 1,
+        "name": "Extra",
+        "unit": "EA"
+      }
+    ]
   },
   "resources": [
     {
@@ -918,7 +925,7 @@
       "labor_cost_basis": "production",
       "labor_rate_id": null,
       "managed_by": null,
-      "material_cost_id": null,
+      "material_cost_id": 1,
       "name": "Extra",
       "parent_component_id": null,
       "pieces": null,
@@ -929,7 +936,7 @@
       "trade": "",
       "unit": "",
       "unit_cost": "100.00",
-      "v": "d55f3a187c82425d"
+      "v": "4ea482eca57eddaf"
     }
   ],
   "shares": [

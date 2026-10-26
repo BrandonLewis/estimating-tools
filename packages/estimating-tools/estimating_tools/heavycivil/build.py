@@ -17,11 +17,11 @@ from openpyxl.packaging.custom import StringProperty
 from openpyxl.workbook.defined_name import DefinedName
 
 from estimating_tools.estimate_spec.build import sheet_qualified
-from estimating_tools.heavycivil import FORMAT_NAME, FORMAT_VERSION, layout, model
+from estimating_tools.heavycivil import FORMAT_NAME, FORMAT_VERSION, baseline, layout, model
 from estimating_tools.heavycivil.columns import BF
 from estimating_tools.heavycivil.sheets.bid_form import write_bid_form
 from estimating_tools.heavycivil.sheets.checks import write_checks
-from estimating_tools.heavycivil.sheets.common import last_column_letter
+from estimating_tools.heavycivil.sheets.common import last_column_letter, set_value
 from estimating_tools.heavycivil.sheets.cost_report import write_cost_report
 from estimating_tools.heavycivil.sheets.crews import write_crews
 from estimating_tools.heavycivil.sheets.flat import write_flat
@@ -37,6 +37,11 @@ WB_SHEET = "_wb"
 
 def build(doc, *, style, exported_at, host) -> Workbook:
     data = model.parse(doc)
+    # The payload as built (``merge_pages``' output when paged -- plain
+    # ``json.loads`` data, no Decimal), for read-back. Encoded first: a value
+    # JSON cannot carry (NaN in a field the model never reads) is refused
+    # before any sheet is written.
+    chunks, meta = baseline.encode(doc)
     plan = layout.plan(data, style)
     stamp = {"exported_at": exported_at, "host": host}
 
@@ -67,8 +72,12 @@ def build(doc, *, style, exported_at, host) -> Workbook:
     book.active = 0
 
     wb_ws.sheet_state = "hidden"
-    wb_ws["A1"] = json.dumps(layout.layout_json(plan, data, style), sort_keys=True,
+    wb_ws["A1"] = json.dumps(layout.layout_json(plan, data, style, meta), sort_keys=True,
                              separators=(",", ":"), default=str)
+    for n, chunk in enumerate(chunks, start=1):
+        # Pinned to text: a last chunk of base64 padding ("==") would
+        # otherwise be stored as a formula.
+        set_value(wb_ws[f"B{n}"], chunk)
 
     names = {
         "hc.cost_report": (plan.tabs["cost_report"],

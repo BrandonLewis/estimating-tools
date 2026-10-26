@@ -9,6 +9,8 @@ from estimating_tools.heavycivil.columns import CW
 from estimating_tools.heavycivil.sheets.common import factory, put, setup_sheet
 
 LIBRARY_BANNER = "Library crew -- an edit copies it into this estimate."
+#: The CREW_END marker's cue: members inserted above it join the crew's sums.
+CREW_END_CUE = "insert members above"
 
 
 def write_crews(ws, plan, wb, style):
@@ -17,7 +19,7 @@ def write_crews(ws, plan, wb, style):
                 subtitle=f"{wb.estimate.name} -- crew rates feed the Cost Report")
     for r in plan.crews:
         if r.kind == "CREW":
-            crew, span = r.obj, plan.member_span[r.id]
+            crew, span = r.obj, plan.crew_span[r.id]
             put(ws, sf, f"{CW.CODE}{r.row}", crew.code or crew.name, "crew_head")
             put(ws, sf, f"{CW.NAME}{r.row}", crew.name, "crew_head")
             # No apply op writes these: shown as export values (they still
@@ -32,6 +34,12 @@ def write_crews(ws, plan, wb, style):
             put(ws, sf, f"{CW.EXPORT}{r.row}", crew.hourly_rate)
         elif r.kind == "NOTE":
             put(ws, sf, f"{CW.NAME}{r.row}", LIBRARY_BANNER, "banner")
+            put(ws, None, f"{CW.KIND}{r.row}", "NOTE")
+            put(ws, None, f"{CW.CREW}{r.row}", r.parent_id)
+        elif r.kind == "CREW_END":
+            put(ws, sf, f"{CW.NAME}{r.row}", CREW_END_CUE, "note")
+            put(ws, None, f"{CW.KIND}{r.row}", "CREW_END")
+            put(ws, None, f"{CW.CREW}{r.row}", r.parent_id)
         else:
             m = r.obj
             put(ws, sf, f"{CW.CODE}{r.row}", m.classification, "input_text")

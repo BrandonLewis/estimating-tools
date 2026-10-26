@@ -14,7 +14,7 @@ HOSTILE = {
 }
 
 #: Formula cells per sheet in the fixture book -- every one a builder's.
-FORMULA_CELLS = {"Bid Form": 31, "Recap": 63, "Cost Report": 192, "Crews": 13, "Rates": 0,
+FORMULA_CELLS = {"Bid Form": 31, "Recap": 63, "Cost Report": 234, "Crews": 13, "Rates": 0,
                  "Schedule": 4, "Checks": 165, "Flat": 42, "_shares": 56, "_cal": 0, "_wb": 0}
 
 

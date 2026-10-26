@@ -316,3 +316,37 @@ def test_lookups_find_rows_by_id(doc):
     for c in wb.crews:
         assert wb.crew(c.id) is c
     assert wb.activity(999999) is None and wb.item(None) is None and wb.crew(-1) is None
+
+
+def test_resource_rate_links_are_read(doc):
+    doc["resources"][0]["equipment_rate_id"] = 7
+    doc["resources"][1]["material_cost_id"] = "m-3"
+    wb = model.parse(doc)
+    first = wb.resources[0]
+    assert (first.labor_rate_id, first.equipment_rate_id, first.material_cost_id) == (None, 7, None)
+    assert first.rate_link == "equipment:7"
+    assert wb.resources[1].rate_link == "material:m-3"
+    assert wb.resources[2].rate_link is None
+
+
+def test_rate_link_is_labour_then_equipment_then_material(doc):
+    doc["resources"][0].update(labor_rate_id=1, equipment_rate_id=2, material_cost_id=3)
+    doc["resources"][1].update(equipment_rate_id=2, material_cost_id=3)
+    wb = model.parse(doc)
+    assert wb.resources[0].rate_link == "labor:1"
+    assert wb.resources[1].rate_link == "equipment:2"
+
+
+@pytest.mark.parametrize("key", ["labor_rate_id", "equipment_rate_id", "material_cost_id"])
+@pytest.mark.parametrize("value", [[1], {"id": 1}, True, 1.5])
+def test_non_scalar_rate_links_are_refused(doc, key, value):
+    doc["resources"][0][key] = value
+    with pytest.raises(model.PayloadError, match=rf"resources\[0\]\.{key}"):
+        model.parse(doc)
+
+
+def test_blank_rate_id_is_no_link(doc):
+    doc["resources"][0].update(labor_rate_id="", equipment_rate_id=2)
+    assert model.parse(doc).resources[0].rate_link == "equipment:2"
+    doc["resources"][1].update(labor_rate_id="", equipment_rate_id="", material_cost_id="")
+    assert model.parse(doc).resources[1].rate_link is None

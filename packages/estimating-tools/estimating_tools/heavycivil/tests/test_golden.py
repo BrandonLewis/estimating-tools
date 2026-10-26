@@ -10,10 +10,20 @@ from estimating_tools.heavycivil import build, style
 GOLDEN = Path(__file__).parent / "fixtures" / "golden" / "heavycivil.snapshot.json"
 
 
+def _mask_baseline(snap):
+    """The baseline chunks are zlib output, which differs between zlib
+    builds (CPython on Windows ships zlib-ng): pin that they are there, not
+    their bytes. The layout JSON's checksum of the decoded payload stays."""
+    for addr, cell in snap["sheets"]["_wb"]["cells"].items():
+        if addr.startswith("B"):
+            cell["v"] = "<baseline>"
+    return snap
+
+
 def test_golden_snapshot(book):
     # Round-trip through JSON so int keys (row heights) compare as the
     # golden file stores them: as strings.
-    snap = json.loads(json.dumps(snapshot(book), sort_keys=True))
+    snap = _mask_baseline(json.loads(json.dumps(snapshot(book), sort_keys=True)))
     if os.environ.get("UPDATE_GOLDEN") == "1":
         GOLDEN.parent.mkdir(parents=True, exist_ok=True)
         GOLDEN.write_text(json.dumps(snap, indent=1, sort_keys=True) + "\n", encoding="utf-8")

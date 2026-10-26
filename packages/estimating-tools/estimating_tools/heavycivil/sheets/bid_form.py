@@ -17,6 +17,10 @@ _LABELS = {"markup_percentage": "Markup %", "markup_amount": "Markup $",
            "direct_cost": "Direct cost (primary bid)", "markup_total": "Markup",
            "bid_factor": "Bid factor", "excluded_cost": "Excluded cost"}
 
+#: An item's scope choices (``EstimateItem.scope``): the Scope column's
+#: drop-down, and the spelling read-back normalises a typed scope to.
+SCOPES = ("included", "excluded")
+
 
 def _estimate(ws, sf, plan, wb):
     e, rows = wb.estimate, plan.bid_inputs
@@ -88,7 +92,8 @@ def write_bid_form(ws, plan, wb, style):
     for row in plan.bid_rows.values():
         _item(ws, sf, plan, row, primary, cost_tab)
     if plan.bid_rows:
-        dv = DataValidation(type="list", formula1='"included,excluded"', allow_blank=False)
+        dv = DataValidation(type="list", formula1='"' + ",".join(SCOPES) + '"',
+                            allow_blank=False)
         dv.add(f"{BF.SCOPE}{first}:{BF.SCOPE}{last}")
         ws.add_data_validation(dv)
     if plan.bid_total_rows:

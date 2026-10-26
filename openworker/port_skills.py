@@ -80,6 +80,7 @@ BIDMANAGER_TOOLS = [
     "add_structure_section", "remove_structure_section", "delete_structure",
     # elements (the IFC round trip — push-takeoff, cost-load-schedule)
     "upsert_modelled_elements", "get_estimate_model", "get_estimate_workbook",
+    "apply_estimate_workbook_changes",
     # named project takeoffs (the shared measurement an estimate pins — push-takeoff)
     "list_takeoffs", "create_takeoff", "compare_takeoff", "apply_takeoff",
     # assemblies

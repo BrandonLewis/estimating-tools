@@ -33,9 +33,28 @@ def test_activity_labor_missing_crew_uses_export_value():
 
 
 def test_resource_cost_has_every_rule():
-    f = F.resource_cost(12, 7)
-    for piece in ('S12="labor"', 'T12="flat"', 'AF12=""', "I7", 'V12<>"Y"', "U12/100", "C12*E12"):
+    f = F.resource_cost(12)
+    for piece in ('S12="labor"', 'T12="flat"', 'AF12=""', "INDEX($I:$I,MAX(AJ12,1))", 'V12<>"Y"',
+                  "U12/100", "C12*E12"):
         assert piece in f
+
+
+def test_resource_formulas_find_their_activity_by_position():
+    """No fixed activity row: production, production unit, hours/shift and
+    crew factor are read through the row's AJ (the nearest ACTIVITY)."""
+    units = F.resource_units(12)
+    for piece in ("INDEX($F:$F,MAX(AJ12,1))", "INDEX($G:$G,MAX(AJ12,1))",
+                  "INDEX($H:$H,MAX(AJ12,1))"):
+        assert piece in units
+    assert "INDEX($I:$I,MAX(AJ12,1))" in F.resource_cost(12)
+    assert isinstance(units, F.Formula)
+
+
+def test_activity_row_chains_from_the_row_above():
+    # Every row, the first included, anchors at the header row: a range
+    # whose first row is data would break when that row is deleted.
+    assert F.activity_row(5, 4) == '=IF(W5="ACTIVITY",ROW(),MAX(AJ$4:AJ4))'
+    assert F.activity_row(9, 4) == '=IF(W9="ACTIVITY",ROW(),MAX(AJ$4:AJ8))'
 
 
 def test_item_cost_handles_manual_excluded_and_zero_quantity():
@@ -116,3 +135,21 @@ def test_bid_total_amount_coerces_each_schedule_id_to_an_integer():
     with pytest.raises((TypeError, ValueError)):
         F.bid_total_amount(schedule_ids=('1)+HYPERLINK("http://x","y"',),
                            includes_unscheduled=False, first=13, last=20)
+
+
+def test_step_shifts_sum_the_bracketed_range():
+    f = F.step_shifts(20, (21, 23))
+    total = ('SUMIF(D21:D23,"HOURS",C21:C23)/IF(OR(H20="",H20=0),8,H20)'
+             '+SUMIF(D21:D23,"<>HOURS",C21:C23)')
+    assert f == (f"=IF(ABS(MOD(({total})*100,1)-0.5)<1E-9,"
+                 f"(INT(({total})*100)+MOD(INT(({total})*100),2))/100,ROUND({total},2))")
+
+
+def test_crew_sum_spans_the_crew_block():
+    assert F.crew_sum("C", (5, 8)) == "=SUM(C5:C8)"
+
+
+def test_resource_formulas_survive_a_blank_activity_row():
+    """AJ is 0 above the first activity; INDEX(..., 0) would return a whole
+    column, so the lookup clamps to row 1."""
+    assert "INDEX($F:$F,MAX(AJ12,1))" in F.resource_units(12)

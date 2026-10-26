@@ -20,6 +20,10 @@ Subcommands:
                  -> the updated spec and a Markdown report; a dry run
                  unless --write, which first saves a timestamped backup
                  of the spec (readback/)
+  heavycivil     build: a get_estimate_workbook JSON -> a HeavyCivil .xlsx;
+                 read: an edited HeavyCivil .xlsx -> a change-set JSON for
+                 BidSheet.ai's apply_estimate_workbook_changes
+                 (heavycivil/readback/; sends nothing)
 
 Deterministic file operations only; MCP lookups stay at the skill layer
 (build-estimate-workbook fetches BM bid-item scaffolds to scaffolds.json)."""
@@ -121,6 +125,7 @@ def cmd_heavycivil_build(args) -> int:
     from datetime import datetime, timezone
 
     from estimating_tools.heavycivil import build as hc_build
+    from estimating_tools.heavycivil.baseline import BaselineError
     from estimating_tools.heavycivil.model import PayloadError, merge_pages
     from estimating_tools.heavycivil.style import StyleError, resolve_style
 
@@ -157,7 +162,7 @@ def cmd_heavycivil_build(args) -> int:
     exported_at = args.exported_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
         book = hc_build.build(merge_pages(docs), style=style, exported_at=exported_at, host=args.host)
-    except PayloadError as exc:
+    except (PayloadError, BaselineError) as exc:
         print(f"payload refused: {exc}", file=sys.stderr)
         return 1
     try:
@@ -166,6 +171,44 @@ def cmd_heavycivil_build(args) -> int:
         print(f"could not write the workbook: {exc}", file=sys.stderr)
         return 1
     print("WROTE:", out)
+    return 0
+
+
+def cmd_heavycivil_read(args) -> int:
+    """Read an edited HeavyCivil workbook back into a change set (JSON) for
+    BidSheet.ai's apply_estimate_workbook_changes. Sends nothing.
+
+    Exit 0: the change set is written (``ops`` empty when nothing changed --
+    "no changes"). Exit 2: the read was refused -- every problem is printed
+    and nothing is written (an earlier change set at the output path is left
+    as it was; the file is written whole or not at all)."""
+    from estimating_tools.heavycivil.readback import ReadRefused, read_book
+
+    book = Path(args.book)
+    out = Path(args.output) if args.output else book.with_name(book.stem + ".changes.json")
+    if _same_file(out, book):
+        _emit(f"read refused: -o {out} is the workbook itself -- give the change set its "
+              "own file name", file=sys.stderr)
+        return 2
+    try:
+        change_set = read_book(book)
+    except ReadRefused as exc:
+        _emit(f"read refused -- {len(exc.problems)} problem(s), nothing written:",
+              file=sys.stderr)
+        for problem in exc.problems:
+            _emit(f"  {problem}", file=sys.stderr)
+        return 2
+    text = json.dumps(change_set.as_json(), indent=1, ensure_ascii=False) + "\n"
+    tmp = out.with_name(out.name + ".tmp")
+    try:
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, out)
+    except OSError as exc:
+        tmp.unlink(missing_ok=True)
+        _emit(f"could not write the change set: {exc}", file=sys.stderr)
+        return 2
+    _emit(change_set.text())
+    _emit(f"WROTE: {out}")
     return 0
 
 
@@ -761,7 +804,8 @@ def _parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("heavycivil",
                        help="HeavyCivil workbook: render BidSheet.ai's estimate "
-                            "workbook payload (get_estimate_workbook JSON).")
+                            "workbook payload (get_estimate_workbook JSON), or read an "
+                            "edited workbook back into a change set.")
     hsub = p.add_subparsers(dest="heavycivil_command", required=True)
     q = hsub.add_parser("build", help="Render a get_estimate_workbook JSON to .xlsx.")
     q.add_argument("workbook_json", nargs="+",
@@ -776,6 +820,12 @@ def _parser() -> argparse.ArgumentParser:
     q.add_argument("--host", default="www.bidsheet.ai",
                    help="BidSheet.ai host the payload came from (stamped for read-back)")
     q.set_defaults(func=cmd_heavycivil_build)
+    q = hsub.add_parser("read", help="Read an edited HeavyCivil .xlsx back into a change set "
+                                     "(JSON ops for apply_estimate_workbook_changes).")
+    q.add_argument("book", help="the edited HeavyCivil workbook")
+    q.add_argument("-o", "--output",
+                   help="change-set JSON (default: BOOK.changes.json next to the workbook)")
+    q.set_defaults(func=cmd_heavycivil_read)
 
     p = sub.add_parser("summarize",
                        help="Price a *.estimate.yaml in pure Python and print "

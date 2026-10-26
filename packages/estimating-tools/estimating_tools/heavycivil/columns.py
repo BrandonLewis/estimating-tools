@@ -29,6 +29,9 @@ class CR:
     TYPE, BASIS, BURD, BINC = "S", "T", "U", "V"
     KIND, ID, V, PARENT, MULT, XCOST, XMH, KEY, REF = "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE"
     H1, H2, H3, H4 = "AF", "AG", "AH", "AI"
+    #: The row of the nearest ACTIVITY at or above (every data row; see
+    #: ``formulas.activity_row``): resource formulas find their activity here.
+    ACT = "AJ"
     #: The cost-type columns, in BidSheet.ai's component_type order.
     SPLIT = (("labor", "M"), ("equipment", "N"), ("material", "O"),
              ("subcontractor", "P"), ("other", "Q"))
@@ -70,6 +73,7 @@ COST_REPORT = (
     Column("h2", CR.H2, "h2", hidden=True),
     Column("h3", CR.H3, "h3", hidden=True),
     Column("h4", CR.H4, "h4", hidden=True),
+    Column("activity_row", CR.ACT, "activity_row", hidden=True),
 )
 
 

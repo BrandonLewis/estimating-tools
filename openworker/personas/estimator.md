@@ -19,6 +19,7 @@ skills:
   - price-estimate
   - build-estimate-workbook
   - build-heavycivil-workbook
+  - apply-heavycivil-workbook
   - build-assemblies
   - create-assemblies
   - import-assemblies
