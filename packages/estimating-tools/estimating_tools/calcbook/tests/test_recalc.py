@@ -78,3 +78,54 @@ def test_recalculate_uses_dispatchex(monkeypatch, tmp_path):
     assert calls.get("used_dispatchex") is True
     assert "used_dispatch" not in calls
     assert calls.get("quit") is True
+
+
+def test_excel_is_quit_even_when_setting_it_up_fails(monkeypatch, tmp_path):
+    """Visible/DisplayAlerts sit inside the try: a COM error there must not
+    leave a hidden Excel behind."""
+    calls = {}
+
+    class FakeApp:
+        def __setattr__(self, name, value):
+            raise OSError("RPC server unavailable")
+
+        def Quit(self):
+            calls["quit"] = True
+
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *a: FakeApp(), Dispatch=None)
+    monkeypatch.setitem(sys.modules, "win32com", types.SimpleNamespace(client=fake_client))
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+    with pytest.raises(OSError):
+        recalc.recalculate(str(tmp_path / "b.xlsx"))
+    assert calls.get("quit") is True
+
+
+def test_the_excel_pid_is_reported_before_the_book_opens(monkeypatch, tmp_path):
+    order = []
+
+    class FakeApp:
+        Hwnd = 1
+
+        class _WBs:
+            def Open(self, path):
+                order.append("open")
+                raise OSError("stop here")
+        Workbooks = _WBs()
+
+        def Quit(self):
+            order.append("quit")
+
+    fake_client = types.SimpleNamespace(DispatchEx=lambda *a: FakeApp(), Dispatch=None)
+    monkeypatch.setitem(sys.modules, "win32com", types.SimpleNamespace(client=fake_client))
+    monkeypatch.setitem(sys.modules, "win32com.client", fake_client)
+    monkeypatch.setattr(recalc, "_excel_pid", lambda excel: 4242)
+    with pytest.raises(OSError):
+        recalc.recalculate(str(tmp_path / "b.xlsx"), report_pid=lambda pid: order.append(pid))
+    assert order == [4242, "open", "quit"]
+
+
+def test_missing_pywin32_is_excel_unavailable(monkeypatch):
+    monkeypatch.setitem(sys.modules, "win32com", None)
+    monkeypatch.setitem(sys.modules, "win32com.client", None)
+    with pytest.raises(recalc.ExcelUnavailable):
+        recalc.recalculate("nope.xlsx")

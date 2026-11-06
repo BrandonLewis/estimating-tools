@@ -284,3 +284,29 @@ def test_develop_bad_fc(capsys):
     rc = main(["develop", "--size", "5", "--fc", "0"])
     assert rc == 1
     assert "fc_psi" in capsys.readouterr().out
+
+
+# --- schedule: the takeoff's identity for apply-takeoff (#376) ----------------
+
+def _takeoff_json(tmp_path, *extra):
+    bars = _write_bars(tmp_path)
+    out_json = tmp_path / "takeoff.json"
+    assert main(["schedule", str(bars), "--out-dir", str(tmp_path),
+                 "--takeoff", str(out_json), "--organization-id", "1", *extra]) == 0
+    return CanonicalTakeoff.from_json(out_json.read_text(encoding="utf-8"))
+
+
+def test_schedule_takeoff_is_named_after_the_schedule_title(tmp_path):
+    assert _takeoff_json(tmp_path).source_id == "footing-f1"
+
+
+def test_schedule_takeoff_source_id_flag_overrides_the_title(tmp_path):
+    assert _takeoff_json(tmp_path, "--source-id", "abutment-1").source_id == "abutment-1"
+
+
+def test_schedule_takeoff_without_a_title_carries_no_source_id(tmp_path):
+    bars = _write_bars(tmp_path, {k: v for k, v in BARS.items() if k != "title"})
+    out_json = tmp_path / "takeoff.json"
+    assert main(["schedule", str(bars), "--out-dir", str(tmp_path),
+                 "--takeoff", str(out_json), "--organization-id", "1"]) == 0
+    assert "source_id" not in json.loads(out_json.read_text(encoding="utf-8"))

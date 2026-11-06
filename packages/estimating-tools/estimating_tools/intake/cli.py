@@ -17,7 +17,7 @@ from pathlib import Path
 import yaml
 
 from estimating_tools.intake.bid_frame import normalize_bid_items, takeoff_map_skeleton
-from estimating_tools.intake.briefing import build_briefing_pack
+from estimating_tools.intake.briefing import build_briefing_pack, routing_notes
 from estimating_tools.intake.manifest import ProjectManifest
 from estimating_tools.profiles.scaffold import materialize_layout
 
@@ -201,7 +201,18 @@ def cmd_briefing(args) -> int:
         return 1
     print(f"briefing pack: {len(created)} files created "
           f"({len(structures)} structures; existing files untouched)")
+    for note in routing_notes(structures, _known_families()):
+        print(note)
     return 0
+
+
+def _known_families():
+    """bimforge's registered families, or None when the registry cannot be read."""
+    try:
+        from bimforge.author.families.registry import available
+        return set(available())
+    except Exception:  # noqa: BLE001 -- the note is advisory; never fail the briefing
+        return None
 
 
 def main(argv=None) -> int:

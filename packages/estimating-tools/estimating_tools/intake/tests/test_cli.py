@@ -216,3 +216,18 @@ def test_escaping_bid_dir_in_manifest_rejected(tmp_path):
     rc = main(["bid-frame", str(proj), "--items", str(items)])
     assert rc == 1
     assert not (tmp_path / "escape").exists()
+
+
+def test_briefing_names_unrouted_structures_and_unknown_families(tmp_path, capsys):
+    proj = _init(tmp_path)
+    structures = {"structures": [
+        {"id": "s1", "family": "box-culvert", "route": "family"},
+        {"id": "s2"},
+        {"id": "s3", "family": "no-such-family", "route": "family"}]}
+    sfile = tmp_path / "structures.yaml"
+    sfile.write_text(yaml.safe_dump(structures), encoding="utf-8")
+    assert main(["briefing", str(proj), "--structures", str(sfile)]) == 0
+    out = capsys.readouterr().out
+    assert "no modelling route: s2 " in out
+    assert "family not in bimforge's registry: s3 (no-such-family)" in out
+    assert "s1" not in out.split("files created")[1]

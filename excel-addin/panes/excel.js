@@ -9,7 +9,7 @@
  * it: a host that cannot answer gets the "save first" reminder, not an error.
  */
 import { colLetter, colIndex } from "../core/refs.js";
-import { blankRuns, visibleFromRuns } from "../core/readback.js";
+import { blankRuns, visibleFromRuns } from "../core/readback-common.js";
 
 /**
  * Ranges behind workbook-scoped names, or null for a name that is missing or
@@ -34,29 +34,109 @@ async function rangesOf(ctx, names, props) {
   return ranges;
 }
 
+/** {name: text | null} for each custom document property; null when the workbook has none by that name. A number, date or yes/no property comes back as text. */
+async function propsOf(ctx, names) {
+  const items = names.map((n) => {
+    const it = ctx.workbook.properties.custom.getItemOrNullObject(n);   // ExcelApi 1.7
+    it.load("value");
+    return it;
+  });
+  await ctx.sync();
+  return Object.fromEntries(names.map((n, i) => [n, items[i].isNullObject ? null : String(items[i].value ?? "")]));
+}
+
 /**
- * The layout JSON lives in the cell named `est.layout` on the hidden
- * `_templates` sheet. Desktop Excel trims custom document properties to 255
- * characters, so the `estimate_layout` property holds only the layout version
- * and serves as a marker. No marker means no stamp.
+ * What every adapter's detect needs, in one Excel.run: the custom properties
+ * `props`, the first cell of each defined name in `cells` (null when the name
+ * is missing or not a range), the sheet names and the active sheet.
+ *
+ * A long layout JSON lives in a named cell (`est.layout` on the hidden
+ * `_templates` sheet), not in a custom property: desktop Excel trims a custom
+ * document property to 255 characters, so the `estimate_layout` property
+ * holds only the layout version and serves as a marker.
  */
-export async function readWorkbook() {
+export async function readFacts({ props, cells }) {
   return Excel.run(async (ctx) => {
-    const wb = ctx.workbook;
-    const prop = wb.properties.custom.getItemOrNullObject("estimate_layout");
-    prop.load("value");
-    const sheets = wb.worksheets;
+    const sheets = ctx.workbook.worksheets;
     sheets.load("items/name");
     const active = sheets.getActiveWorksheet();
     active.load("name");
+    const found = await propsOf(ctx, props);       // this sync loads the sheets too
+    const ranges = cells.length ? await rangesOf(ctx, cells, "values") : [];
+    return {
+      props: found,
+      cells: Object.fromEntries(cells.map((n, i) => [n, ranges[i] ? ranges[i].values[0][0] : null])),
+      sheetNames: sheets.items.map((s) => s.name),
+      activeSheet: active.name,
+    };
+  });
+}
+
+/** One custom document property's value, or null when the workbook has none by that name. */
+export async function readProperty(name) {
+  return Excel.run(async (ctx) => (await propsOf(ctx, [name]))[name]);
+}
+
+/** The values (2-D) of the range behind a workbook-scoped name, or null when the name is missing or not a range. */
+export async function readNamedValues(name) {
+  return Excel.run(async (ctx) => {
+    const [rng] = await rangesOf(ctx, [name], "values");
+    return rng ? rng.values : null;
+  });
+}
+
+/** The most rows readColumns and readActiveColumns read from one sheet; the same cap as SCAN_MAX_ROWS. */
+export const READ_MAX_ROWS = 20000;
+
+/**
+ * Columns `cols` of `ws` from row 1 to the last row of `used` (already
+ * loaded with rowIndex and rowCount), capped at READ_MAX_ROWS:
+ * {last, truncated, columns: {col: values}}, where values[i] is row i+1's.
+ */
+async function columnsOf(ctx, ws, used, cols) {
+  const end = used.isNullObject ? 1 : used.rowIndex + used.rowCount;
+  const last = Math.min(end, READ_MAX_ROWS);
+  const ranges = cols.map((c) => {
+    const r = ws.getRange(`${c}1:${c}${last}`);
+    r.load("values");
+    return r;
+  });
+  await ctx.sync();
+  return { last, truncated: end > READ_MAX_ROWS,
+           columns: Object.fromEntries(cols.map((c, i) => [c, ranges[i].values.map((row) => row[0])])) };
+}
+
+/**
+ * Raw values of columns `cols` (letters) on `sheet`, from row 1 to the last
+ * used row, at most READ_MAX_ROWS: {last, truncated, columns: {col: values}},
+ * where values[i] is row i+1's value. null when there is no sheet by that name.
+ */
+export async function readColumns(sheet, cols) {
+  return Excel.run(async (ctx) => {
+    const ws = ctx.workbook.worksheets.getItemOrNullObject(sheet);
     await ctx.sync();
-    let layoutText = null;
-    if (!prop.isNullObject) {
-      // A marker with no readable cell is a damaged stamp, which parseLayout reports as "bad".
-      const [cell] = await rangesOf(ctx, ["est.layout"], "values");
-      layoutText = cell ? String(cell.values[0][0] ?? "{}") : "{}";
-    }
-    return { layoutText, sheetNames: sheets.items.map((s) => s.name), activeSheet: active.name };
+    if (ws.isNullObject) return null;
+    const used = ws.getUsedRangeOrNullObject(true);
+    used.load(["rowIndex", "rowCount"]);
+    await ctx.sync();
+    return columnsOf(ctx, ws, used, cols);
+  });
+}
+
+/**
+ * The active cell's sheet and row, plus the raw values of columns `cols` on
+ * that sheet as readColumns reads them (capped, with `truncated`).
+ */
+export async function readActiveColumns(cols) {
+  return Excel.run(async (ctx) => {
+    const cell = ctx.workbook.getActiveCell();
+    cell.load("rowIndex");
+    const ws = ctx.workbook.worksheets.getActiveWorksheet();
+    ws.load("name");
+    const used = ws.getUsedRangeOrNullObject(true);
+    used.load(["rowIndex", "rowCount"]);
+    await ctx.sync();
+    return { sheet: ws.name, row: cell.rowIndex + 1, ...(await columnsOf(ctx, ws, used, cols)) };
   });
 }
 

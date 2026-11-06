@@ -1,11 +1,12 @@
 """estimating_tools' bimforge requirement must carry a lower bound.
 
-The plugin bundles a specific bimforge wheel, and bimforge is published to PyPI
-from BrandonLewis/BIMForge on the same version line. A BARE `bimforge`
-requirement would be satisfied by ANY registry version, older included; the
-floor pins the minimum to what this repo's code expects. And the floor must be
-<= the bimforge version this repo builds, or the bundled wheel would stop
-satisfying it and every install would break.
+bimforge is developed and released in BrandonLewis/BIMForge; this repo takes
+it from PyPI. A BARE `bimforge` requirement would be satisfied by ANY registry
+version, older included; the floor pins the minimum to what this repo's code
+expects. The plugins bundle exactly the floored release
+(`scripts/build_plugin_wheel.py --pypi bimforge`), so the bundled wheel must
+be that version: lower and it would not satisfy the floor, higher and the
+floor no longer says what the plugins ship.
 
 Deliberately parses with `re` and no TOML library: this repo supports Python
 3.10, where `tomllib` is absent, and a guard that skips on a supported version
@@ -19,16 +20,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ET = ROOT / "packages" / "estimating-tools" / "pyproject.toml"
-BF = ROOT / "packages" / "bimforge" / "pyproject.toml"
 BUNDLED = ROOT / "plugins" / "estimating-core" / "dist"
-
-
-def _version(pyproject: Path) -> tuple[int, ...]:
-    """The [project] version, as a comparable tuple."""
-    m = re.search(r'^version\s*=\s*"([^"]+)"', pyproject.read_text(
-        encoding="utf-8"), re.M)
-    assert m, f"no version in {pyproject}"
-    return tuple(int(x) for x in m.group(1).split("."))
 
 
 def _bimforge_requirements() -> list[tuple[str, str]]:
@@ -67,20 +59,24 @@ def test_every_bimforge_requirement_has_a_floor():
 
 
 def _bimforge_we_ship() -> tuple[int, ...]:
-    """The bimforge version this tree ships: the source package's in the
-    monorepo, the bundled wheel's in the public export (which takes bimforge
-    from PyPI and carries no source)."""
-    if BF.exists():
-        return _version(BF)
+    """The bimforge version the plugins bundle."""
     wheels = sorted(BUNDLED.glob("bimforge-*.whl"))
-    assert wheels, f"no packages/bimforge and no bundled bimforge wheel under {BUNDLED}"
-    return tuple(int(x) for x in wheels[-1].name.split("-")[1].split("."))
+    assert len(wheels) == 1, f"expected one bundled bimforge wheel under {BUNDLED}, found {wheels}"
+    return tuple(int(x) for x in wheels[0].name.split("-")[1].split("."))
 
 
-def test_no_floor_is_above_the_version_we_build():
-    built = _bimforge_we_ship()
+def test_no_floor_is_above_the_version_we_ship():
+    shipped = _bimforge_we_ship()
     for key, spec in _bimforge_requirements():
         floor = _floor(spec)
-        assert floor is not None and floor <= built, (
-            f"{key} floors bimforge at {floor} but this repo builds {built}; "
+        assert floor is not None and floor <= shipped, (
+            f"{key} floors bimforge at {floor} but the plugins bundle {shipped}; "
             f"the bundled wheel would not satisfy it")
+
+
+def test_the_plugins_bundle_the_floored_release():
+    shipped = _bimforge_we_ship()
+    floors = {_floor(s) for k, s in _bimforge_requirements() if k == "dependencies"}
+    assert floors == {shipped}, (
+        f"dependencies floor bimforge at {floors} but the plugins bundle {shipped}; "
+        f"run scripts/build_plugin_wheel.py <plugin> --pypi bimforge")

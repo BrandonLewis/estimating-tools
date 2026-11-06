@@ -2,7 +2,7 @@
 import pytest
 import yaml
 
-from estimating_tools.intake.briefing import build_briefing_pack
+from estimating_tools.intake.briefing import build_briefing_pack, routing_notes
 from estimating_tools.intake.manifest import BidFrameItem, ProjectManifest
 
 STRUCTURES = [
@@ -82,3 +82,54 @@ def test_rerun_adding_structure_keeps_structures_yaml_in_sync(tmp_path):
     assert {s["id"] for s in data["structures"]} == {"headwall-type-1", "outfall-2"}
     names = {p.name for p in created}
     assert names == {"structures.yaml", "outfall-2.md"}   # scope/risks/s1 prompt untouched
+
+
+ROUTED = [
+    {"id": "culvert-a", "name": "Culvert A", "family": "box-culvert", "route": "family"},
+    {"id": "bridge-1", "name": "Bridge 1", "family": "bridge-standard", "route": "federated"},
+    {"id": "vault", "name": "Vault", "route": "bespoke"},
+    {"id": "outfall-2", "name": "Outfall No. 2"},
+]
+
+
+def _frontmatter(base, sid):
+    text = (base / "Briefing" / "prompts" / f"{sid}.md").read_text(encoding="utf-8")
+    return yaml.safe_load(text.split("---")[1])
+
+
+def test_family_and_route_reach_the_prompt_frontmatter(tmp_path):
+    build_briefing_pack(_manifest(), ROUTED, tmp_path)
+    assert _frontmatter(tmp_path, "culvert-a")["family"] == "box-culvert"
+    assert _frontmatter(tmp_path, "bridge-1")["route"] == "federated"
+    assert "family" not in _frontmatter(tmp_path, "vault")
+
+
+def test_a_structure_without_family_or_route_writes_the_frontmatter_it_always_did(tmp_path):
+    build_briefing_pack(_manifest(), STRUCTURES, tmp_path)
+    assert list(_frontmatter(tmp_path, "headwall-type-1")) == [
+        "structure_id", "project", "organization_id", "bm_project_id", "count",
+        "bid_items", "cost_codes"]
+
+
+@pytest.mark.parametrize("entry, message", [
+    ({"id": "a", "route": "hand-math"}, "invalid route 'hand-math'"),
+    ({"id": "a", "route": "family"}, "route 'family' names no family"),
+    ({"id": "a", "route": "federated"}, "route 'federated' names no family"),
+    ({"id": "a", "family": "Box Culvert"}, "invalid family 'Box Culvert'"),
+])
+def test_a_bad_route_or_family_is_refused(tmp_path, entry, message):
+    with pytest.raises(ValueError, match=message):
+        build_briefing_pack(_manifest(), [entry], tmp_path)
+    assert not (tmp_path / "Briefing").exists()
+
+
+def test_routing_notes_name_unrouted_structures_and_unknown_families():
+    known = {"box-culvert", "bridge-standard"}
+    assert routing_notes(ROUTED, known) == [
+        "no modelling route: outfall-2 (set route: family | bespoke | federated)"]
+    odd = ROUTED + [{"id": "piles", "family": "soldier-pile-wall", "route": "family"}]
+    assert routing_notes(odd, known)[1] == (
+        "family not in bimforge's registry: piles (soldier-pile-wall) "
+        "(a consumer repo's own family, or a typo)")
+    assert routing_notes(odd, None) == routing_notes(ROUTED, known)
+    assert routing_notes(ROUTED[:3], known) == []

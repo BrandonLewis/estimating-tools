@@ -61,8 +61,10 @@ def _run_audit(args) -> int:
             import ifcopenshell
 
             from bimforge.bim.ifc_takeoff import ifc_leg
+
+            from estimating_tools.takeoff.audit import mark_wholes
             try:
-                ifc = ifc_leg(args.ifc)
+                ifc = mark_wholes(args.ifc, ifc_leg(args.ifc))
             except ifcopenshell.Error as exc:
                 raise ValueError(f"unreadable IFC {args.ifc}: {exc}") from exc
         mesh = None

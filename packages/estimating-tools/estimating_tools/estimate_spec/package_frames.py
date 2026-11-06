@@ -506,6 +506,19 @@ def build_package_frames(spec: dict, quotes: list[CanonicalQuote], *, spare_colu
     return out
 
 
+def vendor_total(frame, vendor: str) -> float:
+    """The vendor column's total on `frame`: its lump amount, else the sum of its
+    numeric cells times the lines' numeric quantities. 0.0 when it has no column."""
+    for col in frame.vendors:
+        if col.is_spare or _fold(col.name) != _fold(vendor):
+            continue
+        if col.lump_sum and col.lump_amount is not None:
+            return float(col.lump_amount)
+        return float(sum(col.cells[ln.key] * ln.qty for ln in frame.lines
+                         if _is_number(col.cells.get(ln.key)) and _is_number(ln.qty)))
+    return 0.0
+
+
 def _paren(value) -> str:
     """A spec number or `=formula` as a parenthesised term of another formula."""
     if isinstance(value, str) and value.startswith("="):

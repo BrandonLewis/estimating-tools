@@ -2,7 +2,8 @@
 
 Reads the pushed tag from $GITHUB_REF_NAME (e.g. "v0.1.1"), strips a leading "v",
 and asserts every committed version string equals it: packages/estimating-tools/
-and packages/bimforge/ pyproject.toml (when present) and each plugins/*/.claude-plugin/plugin.json.
+pyproject.toml and each plugins/*/.claude-plugin/plugin.json. bimforge is released
+from BrandonLewis/BIMForge on its own line and is not checked here.
 Exits 0 on a full
 match (prints "version consistency OK: all == <ver>"); else exits 1 and lists every
 mismatched file. The committed versions are authoritative — the tag is a pointer.
@@ -27,13 +28,7 @@ def main() -> int:
     want = tag[1:] if tag.startswith("v") else tag
 
     errs = []
-    for rel in ("packages/estimating-tools/pyproject.toml",
-                "packages/bimforge/pyproject.toml"):
-        if rel.startswith("packages/bimforge") and not (ROOT / rel).exists():
-            # the public estimating-tools tree installs bimforge from PyPI and
-            # carries only its bundled wheel (tests/test_bimforge_floor.py pins
-            # that wheel against the floor); the monorepo has the source
-            continue
+    for rel in ("packages/estimating-tools/pyproject.toml",):
         pp = (ROOT / rel).read_text()
         m = re.search(r'^version\s*=\s*"([^"]+)"', pp, re.M)
         if m is None:

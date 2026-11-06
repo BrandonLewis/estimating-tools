@@ -1,4 +1,5 @@
-"""Build a package's wheel into a plugin's dist/, or --check it for drift.
+"""Build a package's wheel into a plugin's dist/, fetch a released one from
+PyPI, or --check either for drift.
 
 The marketplace copies only the plugin subtree, so every wheel a plugin needs
 must be committed inside the plugin. Wheels track main: any PR changing a
@@ -8,16 +9,26 @@ check only compares wheels whose name prefix matches the built package.
 
 Usage:
   python scripts/build_plugin_wheel.py plugins/estimating-core                                # estimating_tools wheel
-  python scripts/build_plugin_wheel.py plugins/estimating-core --package packages/bimforge      # bimforge wheel
-  python scripts/build_plugin_wheel.py plugins/calc-bim --package packages/bimforge --check     # CI drift gate
+  python scripts/build_plugin_wheel.py plugins/estimating-core --pypi bimforge                 # bimforge wheel
+  python scripts/build_plugin_wheel.py plugins/calc-bim --pypi bimforge --check                # CI drift gate
+
+bimforge is developed and released in BrandonLewis/BIMForge. `--pypi NAME`
+bundles exactly the version estimating_tools floors (`NAME>=X.Y.Z` in its
+pyproject dependencies), downloaded from PyPI; `--check` requires the
+committed file to carry that version's name and PyPI's published sha256.
+Raising the floor is how a newer bimforge reaches the plugins.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -90,13 +101,81 @@ def diff_wheels(a: Path, b: Path) -> list[str]:
     return diffs
 
 
+ET_PYPROJECT = ROOT / "packages" / "estimating-tools" / "pyproject.toml"
+
+
+def floored_version(name: str) -> str:
+    """The version estimating_tools' base `dependencies` floor NAME at."""
+    toml = ET_PYPROJECT.read_text(encoding="utf-8")
+    deps = re.search(r"^dependencies\s*=\s*\[([^\]]*)\]", toml, re.M)
+    if deps:
+        m = re.search(rf'"{re.escape(name)}\s*>=\s*([0-9][0-9.]*)"', deps.group(1))
+        if m:
+            return m.group(1)
+    raise SystemExit(f"{ET_PYPROJECT.relative_to(ROOT)}: no `{name}>=X.Y.Z` in dependencies")
+
+
+def pypi_wheel(name: str, version: str) -> tuple[str, str, str]:
+    """(filename, url, sha256) of the release's py3-none-any wheel on PyPI."""
+    with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/{version}/json", timeout=60) as r:
+        files = json.load(r)["urls"]
+    wheels = [f for f in files if f["packagetype"] == "bdist_wheel"]
+    if len(wheels) != 1:
+        raise SystemExit(f"{name} {version} on PyPI: expected one wheel, found {len(wheels)}")
+    w = wheels[0]
+    return w["filename"], w["url"], w["digests"]["sha256"]
+
+
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def bundle_from_pypi(plugin: str, name: str, check: bool) -> int:
+    dist = ROOT / plugin / "dist"
+    version = floored_version(name)
+    filename, url, sha = pypi_wheel(name, version)
+    prefix = filename.split("-")[0]
+    committed = sorted(dist.glob(f"{prefix}-*.whl"))
+    fix = f"fix: python scripts/build_plugin_wheel.py {plugin} --pypi {name}"
+    if check:
+        if len(committed) != 1:
+            print(f"DRIFT: expected exactly one committed {prefix}-*.whl in {dist}, found {len(committed)}")
+            print(fix)
+            return 1
+        if committed[0].name != filename:
+            print(f"DRIFT: committed {committed[0].name}, but estimating_tools floors {name} at {version} ({filename})")
+            print(fix)
+            return 1
+        if _sha256(committed[0]) != sha:
+            print(f"DRIFT: {committed[0].name} is not the file PyPI publishes (sha256 differs)")
+            print(fix)
+            return 1
+        print(f"wheel up to date: {filename} (PyPI sha256 {sha[:12]})")
+        return 0
+    with urllib.request.urlopen(url, timeout=120) as r:
+        data = r.read()
+    if hashlib.sha256(data).hexdigest() != sha:
+        raise SystemExit(f"downloaded {filename} does not match PyPI's sha256")
+    dist.mkdir(parents=True, exist_ok=True)
+    for old in committed:
+        old.unlink()
+    target = dist / filename
+    target.write_bytes(data)
+    print(f"wrote {target.relative_to(ROOT)} from PyPI")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("plugin", help="plugin directory to receive the wheel, e.g. plugins/estimating-core")
     ap.add_argument("--package", default="packages/estimating-tools",
                     help="package directory to build (default: packages/estimating-tools)")
+    ap.add_argument("--pypi", metavar="NAME",
+                    help="bundle NAME's released wheel from PyPI at the version estimating_tools floors")
     ap.add_argument("--check", action="store_true", help="verify the committed wheel matches a fresh build")
     args = ap.parse_args(argv)
+    if args.pypi:
+        return bundle_from_pypi(args.plugin, args.pypi, args.check)
 
     dist = ROOT / args.plugin / "dist"
     with tempfile.TemporaryDirectory() as td:

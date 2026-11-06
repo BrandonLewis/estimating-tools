@@ -515,6 +515,15 @@ def merge_scaffold(existing: dict, fresh: dict) -> tuple[dict, MergeReport]:
             new_hashes[f] = content_hash(cur[f])
         new_meta = dict(fresh_item.get("scaffold_meta") or meta)
         new_meta["field_hashes"] = new_hashes
+        # apply-takeoff's line ownership (issue #376): it follows the
+        # geometry. Scaffold geometry (or the official qty, on an item whose
+        # owners were never recorded) coming back means no takeoff owns
+        # anything; otherwise the applied lines stay, and so do their owners.
+        old_record = meta.get("takeoffs")
+        if "takeoff" in changed or ("qty" in changed and old_record is None):
+            new_meta["takeoffs"] = []
+        elif old_record is not None:
+            new_meta["takeoffs"] = old_record
         cur["scaffold_meta"] = new_meta
         if changed:
             report.updated.append((item_no, changed))

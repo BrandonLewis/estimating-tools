@@ -96,3 +96,16 @@ def test_picks_and_carry_must_name_package_items(key):
 
 def test_no_packages_is_silent():
     validate_cross_references(example_spec())
+
+
+def test_schema_accepts_pinned():
+    spec = _spec()
+    spec["work_packages"][0]["pinned"] = True
+    scaffold.validate_spec(spec, pack=fieldbook_pack())
+
+
+def test_pinned_must_be_boolean():
+    spec = _spec()
+    spec["work_packages"][0]["pinned"] = "yes"
+    with pytest.raises(Exception):
+        scaffold.validate_spec(spec, pack=fieldbook_pack())

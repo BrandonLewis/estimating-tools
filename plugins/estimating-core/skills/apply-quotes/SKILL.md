@@ -1,149 +1,79 @@
 ---
 name: apply-quotes
-description: Award a work package's chosen vendor quotes to the estimate as subcontractor allocations and roll up the estimate package — via the BidSheet.ai MCP. Confirms before writing; idempotent; adjusts on bid-day revisions. Writes.
+description: Carry a work package's chosen vendor quote (or self-perform) into the estimate with carry_work_package_quote, set its carry mode, and roll up the estimate package — via the BidSheet.ai MCP. Confirms before writing; idempotent; adjusts on bid-day revisions. Writes.
 ---
 
-> **Setup:** the `est-*` tools are **not on `PATH`** — every command below names its shim under `~/.estimating/bin/`, which this plugin's SessionStart hook creates. If a shim is missing, run `python <plugin-root>/scripts/ensure_tools.py` (the plugin root is this skill's directory's grandparent); it builds the shared runtime and prints one line saying what happened. Then retry.
+# Apply / Carry Vendor Quotes
 
-> **Display contract:** Show `render` output to the user **verbatim in a fenced code block** — never reformat it, add/remove columns, or substitute your own table; `parse` depends on the exact shape. If the `open_artifact_editor` tool (artifact-editor server) is available, ALSO call it — `open_artifact_editor(markdown=<rendered, verbatim>, title="<title>", editable=<false for read-only plan renders>)` — and tell the user to edit in the inline panel and click **Save & send to chat**; their edits arrive as a chat message. In the terminal, the same tool instead opens the editor in the user's web browser and returns the saved block directly in the tool result — parse and push it when it returns (Save = the user's consent). If the wait expires, call `collect_artifact_edits` after the user says they've saved. If the tool is missing or errors, show the live page built by:
->
-> ```python
-> from estimating_tools.artifacts_html import to_editable_html
-> page = to_editable_html(rendered, title="<title>")
-> ```
->
-> Prefer the host's native artifact mechanism (present `page` as a live HTML artifact); if the host only renders files, write it to `<slug>.artifact.html` (named after the artifact so successive renders don't overwrite each other). For editable artifacts, point the user at the page's **Copy edited artifact** button; for read-only plan renders, pass `editable=False` (the page has no button). Run `parse` only on text the user provides — the Save message, the pasted export, or their edited block — never on your own restatement of it.
+Use this after `compare-quotes` to carry the chosen vendor pricing into the estimate. The
+estimate carries **one quote per work package** (`carry_work_package_quote`); BidSheet.ai
+prices the package from it. This **writes** to BidSheet.ai, but only after you confirm,
+and nothing runs against production without the estimator's go-ahead. Partial bids are
+normal on bid day and quotes get revised; re-run to change the carry.
 
-# Apply / Award Vendor Quotes
+For a spec-driven bid (`work_packages` in the estimate spec, quote files on disk), use
+`sync-work-packages` instead: it pushes the whole choice from the file and records it.
+This skill is the by-hand path in BidSheet.ai.
 
-Use this after `compare-quotes` to AWARD the chosen vendor pricing — post it to the
-estimate as **subcontractor allocations** and roll up the estimate package. This
-**writes** to BidSheet.ai, but only after you confirm the plan. Built for bid day:
-partial bids are normal (a sub bids the structures; the GC self-performs
-excavation/backfill), and quotes get revised — re-run to adjust the award.
-
-**Precondition:** the project has a priced estimate (`price-estimate`). Each
-allocation resolves the quote line to its estimate item; if that fails, run
-`price-estimate` first.
+**Precondition:** the project has a priced estimate (`price-estimate`) and BidSheet.ai
+returns `carry_mode` from `get_work_package`. If it does not, BidSheet.ai is not yet on the
+carried-quote model: stop and say so.
 
 ## Inputs
 - The target `project_id` and the work package (by name or `work_package_id`).
-- The award decision (gathered below).
+- The decision (gathered below).
 
 ## Workflow
-1. **Resolve the work package:** `list_work_packages(project_id)` → match by name, or
-   use the given `work_package_id`. Record `work_package_id`.
-2. **(Re)build the spread** (read-only), exactly as `compare-quotes` does:
-   `get_work_package` items + `list_bid_items` + `list_work_package_quotes` +
-   `list_work_package_quote_line_items` per quote →
-   `estimating_tools.spreads.build_spread(...)`. Building fresh each run reflects any
-   revised lines.
-3. **Get the award decision** from the user:
-   - `vendor` — one `vendor_id` gets all the items it bid; or
-   - `manual` — a list of `{work_package_item_id, vendor_id}` (multiple subs per item
-     allowed, e.g. a sub does the structures and the GC self-performs the rest).
-   - Separately, ask whether the user wants to **accept any vendor alternate**
-     (`Cell(status="alternate")` on the spread) — an alternate is scope the vendor
-     is offering as an option, never part of either strategy above. Accepting one
-     is step 8a, a deliberate action outside the batch plan.
-4. **Plan it:** `estimating_tools.spreads.plan_award(spread, strategy, vendor_id=…,
-   selection=…)` → an `AwardPlan` (entries with `quote_line_item_id` +
-   `allocation_type`/`value`; per-item coverage with the self-perform remainder).
-   `plan_award` never includes an alternate cell (status `"alternate"`) in either
-   strategy — same as an excluded cell, it is skipped even when manually selected —
-   so accepting one is always the separate step 8a below, never silently planned.
-5. **Forbidden-mix guard (BEFORE any allocation write):** read the quote-conditions
-   journal — `<bid working dir>/Subquotes/quote-conditions.jsonl` (written by
-   `capture-quote`); load the current records and filter to this package:
-
-   ```python
-   from estimating_tools.quotespace.conditions import read_conditions
-   from estimating_tools.quotespace.model import current_records
-   ```
-
-   Match planned-award vendors to journal records by `bm_vendor_id` when present,
-   else by casefolded org name — the same rule the leveling engine uses.
-   For each vendor the plan awards PART (not all) of the items that vendor bid:
-   - `separate_acceptance_permitted` is `false` → **STOP.** Make no writes. Surface
-     the vendor's `acceptance_notes` clause **verbatim** — the vendor's own terms
-     forbid this mix. The paths forward are a whole-quote award to that vendor, an
-     award that excludes them, or the user renegotiating the clause with the vendor
-     (then re-recording the condition via `~/.estimating/bin/est-quotespace condition`).
-   - `null` / vendor unrecorded / journal missing → **WARN** ("acceptance terms for
-     <vendor> are unverified — this partial award assumes permission the quote
-     doesn't grant") and require the user's **explicit confirmation** of that risk
-     before proceeding to the confirm step.
-   A whole-quote award (every item the vendor bid) needs no guard — separate
-   acceptance is not in play.
-6. **Detect superseded allocations:** `list_subcontractor_allocations(quote_id=…)` for
-   the package's quotes → any existing allocation whose `quote_line_item_id` is NOT in
-   the new plan is a *candidate* for **superseded** (e.g. a revision changed the
-   winner). Before flagging one, check whether it is an **accepted alternate**
-   (step 8a — its line has `is_alternate=true`): `plan_award` never includes an
-   alternate line (step 4), so every accepted alternate looks like a candidate here
-   even when nothing changed. Split on whether its line is still on the quote's
-   **current revision** (check `list_work_package_quote_line_items(quote_id)`):
-   - **Current revision** → it is NOT superseded. Leave it out of the superseded
-     list; list it separately as **"accepted alternates (kept)"** so the user can see
-     it's still in effect, and make no write for it.
-   - **Superseded revision** (a newer current revision replaced the line it points
-     at) → flag it "vendor <X> revised to v<N> — re-accept the alternate on v<N>"; this
-     needs a fresh, confirmed step 8a accept on the new revision's line, not a plain
-     update/removal.
-   Every other allocation not in the new plan (i.e. not an accepted alternate) is a
-   genuine superseded allocation — usually the vendor **revised** their quote and the
-   line the allocation pointed at belongs to a superseded revision that a new current
-   revision has replaced. Surface it as "vendor <X> revised to v<N> — re-point the
-   award to the current revision's line" (use `list_quote_revisions(quote_id)` to show
-   the history if helpful), and handle it with the same confirm-driven update/removal.
-7. **Confirm BEFORE writing:** show `estimating_tools.spreads.render_award_plan(plan)`,
-   the superseded allocations that would be removed, and the accepted alternates kept
-   unchanged (step 6). If the user's `manual` selection (step 3) named a
-   `{work_package_item_id, vendor_id}` pair whose cell on the spread is
-   `Cell(status="alternate")`, say plainly that it was dropped from this plan (step 4 —
-   `plan_award` never includes an alternate) and point them to step 8a if they want to
-   award it. Make NO writes until the user explicitly confirms.
-8. **Upsert allocations** (on confirmation): for each entry, if no allocation exists
-   for its `quote_line_item_id`, `allocate_subcontractor(quote_line_item_id,
-   allocation_type, value)` (the result has a `created` flag); if one exists and its
-   `allocation_type`/`value` differ, `update_subcontractor_allocation(allocation_id,
-   …)`; skip unchanged. Remove each **confirmed** superseded allocation with
-   `remove_subcontractor_allocation(allocation_id)`.
-8a. **Accepting a vendor alternate (only if the user asked, step 3):** allocating an
-    alternate line's `quote_line_item_id` (from the spread's `Cell(status="alternate")`,
-    or `list_work_package_quote_line_items`) **without** `accept_alternate=true` is
-    **refused with an error** ("Accept the alternate (`accept_alternate`) to allocate
-    it.") — so call `allocate_subcontractor(quote_line_item_id, allocation_type, value,
-    accept_alternate=True)` (same on `update_subcontractor_allocation`). Confirm the
-    specific line, its price, and that it is an add to the award **before** making
-    this call — it is not covered by the step 7 confirm, which only shows the
-    strategy's planned entries. Likewise, don't allocate an **excluded** line's
-    `quote_line_item_id` — the vendor isn't bidding it. Unlike an alternate, the server
-    does NOT refuse this call: it silently creates an allocation that posts **$0**
-    (`accept_alternate` has no effect here either way). There is no override that makes
-    excluded scope a legitimate award, so skip excluded lines entirely rather than
-    calling `allocate_subcontractor` on them.
-9. **Roll up the estimate package:** find it for this work package —
-   `list_estimates(project_id)` → the project's estimate →
-   `list_estimate_packages(estimate_id)` → the package whose `work_package_id`
-   matches → `recalculate_estimate_package_totals(package_id)`. If none exists, skip
-   and say so.
-10. **Report:** allocations created / updated / skipped / removed; per-item
-    self-perform remainders; and the refreshed estimate-package totals.
+1. **Resolve the work package:** `list_work_packages(project_id)` -> match by name, or
+   use the given `work_package_id`. Record it.
+2. **Read its state:** `get_work_package(work_package_id)` -> `carry_mode`
+   (automatic or pinned), `selected_quote`, `self_perform`, `new_quotes_since_carry`.
+   Rebuild the spread as `compare-quotes` does when the estimator wants to see it.
+3. **Get the decision** from the user:
+   - a vendor's quote (`quote_id`, the current revision) to carry, and which of its
+     alternates (if any) to accept; or
+   - **self-perform** (the GC prices the package itself); or
+   - back to **automatic** (BidSheet.ai carries its own lowest quote).
+4. **Forbidden-mix guard (before any write):** a carried quote is taken whole, so the
+   guard bites only when the estimator also wants a hand allocation of part of a vendor's
+   items. In that case read the vendor's `separate_acceptance_permitted` and
+   `acceptance_notes` from the quote (BM-primary; the offline journal
+   `<bid working dir>/Subquotes/quote-conditions.jsonl` otherwise).
+   - `false` -> **STOP**; quote `acceptance_notes` verbatim.
+   - unknown -> warn and require explicit confirmation of the risk.
+5. **Confirm BEFORE writing.** Show the package, today's carry (`carry_mode`,
+   `selected_quote`), what will be carried, and any `new_quotes_since_carry`. Make NO
+   writes until the user explicitly confirms.
+6. **Carry** (on confirmation):
+   - a vendor: `carry_work_package_quote(work_package_id, quote_id, pin=True)`;
+   - self-perform: `carry_work_package_quote(work_package_id, quote_id=0, pin=True)`;
+   - a vendor alternate the estimator wants carried: add
+     `accept_alternate_line_ids=[<line ids>]` to the vendor call. The ids come from
+     `list_work_package_quote_line_items(quote_id)`, the lines with `is_alternate` true;
+     confirm each line and its price first;
+   - back to automatic: `update_work_package(work_package_id, carry_mode="automatic")`.
+   Setting `carry_mode` by hand is only for this return to automatic or an explicit ask;
+   a pin comes from `carry_work_package_quote`.
+7. **Read `carry_warnings`** in the result and show them to the estimator verbatim; none
+   of them is cosmetic. An error comes back as `{"error": ...}`: report it, do not retry
+   blindly.
+8. **Acknowledge** new quotes only when the estimator has looked at them:
+   `acknowledge_work_package_quotes(work_package_id)`.
+9. **Roll up the estimate package:** `list_estimates(project_id)` ->
+   `list_estimate_packages(estimate_id)` -> the package whose `work_package_id` matches ->
+   `recalculate_estimate_package_totals(package_id)`. If none exists, skip and say so.
+10. **Report:** what is now carried (re-read `get_work_package`), the `carry_warnings`, and
+    the refreshed estimate-package totals.
 
 ## Notes
-- The remainder after partial awards is the GC's self-perform (or a later manual
-  allocation) — it is reported, never auto-filled.
-- Re-running is safe and is the bid-day path: it updates changed allocations and
-  surfaces superseded ones for confirm-driven removal — no duplicates.
-- This cycle does NOT change quote status (award is recorded as allocations, not on
-  the quote). The field mapping is deterministic (`estimating_tools.spreads`); the
-  judgment is the award decision and confirming the writes.
-- Quote revisions now preserve history (BidManager #556): a vendor's revised quote is a
-  new current revision captured by `capture-quote`; leveling and award operate on the
-  current revision, and prior revisions remain for audit (`list_quote_revisions`).
-- BidSheet.ai write constraints (`allocation_percentage` precision, silent rounding,
-  tool-signature footguns): see `../estimating-reference/references/api-constraints.md`.
-- A vendor alternate is accepted one line at a time, confirmed each time (step 8a) —
-  never batched into `plan_award`/`render_award_plan` like a normal award. It is a
-  conscious add to scope, not a pricing choice among competing bids.
+- Re-running is safe: carrying the quote already carried changes nothing. A vendor's
+  revision is a new current revision (`capture-quote`); carry it again and
+  `new_quotes_since_carry` clears once acknowledged.
+- The old allocation-based award (`allocate_subcontractor` per quote line) is not used
+  here. A hand allocation by item is `sync-work-packages`' `picks` form.
+- Any plug component left on an item the vendor now covers double counts; `sync-work-packages`
+  offers its removal and warns when one remains.
+- This cycle does NOT change quote status (the carry is recorded on the package).
+- Quote revisions preserve history (BidManager #556); prior revisions remain for audit
+  (`list_quote_revisions`).
+- BidSheet.ai write constraints: see `../estimating-reference/references/api-constraints.md`.

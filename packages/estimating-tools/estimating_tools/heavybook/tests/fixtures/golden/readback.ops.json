@@ -1,0 +1,197 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [
+  "Cost Report row 11: not priced live in this book: the new activity 'Excavate' in its item's total; it keeps its source's crew and cost code, but not its element links or spread -- it shows after the apply and a rebuild",
+  "Cost Report row 13: the new line 'CAT 336' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild",
+  "Cost Report row 19: the new line 'Carpenters' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild"
+ ],
+ "ops": [
+  {
+   "fields": {
+    "markup_percentage": "12"
+   },
+   "op": "estimate.update",
+   "ref": 1,
+   "v": "ac6cc8eec0e04323"
+  },
+  {
+   "fields": {
+    "item_id": 3
+   },
+   "op": "activity.move",
+   "ref": 6,
+   "v": "d99670e1b39c54a4"
+  },
+  {
+   "fields": {
+    "assembly_type": "GENERIC",
+    "count": 1,
+    "crew_factor": "1",
+    "estimate_item_id": 1,
+    "hours_per_shift": "8",
+    "name": "Excavate",
+    "production_unit": "DAYS"
+   },
+   "op": "activity.create",
+   "ref": "new:a1"
+  },
+  {
+   "fields": {
+    "duration_shifts": "3"
+   },
+   "op": "activity.update",
+   "ref": "new:a1"
+  },
+  {
+   "fields": {
+    "activity_id": 4,
+    "duration": "4",
+    "duration_unit": "HOURS",
+    "name": "Strip"
+   },
+   "op": "step.add",
+   "ref": "new:s1"
+  },
+  {
+   "fields": {
+    "activity_id": "new:a1",
+    "component_type": "equipment",
+    "includes_burden": false,
+    "labor_cost_basis": "production",
+    "name": "CAT 336",
+    "quantity": "32",
+    "unit_cost": "185"
+   },
+   "op": "resource.create",
+   "ref": "new:r1"
+  },
+  {
+   "fields": {
+    "activity_id": 2,
+    "burden_percentage": "10",
+    "component_type": "labor",
+    "includes_burden": false,
+    "labor_cost_basis": "production",
+    "name": "Carpenters",
+    "quantity": "2",
+    "unit_cost": "400"
+   },
+   "op": "resource.create",
+   "ref": "new:r2"
+  },
+  {
+   "fields": {
+    "quantity": "32"
+   },
+   "op": "resource.update",
+   "ref": 1,
+   "v": "8351b6e723234615"
+  },
+  {
+   "fields": {
+    "members": [
+     {
+      "classification": "Laborer",
+      "count": "3",
+      "hourly_rate_override": "50",
+      "labor_rate_id": null,
+      "sort_order": 0
+     },
+     {
+      "classification": "OPER",
+      "count": "1",
+      "hourly_rate_override": null,
+      "labor_rate_id": 1,
+      "sort_order": 0
+     }
+    ]
+   },
+   "op": "crew.update_members",
+   "ref": 1,
+   "v": "5e68b40e2a6f0914"
+  },
+  {
+   "fields": {
+    "crew_id": 1
+   },
+   "op": "activity.set_crew",
+   "ref": "new:a1"
+  },
+  {
+   "fields": {},
+   "op": "resource.delete",
+   "ref": 4,
+   "v": "99bc399cd92ef974"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 4,
+   "sheet": "Bid Form"
+  },
+  {
+   "op_index": 1,
+   "row": 44,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 2,
+   "row": 11,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 3,
+   "row": 11,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 4,
+   "row": 27,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 5,
+   "row": 13,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 6,
+   "row": 19,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 7,
+   "row": 9,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 8,
+   "row": 5,
+   "sheet": "Crews"
+  },
+  {
+   "op_index": 9,
+   "row": 11,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 10,
+   "row": null,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Bid Form row 4: estimate markup_percentage 10 → 12",
+  "Cost Report row 44: activity 'Finish' moves to item M1 as a root activity, with its child activities, steps and resources",
+  "Cost Report row 11: new activity 'Excavate' (a copy of activity 1)",
+  "Cost Report row 27: new step 'Strip'",
+  "Cost Report row 13: new line 'CAT 336' (a copy of resource 1)",
+  "Cost Report row 19: new line 'Carpenters' (a copy of resource 2)",
+  "Cost Report row 9: 'CAT 336' quantity 30 → 32",
+  "Crews row 6: Excavation crew member 'Laborer' count 2 → 3",
+  "Cost Report row 11: new activity 'Excavate' keeps crew 1",
+  "Cost Report: line 'Form ties' (resource 4) deleted"
+ ]
+}

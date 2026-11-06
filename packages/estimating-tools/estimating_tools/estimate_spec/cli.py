@@ -20,6 +20,18 @@ Subcommands:
                  -> the updated spec and a Markdown report; a dry run
                  unless --write, which first saves a timestamped backup
                  of the spec (readback/)
+  assemblies     a *.estimate.yaml -> per-item bulk_create_assemblies payload
+                 JSON + a report; --existing adds the re-push plan, --compare
+                 checks the payloads against an earlier push's files
+                 (assemblies_gen.py; sends nothing)
+  heavybook      build: alias of build --pack heavybook (pages merge);
+                 read: an edited HeavyBook .xlsx -> a change-set JSON
+                 (sends nothing)
+  packs, login, fetch, read, apply, build --pack
+                 the generic exchange verbs (exchange/cli.py): list the
+                 packs, store a BidSheet.ai token, fetch a payload, build a
+                 book with a named pack, read any pack's book into a change
+                 set, dry-run or --commit it and patch the book
 
 Deterministic file operations only; MCP lookups stay at the skill layer
 (build-estimate-workbook fetches BM bid-item scaffolds to scaffolds.json)."""
@@ -28,7 +40,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import shutil
 import sys
 from datetime import date, datetime, timezone
@@ -36,8 +47,12 @@ from pathlib import Path
 
 import yaml
 
+from estimating_tools.estimate_spec.format_pack import profile_for_pack as _profile_for_pack
+
 _SUBCOMMANDS = ("build", "scaffold", "apply-takeoff", "scaffold-save",
-                "cip-buildup", "summarize", "read-back", "packages", "heavycivil")
+                "cip-buildup", "summarize", "read-back", "packages", "heavybook", "heavycivil",
+                "assemblies", "packs", "login", "fetch", "read", "apply",
+                "refresh")
 
 
 def cmd_build(args) -> int:
@@ -46,7 +61,19 @@ def cmd_build(args) -> int:
     Every predictable input defect gets a sentence and an exit code, the way
     cmd_cip and cmd_summarize do: a missing file, unparseable YAML, or a spec
     the pack refuses is a user error, not a traceback.
+
+    With --pack the input is a read-model JSON and the named exchange pack
+    builds it (est-estimate build --pack heavybook e1.workbook.json).
     """
+    if getattr(args, "pack", None):
+        from estimating_tools.exchange.cli import cmd_build_pack
+        return cmd_build_pack(args)
+    if len(args.config) != 1:
+        print("build takes one spec YAML (several files are pages: use --pack)", file=sys.stderr)
+        return 1
+    args.config = args.config[0]
+    if args.style or args.host or args.exported_at:
+        print("--style/--host/--exported-at apply only with --pack; ignored", file=sys.stderr)
     from estimating_tools.addin.brand import workbook_brand
     from estimating_tools.estimate_spec.build import build
     from estimating_tools.estimate_spec.layout_map import LayoutMapError
@@ -81,7 +108,28 @@ def cmd_build(args) -> int:
         print(f"could not write the workbook: {exc}", file=sys.stderr)
         return 1
     print("WROTE:", out)
+    # The build already stored cached values with the built-in evaluator
+    # (xlcalc, #445). The engine pass (#370) is opt-in: ``--recalc excel``
+    # (or auto/libreoffice) also has Excel recalculate, one line; no engine
+    # is a note, not a failure (the book is as written). Off: no line.
+    engine = getattr(args, "recalc", None) or "off"
+    if engine != "off":
+        from estimating_tools import xlsx_recalc
+        print(xlsx_recalc.recalculate(out, engine=engine).message())
     return 0
+
+
+def add_recalc_option(parser, *, auto: str) -> None:
+    """``--recalc`` for a build verb (#370)."""
+    parser.add_argument(
+        "--recalc", choices=("auto", "excel", "libreoffice", "off"), default="off",
+        help="after the build, also have a calculating engine recalculate the book "
+             "(default off: the built-in evaluator already stores cached values, so "
+             "Protected View, previews and data_only readers show numbers; excel: Excel "
+             "recalculates too, for functions the built-in evaluator does not cover; "
+             f"auto: {auto}; libreoffice: unverified, only when named). An engine pass "
+             "makes the build not byte-reproducible. ESTIMATING_RECALC=off switches it "
+             "off everywhere.")
 
 
 def cmd_cip(args) -> int:
@@ -115,58 +163,29 @@ def cmd_cip(args) -> int:
     return 0
 
 
-def cmd_heavycivil_build(args) -> int:
-    """Render a get_estimate_workbook JSON (BidSheet.ai) to a HeavyCivil
-    workbook. Writes nothing on any refusal."""
-    from datetime import datetime, timezone
+def cmd_heavybook_build(args) -> int:
+    """`est-estimate heavybook build PAGE.json [...]`: the HeavyBook pack's
+    build with its style options -- the same path as
+    `est-estimate build --pack heavybook`, kept as the named alias."""
+    from estimating_tools.exchange.cli import cmd_build_pack
 
-    from estimating_tools.heavycivil import build as hc_build
-    from estimating_tools.heavycivil.model import PayloadError, merge_pages
-    from estimating_tools.heavycivil.style import StyleError, resolve_style
+    args.pack = "heavybook"
+    args.config = list(args.workbook_json)
+    args.format = None
+    return cmd_build_pack(args)
 
-    srcs = [Path(p) for p in args.workbook_json]
-    docs = []
-    for src in srcs:
-        try:
-            docs.append(json.loads(src.read_text(encoding="utf-8")))
-        except FileNotFoundError:
-            print(f"no such file: {src}", file=sys.stderr)
-            return 1
-        except json.JSONDecodeError as exc:
-            print(f"invalid JSON in {src}: {exc}", file=sys.stderr)
-            return 1
-        except (OSError, UnicodeDecodeError) as exc:
-            print(f"could not read {src}: {exc}", file=sys.stderr)
-            return 1
-    src = srcs[0]
-    from estimating_tools.estimate_spec.format_pack import FormatPackError
-    try:
-        # Strict, like --format: a profile that names a style but fails to
-        # load is an error, never a silent fall back to the bundled style.
-        profile = None if args.style else _profile_for_pack("heavycivil_style")
-        style = resolve_style(args.style, profile)
-    except FormatPackError as exc:
-        print(f"org profile refused: {exc}", file=sys.stderr)
-        return 1
-    except StyleError as exc:
-        print(f"style pack refused: {exc}", file=sys.stderr)
-        return 1
-    stem = src.name[:-len(".json")] if src.name.endswith(".json") else src.stem
-    stem = re.sub(r"\.p\d+$", "", stem)
-    out = Path(args.output) if args.output else src.with_name(stem + ".xlsx")
-    exported_at = args.exported_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    try:
-        book = hc_build.build(merge_pages(docs), style=style, exported_at=exported_at, host=args.host)
-    except PayloadError as exc:
-        print(f"payload refused: {exc}", file=sys.stderr)
-        return 1
-    try:
-        hc_build.save(book, out)
-    except OSError as exc:
-        print(f"could not write the workbook: {exc}", file=sys.stderr)
-        return 1
-    print("WROTE:", out)
-    return 0
+
+def cmd_heavybook_read(args) -> int:
+    """Alias of ``est-estimate read``: the book's pack is detected and its
+    read goes through the generic reader. Sends nothing.
+
+    Exit 0: the change set is written (``ops`` empty when nothing changed --
+    "no changes"). Exit 2: the read was refused -- every problem is printed
+    and nothing is written (an earlier change set at the output path is left
+    as it was; the file is written whole or not at all)."""
+    from estimating_tools.exchange.cli import cmd_read
+
+    return cmd_read(args)
 
 
 def cmd_summarize(args) -> int:
@@ -208,45 +227,6 @@ def _load_profile():
     except Exception:  # jsonschema missing, malformed profile — stay agnostic
         from estimating_tools.profiles.model import Profile
         return Profile(data={})
-
-
-def _profile_for_pack(field="format"):
-    """The org profile, loaded strictly for pack resolution (Decision 5).
-
-    With no profile directory configured this is the empty profile. When
-    ESTIMATING_PROFILES names at least one directory, a profile that fails to
-    load, or one whose raw profile.yaml sets `estimating.<field>` that field
-    validation then dropped, raises FormatPackError — a pack the org named is
-    never silently replaced by the bundled one. ``field`` is `format` for
-    format packs and `heavycivil_style` for HeavyCivil style packs.
-    """
-    from estimating_tools.estimate_spec.format_pack import FormatPackError
-    from estimating_tools.profiles.model import Profile
-
-    try:
-        from estimating_tools.profiles.loader import discover, load, load_one
-    except ImportError:  # profiles extras missing: nothing can be configured
-        return Profile(data={})
-    dirs = discover()
-    if not dirs:
-        return Profile(data={})
-    try:
-        profile = load(dirs)
-        for d in dirs:
-            # Checked per directory, so one layer's dropped format is not
-            # masked by another layer's valid one.
-            raw = yaml.safe_load((Path(d) / "profile.yaml").read_text(encoding="utf-8"))
-            est = raw.get("estimating") if isinstance(raw, dict) else None
-            if (isinstance(est, dict) and est.get(field)
-                    and not (load_one(d).get("estimating") or {}).get(field)):
-                raise FormatPackError(
-                    f"profile {d} sets estimating.{field} but its estimating "
-                    "section failed validation and was dropped (see the warning)")
-    except FormatPackError:
-        raise
-    except Exception as exc:  # noqa: BLE001 — any load failure is fatal here
-        raise FormatPackError(f"org profile could not be loaded: {exc}") from exc
-    return profile
 
 
 def _resolve_pack_or_report(args, *, writes=None):
@@ -360,6 +340,15 @@ def cmd_scaffold(args) -> int:
 
 
 def cmd_apply_takeoff(args) -> int:
+    """Exit 0: applied (or nothing to do). Exit 1: a file cannot be read,
+    or the result does not validate; nothing is written.
+
+    Exit 2 has two meanings, told apart by the output:
+    - the format pack was refused: NOTHING is written;
+    - rows were refused (a generic takeoff name, a unit that does not add
+      up, lines that predate takeoff ownership): a `REFUSED: N row(s) not
+      applied` line is printed, the refused items are left as they were,
+      and the OTHER rows were applied and written."""
     from estimating_tools.estimate_spec.apply import apply_takeoff, render_apply_report
     from estimating_tools.estimate_spec.scaffold import validate_spec
     from estimating_tools.takeoff.model import CanonicalTakeoff
@@ -387,7 +376,13 @@ def cmd_apply_takeoff(args) -> int:
         print(f"invalid takeoff JSON: {exc}")
         return 1
 
-    result = apply_takeoff(spec, takeoff, pack=pack, force=args.force)
+    # a takeoff's identity is its source_id, else its file's stem (never the
+    # directory): name per-structure takeoff files distinctly (#376)
+    result = apply_takeoff(spec, takeoff, pack=pack, force=args.force,
+                           replace=args.replace,
+                           adopt_legacy=args.adopt_legacy,
+                           source_name=Path(args.takeoff).stem,
+                           source_id=args.source_id)
     try:
         validate_spec(result.spec, pack=pack)
     except ValueError as exc:
@@ -405,10 +400,22 @@ def cmd_apply_takeoff(args) -> int:
     print(f"{len(result.matched)} applied, {len(result.unchanged)} unchanged, "
           f"{len(result.skipped)} skipped, {len(result.unmatched_rows)} unmatched "
           f"rows, {len(result.unmatched_items)} unmatched items"
+          + (f", {len(result.refused)} refused" if result.refused else "")
           + ("" if changed else " (spec unchanged on disk)"))
     if result.skipped and not args.force:
         for s in result.skipped:
             print(f"  skipped: {s['item_no']} — {s['reason']}")
+    for m in result.merged:
+        print(f"  item {m['item_no']}: {len(m['takeoffs'])} takeoffs "
+              f"contributed ({', '.join(m['takeoffs'])})")
+    for w in result.warnings:
+        print(f"  warning: {w}")
+    for r in result.refused:
+        print(f"  refused: item {r['item_no']} — {r['reason']}")
+    if result.refused:
+        print(f"REFUSED: {len(result.refused)} row(s) not applied — those items "
+              "are unchanged; see the refused lines above (exit 2)")
+        return 2
     return 0
 
 
@@ -607,7 +614,7 @@ def cmd_read_back(args) -> int:
 
 
 def cmd_packages(args) -> int:
-    """`packages init | sync | coverage`: work packages in the spec.
+    """`packages init | sync | coverage | push | pull`: work packages in the spec.
 
     Exit 0 ok, 1 a ValueError (nothing written), 2 a file cannot be read.
     """
@@ -636,6 +643,11 @@ def cmd_packages(args) -> int:
     if not isinstance(spec, dict):
         _emit(f"invalid spec {spec_path}: expected a mapping", file=sys.stderr)
         return 2
+
+    if args.packages_command == "push" and args.apply:
+        return _packages_apply(args, spec_path, spec)
+    if args.packages_command in ("push", "pull"):
+        return _packages_plan(args, spec_path, spec)
 
     if args.packages_command == "coverage":
         from estimating_tools.quotes.files import QuoteFileError, load_quotes
@@ -692,6 +704,194 @@ def cmd_packages(args) -> int:
     return 0
 
 
+def _bm_dir(spec_path: Path, spec: dict) -> tuple[Path, Path]:
+    """The quotes dir and its `_bm/` dir (sidecar and plan JSON; kept out of the
+    quotes dir itself, whose `*.json` are all read as quote files)."""
+    qdir = spec_path.parent / (spec.get("work_packages_quotes_dir") or "quotes")
+    return qdir, qdir / "_bm"
+
+
+def _packages_plan(args, spec_path: Path, spec: dict) -> int:
+    """`packages push SPEC --bm EXPORT` / `packages pull SPEC --bm EXPORT [--write]`:
+    print the plan and write its JSON. Exit 0 ok (push `--strict`: 1 when the plan
+    has a conflict or refusal), 1 a ValueError, 2 unreadable input or a stale export."""
+    from estimating_tools.estimate_spec.bm_sync.export import BmExport, ExportError
+    from estimating_tools.estimate_spec.bm_sync.ops import render_plan
+    from estimating_tools.estimate_spec.bm_sync.sidecar import Sidecar, file_sha
+    from estimating_tools.quotes.files import QuoteFileError, load_quote_file
+
+    cmd = args.packages_command
+    if not args.bm:
+        _emit(f"packages {cmd}: --bm EXPORT.json is required", file=sys.stderr)
+        return 2
+    qdir, bm_dir = _bm_dir(spec_path, spec)
+    try:
+        export = BmExport.from_dict(json.loads(Path(args.bm).read_text(encoding="utf-8")))
+    except FileNotFoundError:
+        _emit(f"no such file: {args.bm}", file=sys.stderr)
+        return 2
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        _emit(f"invalid JSON in {args.bm}: {exc}", file=sys.stderr)
+        return 2
+    except (ExportError, AttributeError, KeyError, TypeError) as exc:
+        _emit(f"unusable export {args.bm}: {exc}", file=sys.stderr)
+        return 2
+    quotes = []
+    for path in sorted(qdir.glob("*.json")) if qdir.is_dir() else []:
+        if path.name.endswith(".example.json"):
+            continue
+        try:
+            quotes.append((path.name, load_quote_file(path), file_sha(path)))
+        except QuoteFileError as exc:
+            _emit(f"quote file problem in {path.name}: {exc}", file=sys.stderr)
+            return 2
+    sidecar_path = bm_dir / "bm-sync.json"
+    try:
+        sidecar = Sidecar.load(sidecar_path)
+    except (ValueError, TypeError) as exc:
+        _emit(f"unreadable sidecar {sidecar_path}: {exc}", file=sys.stderr)
+        return 2
+    now = datetime.now().isoformat(timespec="seconds")
+    try:
+        if cmd == "push":
+            from estimating_tools.estimate_spec.bm_sync.plan_push import plan_push
+            plan = plan_push(spec, quotes, export, sidecar, spec_name=spec_path.name,
+                             force=args.force, now=now)
+        else:
+            from estimating_tools.estimate_spec.bm_sync.plan_pull import plan_pull
+            plan = plan_pull(spec, quotes, export, sidecar, spec_name=spec_path.name,
+                             force=args.force, now=now)
+    except ValueError as exc:
+        _emit(f"packages {cmd}: {exc}", file=sys.stderr)
+        return 1
+    _emit(render_plan(plan).rstrip("\n"))
+    out = Path(args.output) if args.output else bm_dir / f"{cmd}.plan.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(plan.to_json() + "\n", encoding="utf-8")
+    _emit(f"plan: {out}")
+    if cmd == "push":
+        blocked = [e for e in plan.entries if e.kind in ("conflict", "refused")]
+        return 1 if blocked and args.strict else 0
+    if not (plan.ops or plan.spec_changes or plan.sidecar_updates):
+        _emit("nothing to write")
+        return 0
+    if not args.write:
+        _emit(f"dry run: {len(plan.ops)} op(s) -- run again with --write to apply them")
+        return 0
+    from estimating_tools.estimate_spec.bm_sync.plan_pull import write_pull
+    bm_dir.mkdir(parents=True, exist_ok=True)
+    if plan.spec_changes:
+        backup = _backup_path(spec_path)
+        shutil.copy2(spec_path, backup)
+        _emit(f"spec backup: {backup.name}")
+    for path in write_pull(plan, spec_path, qdir, sidecar_path):
+        _emit(f"wrote {path}")
+    return 0
+
+
+def _packages_apply(args, spec_path: Path, spec: dict) -> int:
+    """`packages push --apply RESULTS --plan PLAN SPEC`: the skill's MCP results onto
+    the sidecar. Exit 0 ok, 1 any op errored, 2 unreadable input."""
+    from estimating_tools.estimate_spec.bm_sync.apply import apply_results
+    from estimating_tools.estimate_spec.bm_sync.ops import Plan
+    from estimating_tools.estimate_spec.bm_sync.sidecar import Sidecar
+
+    _qdir, bm_dir = _bm_dir(spec_path, spec)
+    plan_path = Path(args.plan) if args.plan else bm_dir / "push.plan.json"
+    sidecar_path = bm_dir / "bm-sync.json"
+    try:
+        plan = Plan.from_json(plan_path.read_text(encoding="utf-8"))
+        results = json.loads(Path(args.apply).read_text(encoding="utf-8"))
+        sidecar = Sidecar.load(sidecar_path)
+    except FileNotFoundError as exc:
+        _emit(f"no such file: {exc.filename}", file=sys.stderr)
+        return 2
+    except (UnicodeDecodeError, ValueError, KeyError, TypeError) as exc:
+        _emit(f"unreadable plan, results or sidecar: {exc}", file=sys.stderr)
+        return 2
+    if plan.direction != "push":
+        _emit(f"{plan_path} is a {plan.direction} plan; --apply takes a push plan", file=sys.stderr)
+        return 2
+    if plan.spec != spec_path.name:
+        _emit(f"plan is for {plan.spec}, not {spec_path.name}", file=sys.stderr)
+        return 2
+    if not isinstance(results, dict):
+        _emit(f"invalid {args.apply}: expected a mapping with 'results'", file=sys.stderr)
+        return 2
+    report = apply_results(plan, results, sidecar, now=datetime.now().isoformat(timespec="seconds"))
+    _emit(f"applied {len(report.applied)}")
+    for op_id, reason in report.skipped:
+        _emit(f"skipped {op_id}: {reason}")
+    for op_id, text in report.errors:
+        _emit(f"error {op_id}: {text}")
+    for text in report.warnings:
+        _emit(f"warning {text}")
+    for text in report.pruned:
+        _emit(f"pruned stale plug record {text}")
+    bm_dir.mkdir(parents=True, exist_ok=True)
+    sidecar.save(sidecar_path)
+    _emit(f"wrote {sidecar_path}")
+    return 1 if report.errors else 0
+
+
+def cmd_assemblies(args) -> int:
+    """`assemblies SPEC -o DIR --bid BID [--existing IDS] [--compare DIR2]`.
+
+    Exit 0 ok, 1 the spec cannot be generated (or --compare finds differences),
+    2 an input cannot be read."""
+    from estimating_tools.estimate_spec.assemblies_gen import (
+        compare_payloads, generate_assemblies, repush_plan)
+    from estimating_tools.estimate_spec.bm_sync.sidecar import Sidecar
+
+    spec_path = Path(args.spec)
+    try:
+        spec = yaml.safe_load(spec_path.read_text(encoding="utf-8")) or {}
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as exc:
+        _emit(f"cannot read {spec_path}: {exc}", file=sys.stderr)
+        return 2
+    if not isinstance(spec, dict):
+        _emit(f"invalid spec {spec_path}: expected a mapping", file=sys.stderr)
+        return 2
+    existing = sidecar = None
+    if args.existing:
+        try:
+            existing = json.loads(Path(args.existing).read_text(encoding="utf-8"))
+            sidecar_path = _bm_dir(spec_path, spec)[1] / "bm-sync.json"
+            sidecar = Sidecar.load(sidecar_path) if sidecar_path.exists() else None
+        except (OSError, ValueError, TypeError) as exc:
+            _emit(f"cannot read the existing ids or the sidecar: {exc}", file=sys.stderr)
+            return 2
+        if not isinstance(existing, dict):
+            _emit(f"invalid {args.existing}: expected a mapping", file=sys.stderr)
+            return 2
+    pack = _resolve_pack_or_report(args)
+    if pack is None:
+        return 2
+    try:
+        result = generate_assemblies(spec, bid=args.bid, pack=pack)
+    except (ValueError, KeyError, TypeError) as exc:     # GenError, FormulaError, a bad spec
+        _emit(f"assemblies: {exc}", file=sys.stderr)
+        return 1
+    report = result.report
+    if existing is not None:
+        report = report.rstrip("\n") + "\n\n" + repush_plan(result, existing, sidecar)
+    out = Path(args.output)
+    out.mkdir(parents=True, exist_ok=True)
+    for item_no, payloads in result.payloads.items():
+        (out / f"{item_no}.json").write_text(json.dumps(payloads, indent=2) + "\n", encoding="utf-8")
+    (out / "assemblies-report.md").write_text(report.rstrip("\n") + "\n", encoding="utf-8")
+    _emit(report)
+    if not args.compare:
+        return 0
+    try:
+        cmp = compare_payloads(result, Path(args.compare))
+    except (OSError, ValueError) as exc:
+        _emit(f"cannot read the existing payloads: {exc}", file=sys.stderr)
+        return 2
+    _emit(cmp.render())
+    return 0 if cmp.ok else 1
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="est-estimate",
@@ -700,8 +900,16 @@ def _parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("build", help="Render an estimate config to .xlsx.")
-    p.add_argument("config", help="estimate config YAML")
+    p.add_argument("config", nargs="+",
+                   help="estimate config YAML (with --pack: one or more read-model JSON "
+                        "files, the pages of one estimate)")
     p.add_argument("-o", "--output", help="output .xlsx path")
+    p.add_argument("--pack", default=None,
+                   help="build from a read-model JSON with this exchange pack instead of a "
+                        "spec YAML")
+    p.add_argument("--exported-at", default=None, help=argparse.SUPPRESS)
+    p.add_argument("--host", default=None, help=argparse.SUPPRESS)
+    p.add_argument("--style", default=None, help=argparse.SUPPRESS)
     p.add_argument("--format", default=None,
                    help="format pack directory (default: the org profile's "
                         "estimating.format, else the bundled pack)")
@@ -711,6 +919,7 @@ def _parser() -> argparse.ArgumentParser:
                    help="skip consumer-registered pre-render config checks (#256)")
     p.add_argument("--no-brand", action="store_true",
                    help="do not stamp the org profile's brand into the workbook")
+    add_recalc_option(p, auto="Excel when present")
     p.set_defaults(func=cmd_build)
 
     p = sub.add_parser("scaffold",
@@ -736,11 +945,28 @@ def _parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("apply-takeoff",
                        help="Apply a CanonicalTakeoff's measured quantities + "
-                            "geometry to a spec (in place).")
+                            "geometry to a spec (in place). Exit 2 when any "
+                            "row is refused (the other rows still apply).")
     p.add_argument("spec", help="*.estimate.yaml to update")
     p.add_argument("--takeoff", required=True, help="CanonicalTakeoff JSON")
     p.add_argument("--force", action="store_true",
                    help="overwrite hand-edited qty/takeoff fields")
+    p.add_argument("--source-id", default=None,
+                   help="this takeoff's identity (e.g. the structure it "
+                        "measured); overrides the takeoff's own source_id and "
+                        "its file name. Re-applying with the same id replaces "
+                        "that takeoff's lines; a different id adds")
+    p.add_argument("--adopt-legacy", action="store_true",
+                   help="on items whose lines predate takeoff ownership (no "
+                        "owner recorded), this takeoff takes them over: its "
+                        "lines and qty replace theirs, no sum. Items that "
+                        "already record owners merge as usual")
+    p.add_argument("--replace", action="store_true",
+                   help="this takeoff's rows replace everything on EVERY item "
+                        "they match, dropping the lines and quantity other "
+                        "takeoffs contributed there (by default takeoffs "
+                        "applied in sequence merge into shared items: lines "
+                        "kept, quantities summed)")
     p.add_argument("--report", default=None, help="write the markdown report here")
     p.add_argument("--format", default=None,
                    help="format pack directory (default: the org profile's "
@@ -759,10 +985,11 @@ def _parser() -> argparse.ArgumentParser:
                    help='output .xlsx path (overrides config "output")')
     p.set_defaults(func=cmd_cip)
 
-    p = sub.add_parser("heavycivil",
-                       help="HeavyCivil workbook: render BidSheet.ai's estimate "
-                            "workbook payload (get_estimate_workbook JSON).")
-    hsub = p.add_subparsers(dest="heavycivil_command", required=True)
+    p = sub.add_parser("heavybook", aliases=["heavycivil"],
+                       help="HeavyBook workbook: render BidSheet.ai's estimate "
+                            "workbook payload (get_estimate_workbook JSON), or read an "
+                            "edited workbook back into a change set.")
+    hsub = p.add_subparsers(dest="heavybook_command", required=True, metavar="{build,read}")
     q = hsub.add_parser("build", help="Render a get_estimate_workbook JSON to .xlsx.")
     q.add_argument("workbook_json", nargs="+",
                    help="one or more saved get_estimate_workbook responses "
@@ -775,7 +1002,14 @@ def _parser() -> argparse.ArgumentParser:
                    help="export timestamp to stamp (default: now, UTC)")
     q.add_argument("--host", default="www.bidsheet.ai",
                    help="BidSheet.ai host the payload came from (stamped for read-back)")
-    q.set_defaults(func=cmd_heavycivil_build)
+    add_recalc_option(q, auto="Excel when present")
+    q.set_defaults(func=cmd_heavybook_build)
+    q = hsub.add_parser("read", help="Read an edited HeavyBook .xlsx back into a change set "
+                                     "(JSON ops for apply_estimate_workbook_changes).")
+    q.add_argument("book", help="the edited HeavyBook workbook")
+    q.add_argument("-o", "--output",
+                   help="change-set JSON (default: BOOK.changes.json next to the workbook)")
+    q.set_defaults(func=cmd_heavybook_read)
 
     p = sub.add_parser("summarize",
                        help="Price a *.estimate.yaml in pure Python and print "
@@ -835,7 +1069,45 @@ def _parser() -> argparse.ArgumentParser:
                        help="write the spec (after saving SPEC.bak-YYYYmmdd-HHMMSS)")
     q = psub.add_parser("coverage", help="Report what the quotes leave unpriced.")
     q.add_argument("spec", help="*.estimate.yaml")
+    q = psub.add_parser("push", help="Plan the BidSheet.ai ops for the packages, quote files "
+                                     "and choices; --apply records the results in the sidecar.")
+    q.add_argument("spec", help="*.estimate.yaml")
+    q.add_argument("--bm", help="the BidSheet.ai export JSON (required unless --apply)")
+    q.add_argument("-o", "--output", help="plan JSON (default <quotes dir>/_bm/push.plan.json)")
+    q.add_argument("--force", choices=["spec"], help="push the spec's side of a conflict")
+    q.add_argument("--strict", action="store_true",
+                   help="exit 1 when the plan has a conflict or refusal")
+    q.add_argument("--apply", metavar="RESULTS.json",
+                   help="record the skill's MCP results for a push plan in the sidecar")
+    q.add_argument("--plan", help="the push plan --apply records (default "
+                                  "<quotes dir>/_bm/push.plan.json)")
+    q = psub.add_parser("pull", help="Plan BidSheet.ai's quotes and pinned choices into quote "
+                                     "files and the spec; --write writes them.")
+    q.add_argument("spec", help="*.estimate.yaml")
+    q.add_argument("--bm", required=True, help="the BidSheet.ai export JSON")
+    q.add_argument("-o", "--output", help="plan JSON (default <quotes dir>/_bm/pull.plan.json)")
+    q.add_argument("--force", choices=["bm"], help="pull BidSheet.ai's side of a conflict")
+    q.add_argument("--write", action="store_true",
+                   help="write the quote files (after a .bak copy), the spec and the sidecar")
     p.set_defaults(func=cmd_packages)
+
+    p = sub.add_parser("assemblies",
+                       help="Per-item bulk_create_assemblies payloads and a report "
+                            "(re-push plan with --existing, regression check with --compare).")
+    p.add_argument("spec", help="*.estimate.yaml")
+    p.add_argument("-o", "--output", required=True, help="directory for <item_no>.json and the report")
+    p.add_argument("--bid", required=True, help="bid tag in each external_id")
+    p.add_argument("--existing", metavar="IDS.json",
+                   help="the bid's bm-assembly-ids.json: adds the re-push plan to the report")
+    p.add_argument("--compare", metavar="DIR",
+                   help="an earlier push's payload dir: print the differences, exit 1 on any")
+    p.add_argument("--format", default=None,
+                   help="format pack directory (default: the org profile's "
+                        "estimating.format, else the bundled pack)")
+    p.set_defaults(func=cmd_assemblies)
+
+    from estimating_tools.exchange.cli import add_subparsers as _exchange_subparsers
+    _exchange_subparsers(sub)
     return parser
 
 
@@ -844,6 +1116,9 @@ def main(argv=None) -> int:
     # Back-compat: `est-estimate <config.yaml> [-o out.xlsx]` == build.
     if argv and argv[0] not in _SUBCOMMANDS and argv[0] not in ("-h", "--help"):
         argv = ["build"] + argv
+    if argv and argv[0] == "heavycivil":
+        print("`heavycivil` is now `heavybook`; the old name goes away next release",
+              file=sys.stderr)
     args = _parser().parse_args(argv)
     return args.func(args)
 

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import copy
-import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -22,12 +21,6 @@ LEGACY = fp.ENGINE_DIR / "tests" / "fixtures" / "packs" / "legacy_demo"
 EXAMPLE = FIELDBOOK_DIR / "examples" / "demo-pipeline.estimate.yaml"
 #: Item sheets' hidden tag/helper columns: kind, code, ok-flag, flag.
 KIND, CODE, OK, FLAG = "Q", "R", "S", "T"
-
-#: A bare (same-sheet) cell/range reference: not preceded by `!` (a
-#: cross-sheet qualifier) or a word/quote character (so it never matches
-#: inside a longer token). Matches "$G$1", "L23", etc.
-_CELL_REF = re.compile(r"(?<![!'A-Za-z0-9_])(\$?[A-Z]{1,3}\$?)(\d+)")
-
 
 def fieldbook_pack():
     return fp.load_pack(FIELDBOOK_DIR)
@@ -306,25 +299,58 @@ def paste_template_rows(wb, first: int, last: int, sheet: str, at: int) -> None:
                 d._style = copy.copy(s._style)
 
 
-def simulate_delete_row(ws, row: int) -> None:
-    """Simulate Excel's "delete row": every same-sheet reference below `row`
-    moves up one, and a reference TO the deleted row becomes `#REF!` -- so the
-    row below a deleted task row loses its code chain (`=R{row}` -> `=#REF!`),
-    exactly as it does in Excel. openpyxl's `delete_rows` moves the cells but
-    never rewrites formula text, and never touches `merged_cells` at all --
-    both are done here: a merged range below `row` moves up with it, and one
-    that spanned only the deleted row disappears."""
-    def repl(m):
-        n = int(m.group(2))
-        if n == row:
+def _delete_sheet_refs(formula: str, sheet: str, own: bool, row: int) -> str:
+    """What Excel does to the references INTO `sheet` (unqualified ones when
+    the formula lives on it, and ones qualified with its name anywhere) when
+    `row` is deleted: a row below moves up one; a single-cell reference to the
+    row becomes `#REF!`; a range loses the row (an endpoint on it moves to the
+    neighbouring row) and only a range that is the deleted row alone becomes
+    `#REF!`. References into any other sheet are left alone."""
+    def move(m):
+        if not (_qualifier(m.group(1)) == sheet if m.group(1) else own):
+            return m.group(0)
+        qual = m.group(1) or ""
+        if m.group(4) is None:
+            n = int(m.group(3))
+            if n == row:
+                return "#REF!"
+            return f"{qual}{m.group(2)}{n - 1 if n > row else n}"
+        lo, hi = int(m.group(3)), int(m.group(5))
+        if lo == hi == row:
             return "#REF!"
-        return f"{m.group(1)}{n - 1 if n > row else n}"
+        lo = lo - 1 if lo > row else lo
+        hi = hi - 1 if hi >= row else hi
+        return f"{qual}{m.group(2)}{lo}:{m.group(4)}{hi}"
+
+    parts = _STRING.split(formula)
+    return "".join(p if i % 2 else _REF.sub(move, p) for i, p in enumerate(parts))
+
+
+def simulate_delete_row(ws, row: int) -> None:
+    """Simulate Excel's "delete row": every reference into this sheet (its own
+    unqualified ones, and other sheets' ones qualified with its name) is
+    rewritten by `_delete_sheet_refs` -- rows below move up, a range shrinks,
+    and a single-cell reference TO the deleted row becomes `#REF!`, so the row
+    below a deleted task row loses its code chain (`=R{row}` -> `=#REF!`),
+    exactly as it does in Excel. References into other sheets are untouched.
+    openpyxl's `delete_rows` moves the cells but never rewrites formula text,
+    and never touches `merged_cells` at all -- both are done here: a merged
+    range below `row` moves up with it, and one that spanned only the deleted
+    row disappears."""
     adjusted = {}
     for line in ws.iter_rows(min_row=1, max_row=ws.max_row):
         for cell in line:
             v = cell.value
             if isinstance(v, str) and v.startswith("=") and cell.row != row:
-                adjusted[(cell.row, cell.column)] = _CELL_REF.sub(repl, v)
+                adjusted[(cell.row, cell.column)] = _delete_sheet_refs(v, ws.title, True, row)
+    for other in ws.parent.worksheets:
+        if other is ws:
+            continue
+        for line in other.iter_rows():
+            for cell in line:
+                v = cell.value
+                if isinstance(v, str) and v.startswith("="):
+                    cell.value = _delete_sheet_refs(v, ws.title, False, row)
     new_ranges = []
     for rng in list(ws.merged_cells.ranges):
         min_row, max_row, min_col, max_col = rng.min_row, rng.max_row, rng.min_col, rng.max_col

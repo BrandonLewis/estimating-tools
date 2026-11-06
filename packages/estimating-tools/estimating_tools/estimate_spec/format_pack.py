@@ -689,3 +689,41 @@ def resolve_pack(cli_path=None, profile=None) -> FormatPack:
         if named:
             return load_pack(named)
     return bundled_pack()
+
+
+def profile_for_pack(field="format"):
+    """The org profile, loaded strictly for pack resolution (Decision 5).
+
+    With no profile directory configured this is the empty profile. When
+    ESTIMATING_PROFILES names at least one directory, a profile that fails to
+    load, or one whose raw profile.yaml sets `estimating.<field>` that field
+    validation then dropped, raises FormatPackError — a pack the org named is
+    never silently replaced by the bundled one. ``field`` is `format` for
+    format packs and `heavycivil_style` for HeavyBook style packs.
+    """
+    from estimating_tools.profiles.model import Profile
+
+    try:
+        from estimating_tools.profiles.loader import discover, load, load_one
+    except ImportError:  # profiles extras missing: nothing can be configured
+        return Profile(data={})
+    dirs = discover()
+    if not dirs:
+        return Profile(data={})
+    try:
+        profile = load(dirs)
+        for d in dirs:
+            # Checked per directory, so one layer's dropped format is not
+            # masked by another layer's valid one.
+            raw = yaml.safe_load((Path(d) / "profile.yaml").read_text(encoding="utf-8"))
+            est = raw.get("estimating") if isinstance(raw, dict) else None
+            if (isinstance(est, dict) and est.get(field)
+                    and not (load_one(d).get("estimating") or {}).get(field)):
+                raise FormatPackError(
+                    f"profile {d} sets estimating.{field} but its estimating "
+                    "section failed validation and was dropped (see the warning)")
+    except FormatPackError:
+        raise
+    except Exception as exc:  # noqa: BLE001 — any load failure is fatal here
+        raise FormatPackError(f"org profile could not be loaded: {exc}") from exc
+    return profile

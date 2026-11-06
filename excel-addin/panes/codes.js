@@ -1,8 +1,6 @@
 import { h, replace, replaceKeepingFocus } from "./view.js";
-import { findBlock } from "../core/blocks.js";
+import { findBlock, NO_CELL } from "../core/packs/fieldbook.js";
 import { searchCodes, isListed } from "../core/codes.js";
-
-export const NO_CELL = "Select a cell on an item sheet.";
 
 export async function renderCodes(root, app, x) {
   const { blocks, tags } = app.state.layout;

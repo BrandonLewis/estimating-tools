@@ -1,11 +1,10 @@
 /* global Office */
 import * as X from "./excel.js";
 import { h, replace } from "./view.js";
-import { parseLayout, tabsFor } from "../core/stamp.js";
+import { factRequest, jumpAddress, pick, sourceOf, tabsOf } from "../core/adapter.js";
+import { fieldbook } from "../core/packs/fieldbook.js";
 import { buildIndex, pickIndexSheet, profileOf, readSize } from "../core/heuristic.js";
-import { itemsFromTable, withTotal } from "../core/items.js";
-import { checksFromTable, failingByItem } from "../core/checks.js";
-import { codeList } from "../core/codes.js";
+import { legacyToTree, withTotal } from "../core/rows.js";
 import { resolveBrand, cssVars, brandPath } from "../core/brand.js";
 import { renderItems } from "./items.js";
 import { renderChecks } from "./checks.js";
@@ -13,6 +12,9 @@ import { renderCodes } from "./codes.js";
 import { renderInsert } from "./insert.js";
 import { renderReadback } from "./readback.js";
 
+/** The pack adapters, in detection order: the first whose detect is not "no" owns the workbook. */
+const ADAPTERS = [fieldbook];
+const FACTS = factRequest(ADAPTERS);
 const TAB_LABELS = { items: "Items", checks: "Checks", codes: "Codes", insert: "Insert", readback: "Read back" };
 const RENDER = { items: renderItems, checks: renderChecks, codes: renderCodes, insert: renderInsert, readback: renderReadback };
 const REFRESH_MS = 400;
@@ -27,13 +29,14 @@ const ui = { tabs: document.getElementById("tabs"), panel: document.getElementBy
 // `seq` counts renders: an async tab renderer that finds it has moved on
 // draws nothing, so a slow read never paints over a newer one. `pending`
 // queues one more refresh when a change lands mid-read. `codeQuery`,
-// `insertNote` and `scan` survive the re-render every workbook change
-// triggers; `scan` (the read-back sheet scan) is redone only on entering the
-// Read back tab or on "Check again".
+// `insertNote`, `insertConfirm` and `scan` survive the re-render every
+// workbook change triggers; `scan` (the read-back sheet scan) is redone only
+// on entering the Read back tab or on "Check again". A stamped workbook's
+// state is {kind: "ok", adapter, layout}.
 export const app = { state: { kind: "loading" }, tab: "items", brand: null, deploymentBrand: null, generic: null,
                      brandBase: null, workbookBrand: null, data: {}, activeSheet: "", busy: false, pending: false,
                      timer: null, selTimer: null, flashTimer: null, seq: 0,
-                     codeQuery: "", insertNote: null, inserting: false, insertButtons: [], scan: null };
+                     codeQuery: "", insertNote: null, insertConfirm: null, inserting: false, insertButtons: [], scan: null };
 
 async function fetchJson(url) {
   try { const r = await fetch(url, { cache: "no-cache" }); return r.ok ? await r.json() : null; } catch { return null; }
@@ -65,6 +68,7 @@ function flash(text) {
 function selectTab(t) {
   if (t !== app.tab) {
     app.insertNote = null;
+    app.insertConfirm = null;
     app.codeQuery = "";
     if (t === "readback") app.scan = null;     // entering Read back re-scans
     flash("");
@@ -74,8 +78,13 @@ function selectTab(t) {
 }
 
 function renderTabs() {
-  const tabs = tabsFor(app.state);
-  if (!tabs.includes(app.tab)) app.tab = tabs[0] || "items";
+  const tabs = tabsOf(app.state);
+  if (!tabs.includes(app.tab)) {
+    // A forced switch (the workbook changed under the pane) drops per-tab state, as selectTab does.
+    const next = tabs[0] || "items";
+    if (next !== app.tab) { app.insertNote = null; app.insertConfirm = null; app.codeQuery = ""; }
+    app.tab = next;
+  }
   const move = (t, step) => {
     const next = tabs[(tabs.indexOf(t) + step + tabs.length) % tabs.length];
     selectTab(next);
@@ -112,52 +121,36 @@ async function go(sheet, addr) {
   }
 }
 
+/**
+ * `x`, the wrapper every adapter and pane reaches Excel through. `current`
+ * tells an async renderer whether it is still the latest render.
+ */
+function wrapper(current) {
+  return {
+    go, jump: (j) => go(j.sheet, jumpAddress(j)), writeCell: X.writeCell, insertTemplate: X.insertTemplate,
+    readNames: X.readNames, readBlock: X.readBlock, readActive: X.readActive, readActiveColumns: X.readActiveColumns,
+    readColumns: X.readColumns, readNamedValues: X.readNamedValues, readProperty: X.readProperty,
+    readDirty: X.readDirty, scanItemSheets: X.scanItemSheets, documentUrl: X.documentUrl, refresh, current,
+  };
+}
+
 export function render() {
   const seq = ++app.seq;
   renderTabs();
   const s = app.state;
-  ui.source.textContent = s.kind === "ok" ? `${s.layout.pack} pack` : s.kind === "heuristic" ? "Hand-built workbook" : "";
+  ui.source.textContent = sourceOf(s);
   if (s.kind === "loading") return replace(ui.panel, h("p", { class: "muted" }, "Loading…"));
   if (s.kind === "error") return renderEmpty("Could not read this workbook.", s.message);
   if (s.kind === "newer") return renderEmpty("Update Estimate Navigator.",
     "This workbook was built with a newer layout than this version of the add-in understands. It shows nothing rather than guess.");
-  if (s.kind === "bad") return renderEmpty("This workbook's Estimate Navigator stamp is damaged.", `${s.message}. Rebuild the workbook with est-estimate.`);
+  if (s.kind === "bad") return renderEmpty("This workbook's Estimate Navigator stamp is damaged.", s.message);
   if (s.kind === "none") return renderEmpty("No estimate here yet.",
     "Open a workbook built by est-estimate, or one with a Summary sheet whose header row reads ITEM and DESCRIPTION.");
-  const done = RENDER[app.tab](ui.panel, app, { go, writeCell: X.writeCell, insertTemplate: X.insertTemplate,
-    readActive: X.readActive, readDirty: X.readDirty, scanItemSheets: X.scanItemSheets,
-    documentUrl: X.documentUrl, refresh, current: () => seq === app.seq });
+  const done = RENDER[app.tab](ui.panel, app, wrapper(() => seq === app.seq));
   // An async renderer that throws past its own guards still says so in the pane.
   if (done && typeof done.catch === "function") {
     done.catch((e) => { if (seq === app.seq) replace(ui.panel, h("p", { class: "bad" }, String((e && e.message) || e))); });
   }
-}
-
-/** The stamped workbook's data, built whole so a render never sees half-old, half-new data. */
-async function readStamped(layout, sheetNames) {
-  const names = ["est.index.item_no", "est.index.descr", "est.index.cost", "est.index.link", "est.direct_total"];
-  if (layout.tables.includes("checks")) names.push("est.checks.rule_no", "est.checks.rule", "est.checks.item", "est.checks.status");
-  if (layout.tables.includes("codes")) names.push("est.codes.code", "est.codes.descr", "est.codes.listed");
-  const n = await X.readNames(names);
-  const v = (k) => n[k]?.values || [];
-  const rows = itemsFromTable({ itemNo: v("est.index.item_no"), descr: v("est.index.descr"), cost: v("est.index.cost"),
-                                link: n["est.index.link"]?.formulas || [], sheetNames });
-  const totalCell = n["est.direct_total"];
-  // A quoted sheet name may itself hold "!", so the separator is the last one.
-  const bang = totalCell ? totalCell.address.lastIndexOf("!") : -1;
-  const tSheet = bang >= 0 ? totalCell.address.slice(0, bang) : "";
-  const tAddr = bang >= 0 ? totalCell.address.slice(bang + 1) : "";
-  const checks = layout.tables.includes("checks")
-    ? checksFromTable({ ruleNo: v("est.checks.rule_no"), rule: v("est.checks.rule"), item: v("est.checks.item"), status: v("est.checks.status") })
-    : null;
-  return {
-    items: withTotal(rows, { total: totalCell?.values?.[0]?.[0], label: "DIRECT",
-                             sheet: tSheet.replace(/^'|'$/g, "").replace(/''/g, "'"), addr: tAddr }),
-    checks,
-    failing: checks ? failingByItem(checks) : new Map(),
-    codes: layout.tables.includes("codes")
-      ? codeList({ code: v("est.codes.code"), descr: v("est.codes.descr"), listed: v("est.codes.listed") }) : [],
-  };
 }
 
 /** A hand-built workbook's data, or null when it has no usable index. */
@@ -169,7 +162,7 @@ async function readHeuristic(sheetNames) {
   const { values, formulas } = await X.readBlock(index, lastCol, rows);
   const built = buildIndex({ values, formulas, sheetNames, indexSheet: index }, profile);
   if (!built.rows.length) return null;
-  return { items: withTotal(built.rows, { label: profile.total_label, sheet: index }), failing: new Map(), codes: [], checks: null };
+  return { items: legacyToTree(withTotal(built.rows, { label: profile.total_label, sheet: index })), checks: null, codes: [] };
 }
 
 /**
@@ -182,16 +175,25 @@ export async function refresh() {
   app.busy = true;
   app.pending = false;
   try {
-    const { layoutText, sheetNames, activeSheet } = await X.readWorkbook();
-    app.activeSheet = activeSheet;
-    const parsed = parseLayout(layoutText);
-    applyBrand(parsed.kind === "ok" ? parsed.layout.brand : null);
-    let data = app.data, state = parsed;
-    if (parsed.kind === "ok") data = await readStamped(parsed.layout, sheetNames);
-    else if (parsed.kind === "none") {
-      const d = await readHeuristic(sheetNames);
-      if (d) data = d;
-      state = d ? { kind: "heuristic" } : { kind: "none" };
+    const facts = await X.readFacts(FACTS);
+    app.activeSheet = facts.activeSheet;
+    const hit = pick(ADAPTERS, facts);
+    let data = app.data, state;
+    if (hit && hit.verdict === "yes") {
+      const x = wrapper(() => true);
+      const layout = await hit.adapter.load(x, facts);
+      applyBrand(hit.adapter.brand ? hit.adapter.brand(layout) : null);
+      data = await hit.adapter.read(x, layout, facts);
+      state = { kind: "ok", adapter: hit.adapter, layout };
+    } else {
+      applyBrand(null);
+      if (hit && hit.verdict === "newer") state = { kind: "newer" };
+      else if (hit && hit.verdict === "bad") state = { kind: "bad", message: hit.adapter.damage(facts) };
+      else {
+        const d = await readHeuristic(facts.sheetNames);
+        if (d) data = d;
+        state = d ? { kind: "heuristic" } : { kind: "none" };
+      }
     }
     app.data = data;
     app.state = state;
