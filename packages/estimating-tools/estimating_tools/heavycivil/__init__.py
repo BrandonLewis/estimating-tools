@@ -1,13 +1,28 @@
-"""HeavyCivil estimate workbook (#1486 sub-project 2).
-
-A second estimate workbook alongside fieldbook, rendered straight from
-BidSheet.ai's ``get_estimate_workbook`` payload rather than from a spec YAML:
-one outlined Cost Report, live formulas that reproduce BidSheet.ai's cost
-rules, and a hidden id + ``v`` on every editable row so a later read-back
-(sub-project 3) can turn edits into ``apply_estimate_workbook_changes`` ops.
-See docs/superpowers/specs/2026-10-20-heavycivil-workbook-render-design.md.
-"""
+"""Compatibility shim: ``estimating_tools.heavycivil`` is
+``estimating_tools.heavybook`` (renamed 2026-10-31). Removed one release
+after the rename ships. Importing any submodule here imports the heavybook
+one and registers it under both names."""
 from __future__ import annotations
 
-FORMAT_NAME = "heavycivil"
-FORMAT_VERSION = "1"
+import importlib
+import pkgutil
+import sys
+import warnings
+
+_NEW = "estimating_tools.heavybook"
+warnings.warn("estimating_tools.heavycivil is now estimating_tools.heavybook",
+              DeprecationWarning, stacklevel=2)
+_pkg = importlib.import_module(_NEW)
+globals().update({k: v for k, v in vars(_pkg).items() if not k.startswith("__")})
+__path__ = list(_pkg.__path__)  # lets ``import estimating_tools.heavycivil.columns`` find the files
+
+# Eager on purpose: lazy aliasing would bring back duplicate module objects through ``__path__``.
+for _m in pkgutil.walk_packages(_pkg.__path__, f"{_NEW}."):
+    if _m.name == f"{_NEW}.tests" or f"{_NEW}.tests." in _m.name:
+        continue
+    _rel = _m.name[len(_NEW) + 1:]
+    sys.modules[f"estimating_tools.heavycivil.{_rel}"] = importlib.import_module(_m.name)
+
+
+def __getattr__(name):
+    return getattr(_pkg, name)

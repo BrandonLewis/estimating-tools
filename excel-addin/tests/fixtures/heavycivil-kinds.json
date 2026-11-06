@@ -1,0 +1,560 @@
+{
+ "cost_report": {
+  "id": [
+   1,
+   1,
+   1,
+   "",
+   1,
+   "",
+   2,
+   "",
+   2,
+   3,
+   "",
+   3,
+   "",
+   4,
+   "",
+   4,
+   "",
+   1,
+   "",
+   5,
+   6,
+   "",
+   5,
+   "",
+   7,
+   "",
+   4,
+   7,
+   "",
+   8,
+   "",
+   2,
+   2,
+   6,
+   "",
+   "",
+   3,
+   5,
+   8,
+   "",
+   9,
+   ""
+  ],
+  "kind": [
+   "ITEM",
+   "ELEMENT_QTY",
+   "ACTIVITY",
+   "START",
+   "RESOURCE",
+   "END",
+   "ACTIVITY",
+   "START",
+   "RESOURCE",
+   "RESOURCE",
+   "END",
+   "ACTIVITY",
+   "START",
+   "RESOURCE",
+   "END",
+   "ACTIVITY",
+   "STEPS",
+   "STEP",
+   "START",
+   "RESOURCE",
+   "RESOURCE",
+   "END",
+   "ACTIVITY",
+   "START",
+   "RESOURCE",
+   "END",
+   "ITEM",
+   "ACTIVITY",
+   "START",
+   "RESOURCE",
+   "END",
+   "ITEM",
+   "ELEMENT_QTY",
+   "ACTIVITY",
+   "START",
+   "END",
+   "ITEM",
+   "ITEM",
+   "ACTIVITY",
+   "START",
+   "RESOURCE",
+   "END"
+  ],
+  "parent": [
+   "",
+   1,
+   "",
+   1,
+   1,
+   1,
+   "",
+   2,
+   2,
+   2,
+   2,
+   2,
+   3,
+   3,
+   3,
+   "",
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   "",
+   5,
+   5,
+   5,
+   "",
+   "",
+   7,
+   7,
+   7,
+   "",
+   2,
+   "",
+   6,
+   6,
+   "",
+   "",
+   "",
+   8,
+   8,
+   8
+  ]
+ },
+ "crews": {
+  "id": [
+   1,
+   1,
+   2,
+   "",
+   2,
+   "",
+   3,
+   ""
+  ],
+  "kind": [
+   "CREW",
+   "MEMBER",
+   "MEMBER",
+   "CREW_END",
+   "CREW",
+   "NOTE",
+   "MEMBER",
+   "CREW_END"
+  ],
+  "parent": [
+   "",
+   1,
+   1,
+   1,
+   "",
+   2,
+   2,
+   2
+  ]
+ },
+ "first_row": 5,
+ "layout": {
+  "bid_inputs": {
+   "figures": [
+    "indirect_cost",
+    "direct_cost",
+    "markup_total",
+    "bid_factor",
+    "excluded_cost"
+   ],
+   "inputs": [
+    "markup_percentage",
+    "markup_amount"
+   ],
+   "name_cell": "T",
+   "value_cell": "C"
+  },
+  "columns": {
+   "bid_form": {
+    "cost": "N",
+    "description": "B",
+    "export_price": "R",
+    "export_total": "S",
+    "id": "K",
+    "input": "T",
+    "item": "A",
+    "kind": "J",
+    "override": "G",
+    "priced": "P",
+    "primary": "O",
+    "primary_cost": "Q",
+    "quantity": "D",
+    "schedule": "C",
+    "schedule_id": "M",
+    "scope": "F",
+    "total": "I",
+    "unit": "E",
+    "unit_price": "H",
+    "v": "L"
+   },
+   "checks": {
+    "bidsheet": "F",
+    "code": "B",
+    "description": "C",
+    "difference": "G",
+    "excel": "E",
+    "kind": "A",
+    "measure": "D",
+    "status": "I",
+    "tolerance": "H"
+   },
+   "cost_report": {
+    "activity_row": "AJ",
+    "burden_included": "V",
+    "burden_pct": "U",
+    "code": "A",
+    "count": "K",
+    "crew_factor": "I",
+    "description": "B",
+    "equipment": "N",
+    "export_cost": "AB",
+    "export_mh": "AC",
+    "h1": "AF",
+    "h2": "AG",
+    "h3": "AH",
+    "h4": "AI",
+    "hours_per_shift": "H",
+    "id": "X",
+    "key": "AD",
+    "kind": "W",
+    "labor": "M",
+    "labor_basis": "T",
+    "manhours": "L",
+    "material": "O",
+    "multiplier": "AA",
+    "other": "Q",
+    "parent_id": "Z",
+    "production": "F",
+    "production_unit": "G",
+    "quantity": "C",
+    "ref": "AE",
+    "shifts": "J",
+    "subcontract": "P",
+    "total": "R",
+    "type": "S",
+    "unit": "D",
+    "unit_cost": "E",
+    "v": "Y"
+   },
+   "crews": {
+    "code": "A",
+    "count": "C",
+    "crew_factor": "H",
+    "crew_id": "N",
+    "crew_row": "R",
+    "effective": "F",
+    "export": "P",
+    "extended": "Q",
+    "headcount": "I",
+    "hourly_rate": "J",
+    "hours_per_shift": "G",
+    "id": "L",
+    "kind": "K",
+    "labor_rate_id": "O",
+    "library_rate": "D",
+    "name": "B",
+    "override": "E",
+    "v": "M"
+   },
+   "flat": {
+    "activity": "C",
+    "code": "B",
+    "cost": "I",
+    "id": "K",
+    "item": "A",
+    "kind": "J",
+    "line": "D",
+    "manhours": "H",
+    "quantity": "F",
+    "type": "E",
+    "unit": "G"
+   },
+   "rates": {
+    "id": "A",
+    "name": "B",
+    "rate": "D",
+    "unit": "C"
+   },
+   "recap": {
+    "bid_total": "N",
+    "bid_unit_price": "M",
+    "description": "B",
+    "direct": "K",
+    "equipment": "G",
+    "id": "P",
+    "item": "A",
+    "kind": "O",
+    "labor": "F",
+    "manhours": "E",
+    "material": "H",
+    "other": "J",
+    "quantity": "C",
+    "subcontract": "I",
+    "unit": "D",
+    "unit_cost": "L"
+   },
+   "schedule": {
+    "activity": "B",
+    "code": "A",
+    "duration": "E",
+    "export_duration": "J",
+    "export_finish": "I",
+    "export_multiplier": "K",
+    "finish": "F",
+    "id": "H",
+    "item": "C",
+    "kind": "G",
+    "start": "D"
+   }
+  },
+  "first_row": 5,
+  "layout_version": 3,
+  "navigator": {
+   "statuses": {
+    "fail": [
+     "DIFF",
+     "CHANGED"
+    ],
+    "info": [
+     "export"
+    ],
+    "pass": [
+     "OK"
+    ]
+   },
+   "templates": {
+    "activity": "hc.tpl.activity",
+    "member": "hc.tpl.member",
+    "resource": "hc.tpl.resource",
+    "step": "hc.tpl.step",
+    "stepped": "hc.tpl.stepped"
+   }
+  },
+  "row_kinds": [
+   {
+    "editable": true,
+    "identified_by": {
+     "id": "X",
+     "v": "Y"
+    },
+    "kind": "ITEM",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "element_id": "X",
+     "quantity_key": "AD",
+     "v": "Y"
+    },
+    "kind": "ELEMENT_QTY",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "id": "X",
+     "parent_id": "Z",
+     "v": "Y"
+    },
+    "kind": "ACTIVITY",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "activity_id": "Z",
+     "id": "X",
+     "v": "Y"
+    },
+    "kind": "STEP",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "activity_id": "Z",
+     "id": "X",
+     "v": "Y"
+    },
+    "kind": "RESOURCE",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "activity_id": "Z"
+    },
+    "kind": "STEPS",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "activity_id": "Z"
+    },
+    "kind": "START",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "activity_id": "Z"
+    },
+    "kind": "END",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": false,
+    "identified_by": {},
+    "kind": "GROUP",
+    "kind_cell": "W",
+    "sheet": "cost_report"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "id": "L",
+     "v": "M"
+    },
+    "kind": "CREW",
+    "kind_cell": "K",
+    "sheet": "crews"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "crew_id": "N",
+     "id": "L"
+    },
+    "kind": "MEMBER",
+    "kind_cell": "K",
+    "sheet": "crews"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "crew_id": "N"
+    },
+    "kind": "NOTE",
+    "kind_cell": "K",
+    "sheet": "crews"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "crew_id": "N"
+    },
+    "kind": "CREW_END",
+    "kind_cell": "K",
+    "sheet": "crews"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "id": "K",
+     "name": "T",
+     "v": "L"
+    },
+    "kind": "ESTIMATE",
+    "kind_cell": "J",
+    "sheet": "bid_form"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "name": "T"
+    },
+    "kind": "BID_INPUT",
+    "kind_cell": "J",
+    "sheet": "bid_form"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "name": "T"
+    },
+    "kind": "BID_FIGURE",
+    "kind_cell": "J",
+    "sheet": "bid_form"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "id": "K",
+     "v": "L"
+    },
+    "kind": "SECTION",
+    "kind_cell": "J",
+    "sheet": "bid_form"
+   },
+   {
+    "editable": true,
+    "identified_by": {
+     "id": "K",
+     "v": "L"
+    },
+    "kind": "ITEM_BID",
+    "kind_cell": "J",
+    "sheet": "bid_form"
+   },
+   {
+    "editable": false,
+    "identified_by": {
+     "id": "K"
+    },
+    "kind": "BID_TOTAL",
+    "kind_cell": "J",
+    "sheet": "bid_form"
+   },
+   {
+    "editable": false,
+    "identified_by": {},
+    "kind": "GROUP",
+    "kind_cell": "J",
+    "sheet": "bid_form"
+   }
+  ],
+  "style": {
+   "name": "heavycivil",
+   "version": "1"
+  },
+  "tabs": {
+   "bid_form": "Bid Form",
+   "checks": "Checks",
+   "cost_report": "Cost Report",
+   "crews": "Crews",
+   "flat": "Flat",
+   "rates": "Rates",
+   "recap": "Recap",
+   "schedule": "Schedule"
+  }
+ },
+ "source": "heavycivil/tests/fixtures/workbook.json, built by heavycivil/tests/test_navigator_kinds.py"
+}

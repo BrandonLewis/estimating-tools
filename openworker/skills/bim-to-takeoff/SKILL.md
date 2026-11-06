@@ -60,19 +60,29 @@ see the **Setup** block above.
    at the top.
 2. **Run:**
    ```bash
-   est-bim takeoff --ifc model.ifc --map <takeoff_map.yaml> \
-       --out takeoff.json --csv takeoff.csv
+   est-bim takeoff --ifc <structure>.ifc --map <takeoff_map.yaml> \
+       --out <structure>.takeoff.json --csv <structure>.takeoff.csv
    ```
    It prints a summary table (item, code, description, qty, unit, schedule),
-   writes `takeoff.json` (CanonicalTakeoff) and `takeoff.csv`.
+   writes `<structure>.takeoff.json` (CanonicalTakeoff) and the CSV. **Name
+   the output after the structure model** (`bridge.takeoff.json`,
+   `approach-slabs.takeoff.json`): `est-estimate apply-takeoff` identifies a
+   takeoff by its file name (or `--source-id`), so per-structure takeoffs
+   applied in sequence add up on shared items only when their names differ,
+   and a bare `takeoff.json` is refused. Keep the name when re-measuring.
+   If `apply-takeoff` exits 2 and prints `REFUSED: N row(s) not applied`,
+   the other rows WERE applied and written; only the refused items are
+   unchanged. Show the user the REFUSED line and each `refused:` line and
+   ask how to proceed; do not re-run with `--source-id`, `--adopt-legacy`
+   or `--replace` on your own.
 3. **Review the "Review" warnings** printed to stderr — any cost code without a
    map entry falls back to natural SI units and is flagged; any element without a
    classification is reported. Fix the layer map or takeoff map rather than
    shipping a wrong unit. If the IFC carries no usable Qtos or classification at
    all (a foreign Tekla/Revit export), flatten it with the `ifc-to-dxf` skill
    and re-enter through `dxf-to-bim`.
-4. **Hand off** `takeoff.json` to the estimating-core `push-takeoff` skill
-   (`est-takeoff plan takeoff.json --structure-id <id>` gives a dry-run push
+4. **Hand off** the takeoff JSON to the estimating-core `push-takeoff` skill
+   (`est-takeoff plan <structure>.takeoff.json --structure-id <id>` gives a dry-run push
    plan first). Takeoff quantities land on the **estimate layer as structure
    sections** via the BidSheet.ai MCP (`mcp__bidmanager__create_structure` /
    `mcp__bidmanager__add_structure_section` per the plan output) — official bid-item

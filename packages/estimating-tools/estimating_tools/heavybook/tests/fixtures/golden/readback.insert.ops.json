@@ -1,0 +1,148 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [
+  "Cost Report row 41: not priced live in this book: the new activity 'Cure' in its item's total -- it shows after the apply and a rebuild",
+  "Cost Report row 15: the new line 'Pump' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild",
+  "Cost Report row 45: the new line 'Curing compound' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild",
+  "Cost Report row 46: the new line 'Curing labor' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild",
+  "Crews row 12: not priced live in this book: the new member's library rate in Pour crew's crew rate -- it shows after the apply and a rebuild",
+  "Crews row 9: library crew 'Pour crew': BidSheet.ai copies it into this estimate and edits the copy; the library crew and other estimates are not changed",
+  "Cost Report row 32: an empty inserted resource line was skipped"
+ ],
+ "ops": [
+  {
+   "fields": {
+    "assembly_type": "GENERIC",
+    "estimate_item_id": 2,
+    "name": "Cure",
+    "sort_order": 0
+   },
+   "op": "activity.create",
+   "ref": "new:a1"
+  },
+  {
+   "fields": {
+    "activity_id": 4,
+    "duration": "4",
+    "duration_unit": "HOURS",
+    "name": "Strip"
+   },
+   "op": "step.add",
+   "ref": "new:s1"
+  },
+  {
+   "fields": {
+    "activity_id": "new:a1",
+    "duration": "3",
+    "duration_unit": "DAYS",
+    "name": "Wet cure"
+   },
+   "op": "step.add",
+   "ref": "new:s2"
+  },
+  {
+   "fields": {
+    "activity_id": 2,
+    "component_type": "equipment",
+    "name": "Pump",
+    "quantity": "2",
+    "unit_cost": "80"
+   },
+   "op": "resource.create",
+   "ref": "new:r1"
+  },
+  {
+   "fields": {
+    "activity_id": "new:a1",
+    "component_type": "material",
+    "name": "Curing compound",
+    "quantity": "40",
+    "unit": "GAL",
+    "unit_cost": "12.5"
+   },
+   "op": "resource.create",
+   "ref": "new:r2"
+  },
+  {
+   "fields": {
+    "activity_id": "new:a1",
+    "component_type": "labor",
+    "name": "Curing labor",
+    "quantity": "16",
+    "unit_cost": "52"
+   },
+   "op": "resource.create",
+   "ref": "new:r3"
+  },
+  {
+   "fields": {
+    "members": [
+     {
+      "classification": "Finisher",
+      "count": "3",
+      "hourly_rate_override": "60",
+      "labor_rate_id": null,
+      "sort_order": 0
+     },
+     {
+      "classification": "OPER",
+      "count": "1",
+      "hourly_rate_override": null,
+      "labor_rate_id": 1,
+      "sort_order": 1
+     }
+    ]
+   },
+   "op": "crew.update_members",
+   "ref": 2,
+   "v": "331a990f8c627d9c"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 41,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 1,
+   "row": 24,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 2,
+   "row": 43,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 3,
+   "row": 15,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 4,
+   "row": 45,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 5,
+   "row": 46,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 6,
+   "row": 9,
+   "sheet": "Crews"
+  }
+ ],
+ "summary": [
+  "Cost Report row 41: new activity 'Cure'",
+  "Cost Report row 24: new step 'Strip'",
+  "Cost Report row 43: new step 'Wet cure'",
+  "Cost Report row 15: new line 'Pump'",
+  "Cost Report row 45: new line 'Curing compound'",
+  "Cost Report row 46: new line 'Curing labor'",
+  "Crews row 12: new Pour crew member 'OPER'"
+ ]
+}

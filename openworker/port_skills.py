@@ -80,6 +80,7 @@ BIDMANAGER_TOOLS = [
     "add_structure_section", "remove_structure_section", "delete_structure",
     # elements (the IFC round trip — push-takeoff, cost-load-schedule)
     "upsert_modelled_elements", "get_estimate_model", "get_estimate_workbook",
+    "apply_estimate_workbook_changes",
     # named project takeoffs (the shared measurement an estimate pins — push-takeoff)
     "list_takeoffs", "create_takeoff", "compare_takeoff", "apply_takeoff",
     # assemblies
@@ -100,7 +101,8 @@ BIDMANAGER_TOOLS = [
     "list_work_package_quotes", "create_work_package_quote",
     "update_work_package_quote", "set_quote_scope_tags",
     "list_work_package_quote_line_items", "create_work_package_quote_line_item",
-    "update_work_package_quote_line_item",
+    "update_work_package_quote_line_item", "delete_work_package_quote_line_item",
+    "carry_work_package_quote", "acknowledge_work_package_quotes", "bulk_update_estimate_items",
     "list_quote_revisions", "create_quote_revision",
     # solicitations / ITB records (solicit-quotes / quote-coverage skills)
     "list_solicitations", "record_solicitation",

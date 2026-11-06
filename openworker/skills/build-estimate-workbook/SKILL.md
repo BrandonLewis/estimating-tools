@@ -125,6 +125,43 @@ hand-build the frame — scaffold it:
    skipped (pass `--force` to overwrite); show the report — it carries the
    official-vs-measured deltas and every unmatched row/item.
 
+   **One takeoff per structure model is fine: apply them in sequence.** When
+   an item is measured in more than one model (rebar in the bridge and in the
+   approach slabs), each apply keeps the lines the earlier takeoffs wrote and
+   appends its own; the item `qty` is the sum. A takeoff is identified by
+   `--source-id` when given, else its `source_id`, else its **file name**, so
+   name each structure's takeoff file distinctly (`bridge.takeoff.json`,
+   `approach-slabs.takeoff.json`) or pass `--source-id <structure>`, and keep
+   the same name when you re-measure a structure: re-applying the same name
+   replaces only that takeoff's lines. A generic name (`takeoff.json`,
+   `rebar.json`, ...) with no source id is refused. **Never apply a federated
+   takeoff and the per-structure takeoffs it combines to one spec**: their
+   quantities add.
+
+   Read the command's outcome:
+   - **Exit 2 with a `REFUSED: N row(s) not applied` line**: surface that
+     line and every `refused:` line to the user verbatim. Those items were
+     left as they were (the other rows did apply). Causes: a generic takeoff
+     name (rename the file or pass `--source-id`), a unit that differs from
+     the item's `uom` or another takeoff's unit, or an item whose lines were
+     applied before takeoff ownership was tracked (once the user agrees,
+     re-apply with `--adopt-legacy`: this takeoff takes over only those
+     unowned items, replacing their lines and qty; items other takeoffs
+     already share keep merging normally. Or apply the takeoff that wrote
+     them). Ask before re-running with any flag.
+   - **Any `possible double count` warning: stop and ask the user** before
+     building or pricing. Two takeoffs may measure the same elements (a
+     federated and a per-structure takeoff, or two files for one structure);
+     resolve it with the user, e.g. by re-applying under the right name.
+   - The report's "Items more than one takeoff contributed to" section names
+     each merged item ("item 61: 2 takeoffs contributed (bridge,
+     approach-slabs)"); confirm those with the user.
+
+   `--replace` is blunt: this takeoff replaces everything on EVERY item it
+   matches, dropping the lines and quantity other takeoffs contributed to
+   merged items too (with a warning saying which). Never use it to clear a
+   legacy refusal; that is `--adopt-legacy`.
+
 5. **Build** (step 2 of the hand-authored workflow below) and price: enter
    labor days/rates on the generated blocks — no frame surgery.
 
@@ -333,11 +370,19 @@ The config is JSON; start from `--init` and edit. Key behaviors:
 
 ## Verify before trusting the totals
 
-A freshly generated `.xlsx` has **unevaluated formulas**: openpyxl writes
-formulas but never computes them, so every total cell is empty until Excel
-(or LibreOffice) opens the file and recalculates. Never read a bid number
-out of a just-generated workbook, and never tell the user a total you got
-by parsing one.
+openpyxl writes formulas but never computes them. `est-estimate build` then
+stores cached values with its built-in evaluator (pure Python, no Excel), so
+the book shows numbers in Protected View, previews and `data_only` readers.
+A line naming formulas it left uncached (an unknown function, a circular
+reference) means those cells are empty until Excel opens the file outside
+Protected View: tell the user to click **Enable Editing**. `--recalc excel`
+additionally has Excel recalculate the book after the build (Excel through
+pywin32 or PowerShell COM; for functions the built-in evaluator does not
+cover) and prints one `RECALC:` line: pass it on (`RECALC: none` means no
+Excel ran and the built-in values stand). By default no engine runs and no
+`RECALC:` line is printed. Either way, never read a bid number out of a
+just-generated workbook, and never tell the user a total you got by parsing
+one.
 
 For the spec-YAML path, get the number before anyone opens Excel by
 pricing the spec in pure Python:

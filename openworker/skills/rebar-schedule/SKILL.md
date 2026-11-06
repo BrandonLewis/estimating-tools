@@ -62,10 +62,23 @@ BBS: **design/detailing governs**; this schedule is for pricing.
    row) in one pass:**
    ```bash
    est-rebar schedule bars.yaml --out-dir <bid_dir>/Sheets --xlsx \
-       --takeoff takeoff.json --organization-id <org_id> \
+       --takeoff <structure>.rebar-takeoff.json --organization-id <org_id> \
+       --source-id <structure> \
        [--cost-code <code>] [--item-number <item>] \
        [--schedule <schedule>] [--project-ref <ref>]
    ```
+   **Name the takeoff after its structure**: the file
+   (`abutment-1.rebar-takeoff.json`) and `--source-id` (default: the bars
+   YAML `title`, slugified, written into the JSON as `source_id`).
+   `apply-takeoff` identifies a takeoff by that name: two structures' rebar
+   on one item add up only when their names differ, re-applying the same
+   name replaces that structure's weight, and a takeoff named only
+   `takeoff.json`/`rebar.json` with no `source_id` is refused.
+   If `apply-takeoff` exits 2 and prints `REFUSED: N row(s) not applied`,
+   the other rows WERE applied and written; only the refused items are
+   unchanged. Show the user the REFUSED line and each `refused:` line and
+   ask how to proceed; do not re-run with `--source-id`, `--adopt-legacy`
+   or `--replace` on your own.
    Always writes `<slug>.md`; `--xlsx` also writes a styled `<slug>.xlsx`
    (clean error if `openpyxl`/the `excel` extra is missing). `--takeoff`
    writes a `CanonicalTakeoff` JSON with **one** quantity row: `unit="LBS"`,
@@ -93,14 +106,15 @@ BBS: **design/detailing governs**; this schedule is for pricing.
    - **Live estimating (the normal case) — the estimate-spec quantity
      path:**
      ```bash
-     est-estimate apply-takeoff <bid>.estimate.yaml --takeoff takeoff.json \
-         [--force] --report apply-report.md
+     est-estimate apply-takeoff <bid>.estimate.yaml \
+         --takeoff <structure>.rebar-takeoff.json [--force] --report apply-report.md
      ```
      This matches the takeoff row onto a spec item by `(schedule,
      item_number)` (falling back to `cost_code`) and sets that item's `qty`
      to the weight (with waste already applied). Before routing, confirm the
-     target item's `uom` is `LBS` — apply-takeoff does not check units, and
-     a weight silently landing on a CY line would corrupt the estimate. Because the row has no
+     target item's `uom` is `LBS` — apply-takeoff refuses a row whose unit
+     differs from the item's `uom` (the report lists it), so a weight routed
+     to a CY line is not applied at all. Because the row has no
      `elements`, only `qty` changes — no geometry rebuild is attempted, which
      is expected for a rebar weight line, not a bug. Show the user
      `apply-report.md` (matched/unchanged/skipped/unmatched) same as

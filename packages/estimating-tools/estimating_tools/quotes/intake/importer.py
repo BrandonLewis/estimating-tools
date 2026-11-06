@@ -17,7 +17,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from estimating_tools.estimate_spec.cli import _backup_path
-from estimating_tools.estimate_spec.package_frames import PackageError, build_package_frames
+from estimating_tools.estimate_spec.package_frames import (
+    PackageError, build_package_frames, vendor_total)
 from estimating_tools.quotes.files import (
     QuoteFileError, load_quote_file, load_quotes, quote_file_slug, write_quote_file)
 from estimating_tools.quotes.intake.batch import package_digest, validate_results
@@ -104,6 +105,12 @@ def assemble_quote(result: dict, pkg: dict, *, source: str) -> tuple[CanonicalQu
         if unpriced and covering:
             notes.append(f"{label}: unpriced, covered by the lump sum")
             continue
+        unit = (rl.get("unit") or "").strip()
+        mismatch = bool(unit) and uom is not None and _fold(unit) != _fold(uom)
+        exclusion_notes = rl.get("exclusion_note")
+        if mismatch:
+            # The push reads this prefix: a line priced in another unit pushes its amount only.
+            exclusion_notes = "; ".join(filter(None, [f"unit {unit} vs {uom}", exclusion_notes]))
         lines.append(QuoteLine(
             schedule_name=target["schedule_name"] if target else default_schedule,
             item_number=item,
@@ -111,9 +118,8 @@ def assemble_quote(result: dict, pkg: dict, *, source: str) -> tuple[CanonicalQu
             unit_price=rl.get("unit_price"), quantity=rl.get("quantity"),
             is_included=rl.get("is_included") is not False,
             is_alternate=bool(rl.get("is_alternate")),
-            exclusion_notes=rl.get("exclusion_note"), folded_into=rl.get("folded_into")))
-        unit = (rl.get("unit") or "").strip()
-        if unit and uom is not None and _fold(unit) != _fold(uom):
+            exclusion_notes=exclusion_notes, folded_into=rl.get("folded_into")))
+        if mismatch:
             reasons.append(f"{label}: priced per {unit}, package line is {uom}")
         elif not unit and rl.get("unit_price") is not None and uom:
             reasons.append(f"{label}: unit not stated; package line is {uom}")
@@ -171,19 +177,6 @@ def is_carried(pkg_spec: dict, vendor: str) -> bool:
     """Does the spec package carry `vendor`, as `selected` or in any pick?"""
     names = [pkg_spec.get("selected")] + list((pkg_spec.get("picks") or {}).values())
     return any(n is not None and _fold(n) == _fold(vendor) for n in names)
-
-
-def vendor_total(frame, vendor: str) -> float:
-    """The vendor column's total on `frame`: its lump amount, else the sum of its
-    numeric cells times the lines' numeric quantities. 0.0 when it has no column."""
-    for col in frame.vendors:
-        if col.is_spare or _fold(col.name) != _fold(vendor):
-            continue
-        if col.lump_sum and col.lump_amount is not None:
-            return float(col.lump_amount)
-        return float(sum(col.cells[ln.key] * ln.qty for ln in frame.lines
-                         if _is_number(col.cells.get(ln.key)) and _is_number(ln.qty)))
-    return 0.0
 
 
 def _quote_file_check(quote: CanonicalQuote) -> None:

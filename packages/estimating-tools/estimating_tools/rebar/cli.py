@@ -3,7 +3,7 @@
   est-rebar schedule <bars.yaml> [--out-dir .] [--xlsx]
                       [--takeoff out.json --organization-id N
                        [--cost-code C] [--item-number I] [--schedule S]
-                       [--project-ref R]]
+                       [--project-ref R] [--source-id ID]]
   est-rebar develop --size 5 --fc 4000 [--fy 60000] [--top-bar] [--epoxy]
                      [--lightweight] [--lap A|B]
 
@@ -131,6 +131,14 @@ def cmd_schedule(args) -> int:
             "project_ref": args.project_ref,
             "rows": rows,
         }
+        # the takeoff's identity for apply-takeoff (#376): --source-id, else
+        # the schedule's own title (a structure's bar schedule), never a
+        # fixed default -- two structures' rebar must not share one
+        source_id = args.source_id or (
+            _slugify(data["title"]) if isinstance(data.get("title"), str)
+            and data["title"].strip() else None)
+        if source_id:
+            payload["source_id"] = source_id
         Path(args.takeoff).write_text(json.dumps(payload, indent=2), encoding="utf-8")
         print(f"wrote {args.takeoff}")
 
@@ -182,6 +190,10 @@ def main(argv=None) -> int:
     s.add_argument("--schedule", dest="schedule_name", default=None,
                    help="schedule label recorded on the takeoff row")
     s.add_argument("--project-ref", default=None)
+    s.add_argument("--source-id", default=None,
+                   help="the takeoff's identity for est-estimate apply-takeoff "
+                        "(e.g. the structure); default: the bars YAML title, "
+                        "slugified")
     s.set_defaults(func=cmd_schedule)
 
     d = sub.add_parser("develop", help="ACI development + lap lengths for one bar size")

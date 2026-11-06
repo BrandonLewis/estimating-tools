@@ -52,6 +52,11 @@ reason, and every quantity is a closed form the gate can check.
    Those are often exactly the pile, pile-cap, wingwall and station/profile
    placement code `bridge-standard` lacks.
 
+   When the bid has a briefing pack, its `Briefing/structures.yaml` records
+   each structure's proposed `family` and `route` (`family`, `federated` or
+   `bespoke`); start from it, confirm it against the sheets, and say when you
+   change one.
+
    Expect PARTIAL coverage and say so in the route you choose: families for the
    parts they model, bespoke `bimforge.author` work federated in for the rest.
    Neither stretching a family over unsupported geometry nor dropping families

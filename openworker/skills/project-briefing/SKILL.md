@@ -1,6 +1,6 @@
 ---
 name: project-briefing
-description: Generate the project prompt pack from an intaken project — scope summary, structure list (with rollup mapping to bid items), risk notes, and one per-structure briefing prompt whose frontmatter carries the pricing keys downstream sheet/BIM/estimate agents consume. Reads the manifest + registered documents; writes Briefing/ files locally.
+description: Generate the project prompt pack from an intaken project — scope summary, structure list (with rollup mapping to bid items), each structure's modelling route (a bimforge family, federated, or bespoke), risk notes, and one per-structure briefing prompt whose frontmatter carries the pricing keys downstream sheet/BIM/estimate agents consume. Reads the manifest + registered documents; writes Briefing/ files locally.
 ---
 
 > **Setup:** If `import estimating_tools` fails, install the bundled wheels: `pip install "$(ls <resources_path>/../_dist/bimforge-*.whl | tail -1)" "$(ls <resources_path>/../_dist/estimating_tools-*.whl | tail -1)[plugin-core]"` — `<resources_path>` is the path `load_skill` returned for this skill. Then retry. (`openworker/install.py` normally does this at install time, so you should only need the fallback on a fresh or relocated Python env.)
@@ -40,8 +40,24 @@ structure's id when `push-takeoff` calls `mcp__bidmanager__create_structure`.
    `TakeoffRow.structure_id` and the estimate structure's id), display name,
    `count`, the cost codes it will carry, and `bid_items` — the
    `[{item_number, schedule}]` pairs its quantities pay into (each must exist
-   in the manifest's bid frame). Review the list with the user before
-   writing.
+   in the manifest's bid frame).
+
+   **Propose how each structure is modelled** — a `family` and a `route` —
+   from the families bimforge actually ships. List them first; never work
+   from memory or a list in a document:
+   `python -c "from bimforge.author.families.registry import available; print(sorted(available()))"`
+   - `route: family` — one family models it (`family: box-culvert`).
+   - `route: federated` — a family models most of it and bespoke parts sit
+     beside it (`family: bridge-standard` for the deck and bents, piles and
+     wingwalls authored over `bimforge.author`). Partial coverage is the
+     normal case for a bridge; it is not a reason to drop the family.
+   - `route: bespoke` — no family fits; it is authored over `bimforge.author`
+     (the `author-structure-model` skill in calc-bim). Never hand math.
+
+   A consumer repo may keep families of its own outside the registry (grep
+   it for `FAMILIES`); name one as the `family` and the builder notes it is
+   not in the registry. Leave `route` unset only when the modelling decision
+   is genuinely open. Review the list with the user before writing.
 4. **Write structures.yaml + skeletons:** save the agreed list as
    `{structures: [...]}` to a temp YAML, then
    `est-intake briefing <project-dir> --structures <file>`. Prose files and
@@ -61,11 +77,18 @@ structure's id when `push-takeoff` calls `mcp__bidmanager__create_structure`.
    flag (a) any bid item in the frame not covered by any structure (its
    quantity must come from somewhere else) and (b) any bid item covered by
    multiple structures — a rollup — so the user can sanity-check the split.
+   Then (c) every structure with no `route`, and any `family` not in the
+   registry; `est-intake briefing` prints both. A briefing pack with
+   unrouted structures is not finished: settle each route with the user.
 
 ## Notes
 - Re-runnable: to add a structure later, append it to `structures.yaml` and
   re-run step 4 — only the new prompt file (plus the refreshed
   `structures.yaml`) is written.
+- `family` and `route` reach a prompt's frontmatter when the prompt is first
+  created. A route settled later is recorded in `structures.yaml` (which is
+  always regenerated) but not in a prompt that already exists, so
+  `structures.yaml` is where the modelling route is read.
 - The frontmatter is the machine contract; downstream skills parse it. Don't
   reformat it. When *reading* a prompt's frontmatter, extract it by the
   `---` delimiters on their own lines (first line to the next line-anchored

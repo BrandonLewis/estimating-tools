@@ -1865,6 +1865,10 @@ def build(config_path, out_path=None, pack=None, *, stamp=True, lint=True, brand
                   quotes=quotes)
     out = out_path or config.get("output") or (Path(config_path).with_suffix(".xlsx"))
     wb.save(out)
+    # openpyxl stores no formula results: without them Protected View and
+    # non-calculating readers show 0 (#370).
+    from estimating_tools.xlcalc import cache_or_warn
+    cache_or_warn(out)
     return out
 
 

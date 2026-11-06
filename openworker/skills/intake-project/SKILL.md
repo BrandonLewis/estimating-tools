@@ -72,7 +72,13 @@ BidSheet.ai's truth only.
 6. **Brief:** invoke the `project-briefing` skill to build the briefing pack
    from what was intaken.
 7. **Report:** show the tree created, the manifest summary (document count by
-   kind, bid-frame size + snapshot time), and anything skipped.
+   kind, bid-frame size + snapshot time), and anything skipped. End with the
+   next step: model each routed structure by loading the `build-structure`
+   skill (the `author-structure-model` skill for `route: bespoke`). Both ship
+   in the calc-bim plugin; where subagents are available, calc-bim's drafting
+   agent sequences them. If they are not among your available skills, tell
+   the user modelling needs calc-bim installed, rather than suggesting the
+   structures be measured by hand.
 
 ## Conformed output is advisory — audit before trusting
 

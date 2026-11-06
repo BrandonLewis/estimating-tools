@@ -368,6 +368,29 @@ def _reconcile_elements(rep, key, rows, ifc, names, tol_pct,
             mesh_si_sum, mesh_complete, vol_measured, elem_geom_variance)
 
 
+def mark_wholes(ifc_path: str, leg: dict) -> dict:
+    """Flag the IFC leg's grouping wholes: `leg[gid]["whole"] = True` for
+    every IfcElement that has no body (no Representation), no quantity set,
+    and aggregates at least one IfcElement (IfcRelAggregates). bimforge
+    0.1.102 writes one such whole per handrail or barrier run; the takeoff
+    never classifies it, so the audit must not call it an orphan. Returns
+    the leg, mutated. Elements the leg lacks are left alone."""
+    import ifcopenshell
+
+    from bimforge.bim.ifc_takeoff import quantity_sets
+    model = ifcopenshell.open(str(ifc_path))
+    for el in model.by_type("IfcElement"):
+        info = leg.get(el.GlobalId)
+        if info is None or el.Representation is not None or quantity_sets(el):
+            continue
+        parts = [o for rel in getattr(el, "IsDecomposedBy", None) or ()
+                 if rel.is_a("IfcRelAggregates")
+                 for o in rel.RelatedObjects or () if o.is_a("IfcElement")]
+        if parts:
+            info["whole"] = True
+    return leg
+
+
 def build_audit(takeoff, *, ifc: dict | None = None, bm: dict | None = None,
                 mesh: dict | None = None, tol_pct: float = 1.0,
                 geom_tol_pct: float = 0.5, provenance: dict | None = None):
@@ -499,7 +522,14 @@ def build_audit(takeoff, *, ifc: dict | None = None, bm: dict | None = None,
         referenced = {e.global_id for e in rep.elements if e.global_id}
         measured_classes = {e.ifc_class for e in rep.elements if e.ifc_class}
         for gid, info in sorted(ifc.items()):
-            if gid not in referenced and info["ifc_class"] in measured_classes:
+            # a whole that only groups its parts (`mark_wholes`: bimforge
+            # 0.1.102's handrail or barrier "run", an IfcRailing / IfcWall
+            # with no body and no quantities of its own, aggregating its
+            # parts) is never in a row and is not an orphan. A physical
+            # element with no quantities still is: it is work the takeoff
+            # does not count.
+            if (gid not in referenced and info["ifc_class"] in measured_classes
+                    and not info.get("whole")):
                 rep.exceptions.append(AuditFinding(
                     "orphan-element", "",
                     f"IFC {info['ifc_class']} '{info['name']}' ({gid}) is "

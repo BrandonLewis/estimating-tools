@@ -39,18 +39,14 @@ sys.path.insert(0, str(ROOT / "plugins" / "estimating-core" / "scripts"))
 import plugin_runtime  # noqa: E402
 
 #: (console script, subcommand or None) -> (extra, owning dist, a module in
-#: the extra that the command imports, the source file that imports it).
+#: the extra that the command imports, the module file that imports it,
+#: relative to the installed package).
 NEEDS_EXTRA = {
     ("est-letterhead", None): (
-        "docgen", "estimating_tools", "docxtpl",
-        "packages/estimating-tools/estimating_tools/docgen/docxtpl_engine.py"),
+        "docgen", "estimating_tools", "docxtpl", "estimating_tools/docgen/docxtpl_engine.py"),
     ("est-bim", "contour-surface"): (
-        "terrain", "bimforge", "scipy",
-        "packages/bimforge/bimforge/terrain/contours.py"),
+        "terrain", "bimforge", "scipy", "bimforge/terrain/contours.py"),
 }
-
-PYPROJECT = {"estimating_tools": ROOT / "packages/estimating-tools/pyproject.toml",
-             "bimforge": ROOT / "packages/bimforge/pyproject.toml"}
 
 
 def _body(text: str) -> str:
@@ -79,24 +75,29 @@ def test_the_table_is_true(key):
     a module that extra provides and the command's source really imports."""
     script, _sub = key
     extra, dist, module, source = NEEDS_EXTRA[key]
-    if not PYPROJECT[dist].is_file() or not (ROOT / source).is_file():
-        # The public export ships bimforge as a wheel, not source; the skill
-        # guard below still runs there, only this provenance check cannot.
-        pytest.skip(f"{dist} source is not in this tree")
-    # A regex read, not tomllib: CI still runs Python 3.10.
-    toml = PYPROJECT[dist].read_text(encoding="utf-8")
-    assert re.search(rf"^{re.escape(script)}\s*=", toml, re.MULTILINE), (
-        f"{script} is not a {dist} console script")
-    deps = re.search(rf"^{re.escape(extra)}\s*=\s*\[([^\]]*)\]", toml, re.MULTILINE)
-    assert deps, f"{dist} has no `{extra}` extra"
-    names = [re.split(r"[\[<>=!~ ]", d.strip().strip('"'))[0].replace("-", "_").lower()
-             for d in deps.group(1).split(",") if d.strip()]
+    # Installed metadata, not a pyproject: bimforge comes from PyPI and this
+    # tree has no source for it.
+    from importlib import metadata, util
+    try:
+        dist_meta = metadata.distribution(dist)
+    except metadata.PackageNotFoundError:
+        pytest.skip(f"{dist} is not installed")
+    assert any(ep.group == "console_scripts" and ep.name == script
+               for ep in dist_meta.entry_points), f"{script} is not a {dist} console script"
+    assert extra in (dist_meta.metadata.get_all("Provides-Extra") or []), (
+        f"{dist} has no `{extra}` extra")
+    names = [re.split(r"[\[<>=!~ ;]", r)[0].replace("-", "_").lower()
+             for r in (dist_meta.requires or [])
+             if re.search(rf"extra\s*==\s*['\"]{re.escape(extra)}['\"]", r)]
     assert module in names, f"{extra} does not provide {module} ({names})"
     assert extra not in plugin_runtime.BASE_EXTRAS[dist], (
         f"{extra} is a base extra now -- drop the row")
     assert plugin_runtime.EXTRA_OWNER.get(extra) == dist, (
         f"ensure-extra cannot install {extra}: EXTRA_OWNER does not map it to {dist}")
-    text = (ROOT / source).read_text(encoding="utf-8")
+    spec = util.find_spec(dist)
+    assert spec and spec.submodule_search_locations, f"cannot locate the {dist} package"
+    pkg = Path(next(iter(spec.submodule_search_locations)))
+    text = (pkg.parent / source).read_text(encoding="utf-8")
     assert re.search(rf"^\s*(from|import) {module}\b", text, re.MULTILINE), (
         f"{source} no longer imports {module} -- re-check whether the row still holds")
 

@@ -17,7 +17,13 @@ for a triangular wedge) are passed straight through to the section dimensions
 so an element that knows its volume but not a full L×W×H box — or a deduct, or
 a wedge — round-trips instead of being forced through the box formula
 (issue #210). All optional and backward compatible: rows without them load
-fine."""
+fine.
+
+A takeoff may also carry a top-level `source_id` (added for issue #376): a
+stable name for the takeoff itself (e.g. the structure model it measured),
+which `est-estimate apply-takeoff` uses to tell apart takeoffs that are
+applied in sequence onto shared items. Optional; older takeoffs load.
+"""
 from __future__ import annotations
 
 import json
@@ -58,6 +64,8 @@ class CanonicalTakeoff:
     organization_id: int
     project_ref: str | None = None
     rows: list = field(default_factory=list)
+    # the takeoff's own identity (see module docstring); None when unset
+    source_id: str | None = None
 
     @classmethod
     def from_json(cls, text: str) -> "CanonicalTakeoff":
@@ -76,4 +84,5 @@ class CanonicalTakeoff:
             organization_id=data["organization_id"],
             project_ref=data.get("project_ref"),
             rows=rows,
+            source_id=data.get("source_id") or None,
         )

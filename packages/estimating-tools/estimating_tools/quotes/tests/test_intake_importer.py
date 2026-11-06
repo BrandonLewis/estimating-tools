@@ -165,6 +165,15 @@ def test_a_unit_that_differs_from_the_package_line_is_flagged():
     assert reasons == []
 
 
+def test_a_mismatched_line_carries_the_unit_prefix_in_its_exclusion_notes():
+    q, _ = assembled(lines=[dict(HAUL_LINE, unit="CWT")])
+    assert q.lines[0].exclusion_notes == "unit CWT vs CY"
+    q, _ = assembled(lines=[dict(HAUL_LINE, unit="CWT", exclusion_note="no weekend haul")])
+    assert q.lines[0].exclusion_notes == "unit CWT vs CY; no weekend haul"
+    q, _ = assembled(lines=[dict(HAUL_LINE, unit="CY", exclusion_note="no weekend haul")])
+    assert q.lines[0].exclusion_notes == "no weekend haul"
+
+
 def test_an_ambiguous_date_is_normalised_and_flagged():
     q, _ = assembled(quote_date="03/04/2026")
     assert q.quote_date == "2026-03-04"

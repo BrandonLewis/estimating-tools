@@ -1,16 +1,8 @@
 import { h, replace } from "./view.js";
-import { planInsert } from "../core/insert.js";
-import { NO_CELL } from "./codes.js";
-
-const ACTIONS = [
-  ["task", "New task", "A task block (header, crew, line, END, subtotal) below this one. The item total picks it up after read-back and a rebuild."],
-  ["crew", "New crew row", "A crew row inside this task, at the cursor."],
-  ["line", "New line", "A material, equipment or subcontract line inside this task, at the cursor."],
-];
 
 /** The outcome card. Kept on `app` because the insert itself fires a workbook change, and the refresh re-renders this tab. */
 function noteCard(note) {
-  return note ? h("div", { class: `card ${note.ok ? "ok" : "bad"}` }, note.text) : null;
+  return note ? h("div", { class: `card ${note.warn ? "warn" : note.ok ? "ok" : "bad"}` }, note.text) : null;
 }
 
 /**
@@ -24,37 +16,49 @@ function setBusy(app, busy) {
   for (const b of app.insertButtons) b.disabled = busy;
 }
 
+/**
+ * The adapter's Insert buttons. A plan with `confirm` is asked first: the pane
+ * shows the question, and the same button at the same spot inserts on the
+ * second click. Every insert is one Excel.run, so one undo reverts it.
+ */
 export async function renderInsert(root, app, x) {
-  const { blocks, tags } = app.state.layout;
+  const { adapter, layout } = app.state;
   let ctx;
-  try { ctx = await x.readActive(tags); } catch {
-    if (x.current()) replace(root, h("p", { class: "muted" }, NO_CELL));
+  // A chart sheet, a shape or another non-cell selection has no active cell.
+  try { ctx = await adapter.readCursor(x, layout); } catch {
+    if (x.current()) replace(root, h("p", { class: "muted" }, adapter.noCell));
     return;
   }
   if (!x.current()) return;
   const note = h("div");
-  const say = (ok, text) => { app.insertNote = { ok, text }; replace(note, noteCard(app.insertNote)); };
+  const say = (ok, text, warn = false) => { app.insertNote = { ok, text, warn }; replace(note, noteCard(app.insertNote)); };
   replace(note, noteCard(app.insertNote));
-  const buttons = ACTIONS.map(([what, title, sub]) => h("button", { class: "row-btn", disabled: app.inserting, onclick: async () => {
+  const buttons = adapter.insertKinds(layout).map(({ what, label, sub }) => h("button", { class: "row-btn", disabled: app.inserting, onclick: async () => {
     if (app.inserting) return;
     setBusy(app, true);
     try {
       let fresh;
-      try { fresh = await x.readActive(tags); } catch { return say(false, NO_CELL); }
-      const plan = planInsert(what, fresh.kinds, fresh.row, blocks);
-      if (!plan.ok) return say(false, plan.reason);
-      const done = await x.insertTemplate(fresh.sheet, plan.at, plan.tpl);
-      say(true, `Inserted rows ${done.first}–${done.last} from _templates. Fill in the blank cells.`);
+      try { fresh = await adapter.readCursor(x, layout); } catch { return say(false, adapter.noCell); }
+      const plan = adapter.planInsert(what, fresh);
+      if (plan.refused) { app.insertConfirm = null; return say(false, plan.refused); }
+      const key = `${what}|${plan.sheet}|${plan.at}`;
+      if (plan.confirm && app.insertConfirm !== key) {
+        app.insertConfirm = key;
+        return say(false, `${plan.confirm} Click ${label} again to insert.`, true);
+      }
+      app.insertConfirm = null;
+      const done = await x.insertTemplate(plan.sheet, plan.at, plan.template);
+      say(true, `Inserted rows ${done.first}–${done.last} from _templates. ${plan.fill || "Fill in the blank cells."}`);
     } catch (e) {
       say(false, `Could not insert: ${String(e.message || e)}. If the sheet is protected, unprotect it first.`);
     } finally {
       setBusy(app, false);
     }
-  } }, h("span", {}, h("strong", {}, title), h("br"), h("span", { class: "muted" }, sub))));
+  } }, h("span", {}, h("strong", {}, label), h("br"), h("span", { class: "muted" }, sub))));
   app.insertButtons = buttons;
   replace(root,
     h("div", { class: "card" }, h("div", { class: "label" }, "Cursor"), `${ctx.sheet} · row ${ctx.row}`),
     buttons,
     note,
-    h("p", { class: "muted" }, "Rows are copied from the hidden _templates sheet with Excel's own copy, exactly like a copy-paste, so read-back accepts them. Rows are never inserted below a task's END row, so every subtotal still covers them."));
+    h("p", { class: "muted" }, adapter.insertFooter(layout)));
 }

@@ -160,6 +160,25 @@
         "field_hashes": {
           "type": "object",
           "additionalProperties": { "type": "string" }
+        },
+        "takeoffs": {
+          "type": "array",
+          "description": "Written by apply-takeoff (issue #376): the takeoffs that contributed to this item, in line order. Each owns `lines` consecutive lines at the end of takeoff.lines whose content hash is `lines_hash` (lines before them are owned by no takeoff and are kept; a hash mismatch makes every line unowned), and `qty` of the item quantity, which is the sum over contributors. `source` is the takeoff's identity: `--source-id`, else its source_id, else its file name. `unit`, `global_ids` and `element_names` are recorded for the unit check and the possible-double-count warnings.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source", "qty", "lines", "lines_hash"],
+            "properties": {
+              "source":        { "type": "string", "minLength": 1 },
+              "name":          { "type": "string" },
+              "qty":           { "type": "number" },
+              "unit":          { "type": "string" },
+              "lines":         { "type": "integer", "minimum": 0 },
+              "lines_hash":    { "type": "string" },
+              "global_ids":    { "type": "array", "items": { "type": "string" } },
+              "element_names": { "type": "array", "items": { "type": "string" } }
+            }
+          }
         }
       }
     },
@@ -254,6 +273,7 @@
         "detail":     { "enum": ["rebar", "concrete", "precast"], "description": "Which takeoff detail the spread sheet shows beside the quotes." },
         "conditions": { "type": "array", "items": { "type": "string" }, "description": "Bid conditions to level quotes against, one line each." },
         "selected":   { "type": "string", "default": "ARR", "description": "The chosen bidder for the package: ARR, CARRY or a vendor name. A missing value means ARR." },
+        "pinned":     { "type": "boolean", "default": false, "description": "The selector is the estimator's decision: with a vendor it is already a pin; with ARR it pins self-perform in BidSheet.ai. Missing means false." },
         "picks":      { "type": "object", "additionalProperties": { "type": "string" }, "description": "Per-item override of selected, keyed by item_no (an item in the package)." },
         "carry":      { "type": "object", "additionalProperties": { "type": "number" }, "description": "CARRY $/unit per package line, keyed item_no or item_no/line name." },
         "surcharge":  { "type": "object", "additionalProperties": { "type": "number" }, "description": "Per-vendor surcharge, keyed by vendor name." }

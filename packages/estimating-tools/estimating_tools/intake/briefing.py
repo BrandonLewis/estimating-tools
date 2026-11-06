@@ -6,7 +6,10 @@ project-briefing skill fills the prose and re-runs must not clobber it. The
 frontmatter is the rollup + pricing contract downstream agents consume:
 structure_id -> TakeoffRow.structure_id and create_structure's structure id
 on the estimate item; count = how many of the structure the bid pays;
-bid_items = the (schedule, item_number) rollup items its quantities pay into."""
+bid_items = the (schedule, item_number) rollup items its quantities pay into;
+family / route (optional) = how the structure is modelled (#304): a bimforge
+family, a bespoke ``bimforge.author`` model, or a family with bespoke parts
+federated beside it."""
 from __future__ import annotations
 
 import re
@@ -19,6 +22,10 @@ _SECTIONS = ("## Scope\n\n_(fill in)_\n\n## Geometry & layout\n\n_(fill in)_\n\n
              "## Risks\n\n_(fill in)_\n\n## Sources\n\n_(cite plan sheets / spec sections)_\n")
 
 _ID_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
+
+#: How a structure is modelled: a family alone, bespoke over
+#: ``bimforge.author``, or a family plus bespoke parts federated beside it.
+ROUTES = ("family", "bespoke", "federated")
 
 
 def _validate_structures(structures: list) -> None:
@@ -33,6 +40,34 @@ def _validate_structures(structures: list) -> None:
         if sid in seen:
             raise ValueError(f"duplicate structure id {sid!r}")
         seen.add(sid)
+        family, route = s.get("family"), s.get("route")
+        if family is not None and (not isinstance(family, str) or not _ID_RE.fullmatch(family)):
+            raise ValueError(f"{sid}: invalid family {family!r} — expected a family "
+                             "name such as 'box-culvert'")
+        if route is not None and route not in ROUTES:
+            raise ValueError(f"{sid}: invalid route {route!r} — expected one of "
+                             + ", ".join(ROUTES))
+        if route in ("family", "federated") and family is None:
+            raise ValueError(f"{sid}: route {route!r} names no family")
+
+
+def routing_notes(structures: list, known_families=None) -> list:
+    """Lines for the structures with no modelling route, and for families
+    not in ``known_families`` (bimforge's ``available()``; None skips that
+    check). A consumer repo can keep families of its own, so an unknown
+    family is a note, not an error."""
+    notes = []
+    unrouted = [s["id"] for s in structures if s.get("route") is None]
+    if unrouted:
+        notes.append(f"no modelling route: {', '.join(unrouted)} "
+                     f"(set route: {' | '.join(ROUTES)})")
+    if known_families is not None:
+        unknown = [f"{s['id']} ({s['family']})" for s in structures
+                   if s.get("family") is not None and s["family"] not in known_families]
+        if unknown:
+            notes.append(f"family not in bimforge's registry: {', '.join(unknown)} "
+                         "(a consumer repo's own family, or a typo)")
+    return notes
 
 
 def _write_once(path: Path, text: str, created: list) -> None:
@@ -54,7 +89,7 @@ def _write_always(path: Path, text: str, created: list) -> None:
 
 def build_briefing_pack(manifest, structures: list, base: Path) -> list:
     """Create Briefing/ under `base` (the bid working dir) for the given
-    structures ([{id, name, count?, cost_codes?, bid_items?}]). Returns the
+    structures ([{id, name, count?, cost_codes?, bid_items?, family?, route?}]). Returns the
     paths created."""
     _validate_structures(structures)
     base = Path(base)
@@ -80,6 +115,9 @@ def build_briefing_pack(manifest, structures: list, base: Path) -> list:
             "bid_items": s.get("bid_items", []),
             "cost_codes": s.get("cost_codes", []),
         }
+        for key in ("family", "route"):         # only when set: older packs stay byte-identical
+            if s.get(key) is not None:
+                fm[key] = s[key]
         text = ("---\n" + yaml.safe_dump(fm, sort_keys=False, allow_unicode=True)
                 + "---\n\n# Briefing — " + s.get("name", s["id"]) + "\n\n" + _SECTIONS)
         _write_once(base / "Briefing" / "prompts" / f"{s['id']}.md", text, created)

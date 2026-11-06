@@ -197,6 +197,17 @@ edited since its last Excel save it returns stale numbers. **Never read
 totals out of a workbook you just wrote**, and never report a total you got
 by parsing one.
 
+`~/.estimating/bin/est-estimate build` (fieldbook and HeavyBook) stores cached values with its
+built-in evaluator (`estimating_tools.xlcalc`, pure Python) so the delivered
+book carries them. `--recalc excel` additionally has Excel recalculate the
+book (for functions the built-in evaluator does not cover); its `RECALC:` line
+says which engine ran or why none did, and by default no engine runs and no
+line is printed. For your own openpyxl output,
+`estimating_tools.xlsx_recalc.recalculate(path)` runs that engine pass: it
+uses Excel (pywin32, or PowerShell COM on Windows/WSL; LibreOffice only
+when named, and unverified), works on a temp copy with a timeout, and leaves
+the file untouched when no engine is present.
+
 For estimate-spec workbooks, get the number without opening Excel by pricing
 the spec in pure Python — `~/.estimating/bin/est-estimate summarize <spec.yaml>` — and see the
 "Verify before trusting the totals" section of the `build-estimate-workbook`

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "estimating-tools/exchange/declaration.schema.json",
+  "title": "Exchange pack declaration, schema 1",
+  "type": "object",
+  "required": ["schema", "pack", "kind", "sheets"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": 1},
+    "pack": {
+      "type": "object", "required": ["name", "version", "contract"], "additionalProperties": false,
+      "properties": {"name": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+                     "version": {"type": "string", "minLength": 1},
+                     "contract": {"type": "string", "minLength": 1}}
+    },
+    "kind": {"enum": ["code", "template", "recipe"]},
+    "stamp": {
+      "type": "object", "additionalProperties": false,
+      "properties": {"name": {"type": "string"}, "sheet": {"type": "string"},
+                     "cell": {"type": "string"}, "property": {"type": "string"}}
+    },
+    "prototypes": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}},
+    "navigator": {"type": "object"},
+    "sheets": {"type": "object", "additionalProperties": {"$ref": "#/$defs/sheet"}}
+  },
+  "$defs": {
+    "column": {"type": "string", "pattern": "^[A-Z]{1,3}$"},
+    "kind": {"type": "string", "pattern": "^[A-Z][A-Z_]*$"},
+    "columns": {"type": "array", "items": {"$ref": "#/$defs/column"}, "uniqueItems": true},
+    "tag": {
+      "oneOf": [
+        {"$ref": "#/$defs/column"},
+        {"type": "object", "required": ["column"], "additionalProperties": false,
+         "properties": {"column": {"$ref": "#/$defs/column"},
+                        "derived": {"type": "array", "items": {"$ref": "#/$defs/kind"}}}}
+      ]
+    },
+    "cue": {"type": "object", "required": ["column", "text"], "additionalProperties": false,
+            "properties": {"column": {"$ref": "#/$defs/column"}, "text": {"type": "string"}}},
+    "block": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "kind": {"$ref": "#/$defs/kind"},
+        "row": {"$ref": "#/$defs/kind"},
+        "marker": {"type": "object", "required": ["open", "close"], "additionalProperties": false,
+                   "properties": {"open": {"$ref": "#/$defs/kind"}, "close": {"$ref": "#/$defs/kind"}}},
+        "optional": {"type": "boolean"},
+        "fixed": {"type": "boolean"},
+        "recursive": {"type": "boolean"},
+        "banner": {"$ref": "#/$defs/kind"},
+        "children": {"type": "array", "items": {"type": "string"}},
+        "within": {"type": "array", "items": {"$ref": "#/$defs/kind"}}
+      }
+    },
+    "named_row": {"type": "object", "required": ["kind"], "additionalProperties": false,
+                  "properties": {"kind": {"$ref": "#/$defs/kind"}, "input": {"type": "boolean"},
+                                 "formula": {"type": "boolean"}}},
+    "sheet": {
+      "type": "object", "required": ["tab", "role"], "additionalProperties": false,
+      "properties": {
+        "tab": {"type": "string", "minLength": 1},
+        "role": {"enum": ["blocks", "flat", "rates"]},
+        "first_row": {"type": "integer", "minimum": 1},
+        "header_row": {"type": "integer", "minimum": 1},
+        "columns": {"type": "object", "propertyNames": {"pattern": "^[A-Z]{1,3}$"},
+                    "additionalProperties": {"type": "string"}},
+        "tags": {"type": "object", "propertyNames": {"enum": ["kind", "id", "v", "parent", "key", "ref", "name", "owner_row"]},
+                 "additionalProperties": {"$ref": "#/$defs/tag"}},
+        "rows": {"type": "array", "items": {"$ref": "#/$defs/kind"}, "uniqueItems": true},
+        "blocks": {"type": "object", "additionalProperties": {"$ref": "#/$defs/block"}},
+        "markers": {"type": "object", "propertyNames": {"pattern": "^[A-Z][A-Z_]*$"},
+                    "additionalProperties": {"type": "object", "additionalProperties": false,
+                                             "properties": {"cue": {"$ref": "#/$defs/cue"}}}},
+        "fields": {"type": "object", "propertyNames": {"pattern": "^[A-Z][A-Z_]*$"},
+                   "additionalProperties": {"type": "object",
+                                            "additionalProperties": {"$ref": "#/$defs/column"}}},
+        "export_values": {"type": "object",
+                          "additionalProperties": {"type": "object",
+                                                   "propertyNames": {"pattern": "^[A-Z]{1,3}$"},
+                                                   "additionalProperties": {"type": "string"}}},
+        "formulas": {"type": "object", "additionalProperties": {"$ref": "#/$defs/columns"}},
+        "written": {"type": "object",
+                    "additionalProperties": {"type": "object",
+                                             "propertyNames": {"pattern": "^[A-Z]{1,3}$"},
+                                             "additionalProperties": {"type": "string"}}},
+        "named_rows": {"type": "object", "required": ["name_column", "value_column", "rows"],
+                       "additionalProperties": false,
+                       "properties": {"name_column": {"$ref": "#/$defs/column"},
+                                      "value_column": {"$ref": "#/$defs/column"},
+                                      "rows": {"type": "object",
+                                               "additionalProperties": {"$ref": "#/$defs/named_row"}}}},
+        "columns_by_key": {"type": "object", "additionalProperties": {"$ref": "#/$defs/column"}},
+        "sections": {"type": "object", "additionalProperties": {"type": "string"}}
+      }
+    }
+  }
+}

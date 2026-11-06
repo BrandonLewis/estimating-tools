@@ -4,17 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "estimating_tools"
-version = "0.1.95"
+version = "0.1.97"
 description = "Deterministic construction estimating and engineering tools."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
-# bimforge is FLOORED, not bare: the plugin bundles a specific wheel, and the
-# floor must stay <= that wheel's version. bimforge is also published to PyPI
-# from BrandonLewis/BIMForge (same version line), so a registry resolution
-# gets the same code the wheel carries.
-dependencies = ["pyyaml", "bimforge>=0.1.88"]
+# bimforge is FLOORED, not bare. It is developed and released in
+# BrandonLewis/BIMForge; the plugins bundle exactly the floored PyPI release
+# (scripts/build_plugin_wheel.py --pypi bimforge), so raising this floor is how
+# a newer bimforge ships. Keep the [all] floor below equal.
+# jsonschema is base: every exchange read validates the book's declaration,
+# and every HeavyBook build loads it (pure Python).
+dependencies = ["pyyaml", "bimforge>=0.1.107", "jsonschema"]
 
 [project.optional-dependencies]
 excel = ["openpyxl"]
@@ -23,7 +25,7 @@ schedule = ["openpyxl"]
 # ruamel.yaml: `est-estimate read-back --write` rewrites the spec in round-trip
 # mode so the estimator's comments, key order and quoting survive. 0.18 and
 # 0.19 are both proven (no pip-audit advisory for either); 0.20 is unreleased.
-estimate_spec = ["openpyxl", "pyyaml", "ruamel.yaml>=0.18,<0.20"]
+estimate_spec = ["openpyxl", "pyyaml", "jsonschema", "ruamel.yaml>=0.18,<0.20"]
 docgen = ["docxtpl", "python-docx", "markdown-it-py", "openpyxl"]
 profiles = ["jsonschema", "pyyaml"]
 intake = ["pyyaml"]
@@ -36,7 +38,7 @@ plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "python-docx", "mcp>=2,<3
 # is tied to 1.0b30's call shape, and a later pycel may change it.
 test = ["pycel>=1.0b30,<1.1"]
 dev = ["estimating_tools[all,test]", "build"]
-all = ["openpyxl", "pdfplumber", "docxtpl", "python-docx", "markdown-it-py", "pytest", "jsonschema", "mcp>=2,<3", "bimforge[all]>=0.1.88", "ruamel.yaml>=0.18,<0.20"]
+all = ["openpyxl", "pdfplumber", "docxtpl", "python-docx", "markdown-it-py", "pytest", "jsonschema", "mcp>=2,<3", "bimforge[all]>=0.1.107", "ruamel.yaml>=0.18,<0.20"]
 
 [project.urls]
 Homepage = "https://github.com/BrandonLewis/estimating-tools"
@@ -74,6 +76,11 @@ est-addin = "estimating_tools.addin.cli:main"
 [project.entry-points."bimforge.style_packs"]
 profile = "estimating_tools.profiles.wires:cad_style_pack"
 
+# Estimate exchange packs (roadmap 1.2). Each entry returns a Pack.
+[project.entry-points."estimating_tools.packs"]
+heavybook = "estimating_tools.heavybook.pack:pack"
+fieldbook = "estimating_tools.estimate_spec.pack:pack"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["estimating_tools*"]
@@ -92,8 +99,9 @@ exclude = [
                                     "packs/*/*.yaml", "packs/*/examples/*.yaml",
                                     "packs/*/examples/quotes/*.json"]
 "estimating_tools.profiles" = ["schema/*.json", "trees/*.yaml"]
-"estimating_tools.heavycivil" = ["style/*.yaml"]
+"estimating_tools.heavybook" = ["style/*.yaml", "pack.yaml"]
 "estimating_tools.quotes.intake" = ["prompts/*.md", "schemas/*.json"]
 "estimating_tools.importers" = ["schema/*.json"]
 "estimating_tools.artifact_app" = ["*.html"]
+"estimating_tools.exchange" = ["schema/*.json"]
 "estimating_tools.addin" = ["*.tmpl", "assets/*.svg", "assets/*.png"]
