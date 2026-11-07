@@ -43,8 +43,9 @@ made every one of them harder to read than the command it was running.
 relocate the tree -- an explicit opt-in that also opts out of skill text being
 literally correct.
 
-STDLIB ONLY, and 3.10-compatible: this runs before anything is installed, on
-whatever interpreter the host happened to start the hook with.
+STDLIB ONLY, and kept runnable on interpreters older than PY_MIN: this runs
+before anything is installed, on whatever interpreter the host happened to
+start the hook with, and must still be able to say "no usable Python" there.
 """
 from __future__ import annotations
 
@@ -62,10 +63,11 @@ HOME_ENV = "ESTIMATING_RUNTIME_HOME"
 
 APP = ".estimating"
 
-#: bimforge's own dependency `ifcopenshell` is `>=3.10,<3.15`, so "newest
+#: bimforge >=0.1.108 requires Python >=3.11 (3.10 reaches end of life in
+#: October 2026), and its dependency `ifcopenshell` is `<3.15`, so "newest
 #: available" is the wrong rule -- a 3.15 interpreter would build a venv whose
 #: install then fails. The ceiling is exclusive.
-PY_MIN = (3, 10)
+PY_MIN = (3, 11)
 PY_MAX_EXCLUSIVE = (3, 15)
 
 WINDOWS = os.name == "nt"
@@ -295,7 +297,7 @@ def _version_of(exe: str):
 def candidate_pythons() -> list:
     """Interpreters to try, best first. Explicit minors before bare names so the
     choice does not silently depend on what `python3` points at today."""
-    names = ["python3.14", "python3.13", "python3.12", "python3.11", "python3.10"]
+    names = ["python3.14", "python3.13", "python3.12", "python3.11"]
     found = [shutil.which(n) for n in names]
     found += [shutil.which("python3"), shutil.which("python"), sys.executable]
     return [f for f in found if f]

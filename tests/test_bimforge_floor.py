@@ -8,10 +8,10 @@ expects. The plugins bundle exactly the floored release
 be that version: lower and it would not satisfy the floor, higher and the
 floor no longer says what the plugins ship.
 
-Deliberately parses with `re` and no TOML library: this repo supports Python
-3.10, where `tomllib` is absent, and a guard that skips on a supported version
-is not a guard. Same reason `scripts/check_release_version.py` reads versions
-with a regex.
+Deliberately parses with `re` and no TOML library, the same way
+`scripts/check_release_version.py` reads versions: a regex over the committed
+text is what the release gate sees, and a parse that disagrees with it would
+pass here and fail there.
 """
 from __future__ import annotations
 

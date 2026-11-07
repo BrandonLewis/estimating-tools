@@ -29,7 +29,7 @@ Examples
     python opencode/install.py --dry-run          # show what would change
     python opencode/install.py --project ~/bids/hwy-41
 
-Stdlib only and 3.10-compatible: it runs before anything of ours is installed.
+Stdlib only, and kept runnable on older interpreters: it runs before anything of ours is installed.
 """
 
 from __future__ import annotations

@@ -1,12 +1,8 @@
 """Tests for the bundled plugin wheel: extras contract + build-script compare logic."""
+import tomllib
 from pathlib import Path
 
 import pytest
-
-try:
-    import tomllib  # Python 3.11+
-except ModuleNotFoundError:  # pragma: no cover - 3.10 CI leg
-    tomllib = None
 
 ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = ROOT / "packages" / "estimating-tools" / "pyproject.toml"
@@ -17,7 +13,6 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from build_plugin_wheel import diff_wheels  # noqa: E402
 
 
-@pytest.mark.skipif(tomllib is None, reason="tomllib requires Python 3.11+")
 def test_plugin_core_extra_matches_skill_dependency_union():
     """plugin-core = what estimating-core skills import + the bundled MCP server's runtime ("mcp")."""
     data = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))
