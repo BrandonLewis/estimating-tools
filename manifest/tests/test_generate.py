@@ -175,7 +175,7 @@ def test_cursor_mcp_json_is_url_only_oauth():
 
 
 def test_codex_config_snippet_bearer_token_env_var():
-    # Assert against the TOML text (no tomllib — the repo supports Python 3.10, where it is absent).
+    # Assert against the TOML text: the snippet is pasted into a config file verbatim.
     generate("--client", "codex")
     raw = (ROOT / "it/codex-config.toml.snippet").read_text()
     assert "[mcp_servers.bidmanager]" in raw and "[mcp_servers.conformed]" in raw

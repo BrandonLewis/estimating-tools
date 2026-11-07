@@ -4,19 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "estimating_tools"
-version = "0.1.97"
+version = "0.1.98"
 description = "Deterministic construction estimating and engineering tools."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
-requires-python = ">=3.10"
+# bimforge >=0.1.108 requires 3.11+; 3.10 reaches end of life in October 2026.
+requires-python = ">=3.11"
 # bimforge is FLOORED, not bare. It is developed and released in
 # BrandonLewis/BIMForge; the plugins bundle exactly the floored PyPI release
 # (scripts/build_plugin_wheel.py --pypi bimforge), so raising this floor is how
 # a newer bimforge ships. Keep the [all] floor below equal.
 # jsonschema is base: every exchange read validates the book's declaration,
 # and every HeavyBook build loads it (pure Python).
-dependencies = ["pyyaml", "bimforge>=0.1.107", "jsonschema"]
+dependencies = ["pyyaml", "bimforge>=0.1.108", "jsonschema"]
 
 [project.optional-dependencies]
 excel = ["openpyxl"]
@@ -38,7 +39,7 @@ plugin-core = ["openpyxl", "jsonschema", "pdfplumber", "python-docx", "mcp>=2,<3
 # is tied to 1.0b30's call shape, and a later pycel may change it.
 test = ["pycel>=1.0b30,<1.1"]
 dev = ["estimating_tools[all,test]", "build"]
-all = ["openpyxl", "pdfplumber", "docxtpl", "python-docx", "markdown-it-py", "pytest", "jsonschema", "mcp>=2,<3", "bimforge[all]>=0.1.107", "ruamel.yaml>=0.18,<0.20"]
+all = ["openpyxl", "pdfplumber", "docxtpl", "python-docx", "markdown-it-py", "pytest", "jsonschema", "mcp>=2,<3", "bimforge[all]>=0.1.108", "ruamel.yaml>=0.18,<0.20"]
 
 [project.urls]
 Homepage = "https://github.com/BrandonLewis/estimating-tools"

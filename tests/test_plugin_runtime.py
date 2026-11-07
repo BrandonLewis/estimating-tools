@@ -97,14 +97,15 @@ def test_version_of_tolerates_a_thing_that_is_not_an_interpreter(tmp_path):
 
 
 def test_the_ceiling_is_exclusive_and_the_floor_inclusive():
-    """ifcopenshell is >=3.10,<3.15, so "newest available" is the wrong rule:
-    a 3.15 interpreter builds a venv whose install then fails."""
-    assert pr.PY_MIN == (3, 10)
+    """bimforge >=0.1.108 needs 3.11+ and ifcopenshell is <3.15, so "newest
+    available" is the wrong rule: a 3.15 interpreter builds a venv whose
+    install then fails, and a 3.10 one cannot resolve bimforge at all."""
+    assert pr.PY_MIN == (3, 11)
     assert pr.PY_MAX_EXCLUSIVE == (3, 15)
-    assert pr.PY_MIN <= (3, 10) < pr.PY_MAX_EXCLUSIVE
+    assert pr.PY_MIN <= (3, 11) < pr.PY_MAX_EXCLUSIVE
     assert pr.PY_MIN <= (3, 14) < pr.PY_MAX_EXCLUSIVE
     assert not (3, 15) < pr.PY_MAX_EXCLUSIVE
-    assert not pr.PY_MIN <= (3, 9)
+    assert not pr.PY_MIN <= (3, 10)
 
 
 @pytest.mark.skipif(WINDOWS, reason="sh stub")
@@ -665,7 +666,7 @@ def test_ensure_with_no_usable_interpreter_says_so_and_exits_clean(
     own = _plugin(tmp_path / "plugins", "calc-bim", {"bimforge": "0.1.81"})
     monkeypatch.setattr(pr, "find_python", lambda: None)
     line = pr.ensure(str(own), "calc-bim")
-    assert "no Python between 3.10 and 3.14" in line
+    assert "no Python between 3.11 and 3.14" in line
 
 
 def test_a_failed_build_suggests_the_manual_command(home, tmp_path, monkeypatch):

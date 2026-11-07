@@ -10,7 +10,7 @@ python opencode/install.py --project ~/bids/hwy-41  # per project: .opencode/ski
 python opencode/install.py --dry-run                # print every action, write nothing
 ```
 
-It is stdlib-only, so any Python 3.10 or newer can run it. Re-run it after pulling a new
+It is stdlib-only, so any Python 3.11 or newer can run it. Re-run it after pulling a new
 release to upgrade. An unchanged install reports "up to date".
 
 ## What it does
