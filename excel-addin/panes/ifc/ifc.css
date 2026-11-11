@@ -1,0 +1,17 @@
+/* IFC Navigator additions over taskpane.css */
+.viewer { display: block; width: 100%; height: 260px; border: 1px solid var(--line); border-radius: 8px;
+          background: color-mix(in srgb, var(--text) 4%, var(--surface)); touch-action: none; }
+.modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.btn.small { min-height: 30px; padding: 0 10px; font-size: 12px; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.file-btn { display: inline-flex; align-items: center; margin-bottom: 8px; }
+.url-row { display: flex; gap: 6px; }
+.url-row input { flex: 1 1 auto; }
+.result .big { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pset-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; }
+.sel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+.mono { font-family: var(--mono); font-size: 11px; }
+th[title], td[title] { cursor: help; }
+table th { width: 38%; white-space: nowrap; }
+details.card summary { cursor: pointer; font-weight: 600; }
+details.card table { margin-top: 8px; }

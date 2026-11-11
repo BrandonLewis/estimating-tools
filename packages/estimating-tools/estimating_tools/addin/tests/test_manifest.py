@@ -43,6 +43,20 @@ def test_two_slugs_give_different_ids():
     assert get(a) != get(b)
 
 
+def test_another_pane_is_another_add_in():
+    nav = ET.fromstring(_render())
+    ifc = ET.fromstring(_render(pane="panes/ifc/ifc.html"))
+    get = lambda r: r.find("o:Id", NS).text
+    assert get(nav) != get(ifc)
+    assert get(ifc) == get(ET.fromstring(_render(pane="panes/ifc/ifc.html")))
+    assert ifc.find("o:DefaultSettings/o:SourceLocation", NS).get("DefaultValue") == APP_URL + "panes/ifc/ifc.html"
+    slugged = ET.fromstring(_render(pane="panes/ifc/ifc.html", slug="client-a"))
+    assert slugged.find("o:DefaultSettings/o:SourceLocation", NS).get("DefaultValue") == APP_URL + "panes/ifc/ifc.html?brand=client-a"
+    for bad in ("taskpane.html", "panes/../x.html", "panes/ifc/ifc.js", "https://x/panes/a.html"):
+        with pytest.raises(AM.ManifestError, match="--pane"):
+            _render(pane=bad)
+
+
 def test_the_id_is_stable_for_the_same_app_url_and_slug():
     a, b = ET.fromstring(_render()), ET.fromstring(_render())
     other = ET.fromstring(_render(app_url="https://other.example.com/excel/addons/navigator/1.0.0/"))

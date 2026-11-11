@@ -41,7 +41,7 @@ def cmd_brand(args) -> int:
 
 def cmd_manifest(args) -> int:
     brand = json.loads(Path(args.brand).read_text(encoding="utf-8"))
-    text = AM.render_manifest(brand, app_url=args.app_url, version=args.version, slug=args.slug)
+    text = AM.render_manifest(brand, app_url=args.app_url, version=args.version, slug=args.slug, pane=args.pane)
     if args.check:
         if not args.output:
             raise AM.ManifestError("--check needs -o/--output")
@@ -74,6 +74,9 @@ def main(argv=None) -> int:
                         "where brand.json/assets/ and the manifest's URLs live, is two levels above it)")
     m.add_argument("--version", required=True, help="manifest version, four numbers (1.0.0.0)")
     m.add_argument("--slug", help="brand folder name the pane loads brand.json from (omit for generic)")
+    m.add_argument("--pane", default=AM.DEFAULT_PANE,
+                   help=f"pane the manifest opens, relative to --app-url (default {AM.DEFAULT_PANE}; "
+                        "panes/ifc/ifc.html for IFC Navigator)")
     m.add_argument("-o", "--output", help="output file (default: stdout)")
     m.add_argument("--check", action="store_true", help="exit 1 if --output differs from what would be written")
     m.set_defaults(func=cmd_manifest)

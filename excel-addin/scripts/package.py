@@ -7,6 +7,7 @@ Lays out:
   OUT/navigator/sample.xlsx               a fieldbook workbook built from the pack's example
   OUT/brand.json, OUT/assets/             the generic brand
   OUT/manifest.xml                        the generic manifest for this version
+  OUT/ifc-manifest.xml                    the IFC Navigator manifest (panes/ifc/ in the same build)
   OUT/{privacy,support,terms}.html        the store pages
 The pane fetches ../../sample.xlsx and ../../../brand.json relative to
 navigator/<version>/panes/taskpane.html, which is why those two sit where they do.
@@ -27,6 +28,7 @@ ADDIN = Path(__file__).resolve().parents[1]
 REPO = ADDIN.parent
 BASE = "https://anvilrockroad.com/excel/addons/"
 PAGES = ("privacy", "support", "terms")
+IFC_PANE = "panes/ifc/ifc.html"
 _VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")  # fullmatch: no trailing newline, ASCII digits only
 
 # Use this checkout's packages, not whatever estimating_tools is installed.
@@ -60,8 +62,13 @@ def main(argv=None) -> int:
     for page in PAGES:
         shutil.copy(ADDIN / "site" / f"{page}.html", out / f"{page}.html")
     brand = json.loads((ADDIN / "brand" / "brand.json").read_text(encoding="utf-8"))
+    app_url = f"{BASE}navigator/{args.version}/"
     (out / "manifest.xml").write_text(
-        AM.render_manifest(brand, app_url=f"{BASE}navigator/{args.version}/", version=f"{args.version}.0"),
+        AM.render_manifest(brand, app_url=app_url, version=f"{args.version}.0"),
+        encoding="utf-8", newline="\n")
+    ifc_brand = brand | json.loads((ADDIN / "brand" / "ifc.json").read_text(encoding="utf-8"))
+    (out / "ifc-manifest.xml").write_text(
+        AM.render_manifest(ifc_brand, app_url=app_url, version=f"{args.version}.0", pane=IFC_PANE),
         encoding="utf-8", newline="\n")
     # Built directly, not through the CLI, so it carries no profile brand.
     example = BUNDLED / "examples" / "demo-pipeline.estimate.yaml"

@@ -2,6 +2,21 @@
 
 One version for the whole repository (see `RELEASING.md`). Newest first.
 
+## Unreleased
+
+### Added
+
+- **IFC Navigator**, a prototype second pane in `excel-addin/` (`panes/ifc/`, manifest
+  `manifests/ifc-navigator.xml`): loads a bimforge *sheet bundle* (`est-bim sheet-bundle`) into
+  `IFC Elements` / `IFC Properties` / `IFC Types` / `IFC Quantities` sheets one chunk at a time,
+  inspects the selected element, measures on the chunk's geometry in a three.js viewer (distance
+  with vertex snap, coplanar face area, element box dims) with results sent to a cell or logged,
+  and diffs the sheets against the loaded origin into a `bimforge-changes/1` change-set for
+  `est-bim apply-changes`. Pure core under `core/ifc/` with `node --test` coverage.
+- `est-addin manifest --pane` (and `render_manifest(pane=...)`): a manifest for another pane in
+  the same build, with its own add-in id. `package.py` writes `ifc-manifest.xml` beside
+  `manifest.xml`.
+
 ## 0.1.87 — first public release
 
 The estimating platform moves to a public repository with a fresh history.

@@ -37,6 +37,16 @@ def test_the_committed_generic_manifest_is_what_the_generator_writes():
     assert committed == AM.render_manifest(AB.GENERIC, app_url=GENERIC_APP_URL, version=GENERIC_VERSION)
 
 
+def test_the_committed_ifc_navigator_manifest_is_what_the_generator_writes():
+    from estimating_tools.addin import manifest as AM
+    overlay = json.loads((ADDIN / "brand" / "ifc.json").read_text(encoding="utf-8"))
+    assert set(overlay) == {"name", "short_name", "description"}
+    committed = (ADDIN / "manifests" / "ifc-navigator.xml").read_text(encoding="utf-8")
+    assert committed == AM.render_manifest(AB.GENERIC | overlay, app_url=GENERIC_APP_URL, version=GENERIC_VERSION,
+                                           pane="panes/ifc/ifc.html")
+    assert "panes/ifc/ifc.html" in committed and "IFC Navigator" in committed
+
+
 def test_package_builds_a_deployable_tree(tmp_path):
     import re
     import subprocess
@@ -55,6 +65,8 @@ def test_package_builds_a_deployable_tree(tmp_path):
     assert (out / "brand.json").exists() and (out / "assets" / "icon-80.png").exists()
     manifest = (out / "manifest.xml").read_text(encoding="utf-8")
     assert "navigator/1.2.3/panes/taskpane.html" in manifest and "<Version>1.2.3.0</Version>" in manifest
+    ifc = (out / "ifc-manifest.xml").read_text(encoding="utf-8")
+    assert "navigator/1.2.3/panes/ifc/ifc.html" in ifc and (build / "panes" / "ifc" / "ifc.html").exists()
     for page in ("privacy", "support", "terms"):
         assert (out / f"{page}.html").exists()
     wb = load_workbook(out / "navigator" / "sample.xlsx")

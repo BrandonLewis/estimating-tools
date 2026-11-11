@@ -1,0 +1,5 @@
+{
+  "name": "IFC Navigator",
+  "short_name": "IFC Navigator",
+  "description": "Load an IFC sheet bundle into sheets, measure on the model, and save the edits as a change-set for est-bim."
+}

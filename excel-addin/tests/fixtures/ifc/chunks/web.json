@@ -1,0 +1,392 @@
+{
+  "chunk": {
+    "id": "web",
+    "label": "web"
+  },
+  "elements": [
+    {
+      "codes": [
+        "F-CONC"
+      ],
+      "container": "web",
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "ifc_class": "IfcFooting",
+      "name": "Abut 1 footing",
+      "predefined_type": null,
+      "type": null,
+      "type_global_id": null,
+      "whole": null
+    },
+    {
+      "codes": [
+        "W-CONC"
+      ],
+      "container": "web",
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "ifc_class": "IfcWall",
+      "name": "Abut 2 wall",
+      "predefined_type": null,
+      "type": "Stem wall",
+      "type_global_id": "3nPUzma6fP6fscNfUORIuN",
+      "whole": null
+    },
+    {
+      "codes": [
+        "POSTS"
+      ],
+      "container": "web",
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "ifc_class": "IfcMember",
+      "name": "Rail post 3",
+      "predefined_type": "POST",
+      "type": "Post",
+      "type_global_id": "2$Hk5yklTTSBgJxMy_0GVr",
+      "whole": "3JMFhz_6HSox7MSMqVOmqC"
+    },
+    {
+      "codes": [],
+      "container": "web",
+      "global_id": "1crfFI1OTRMP6pqgR1m8YR",
+      "ifc_class": "IfcGeographicElement",
+      "name": "Existing ground",
+      "predefined_type": "TERRAIN",
+      "type": null,
+      "type_global_id": null,
+      "whole": null
+    },
+    {
+      "codes": [
+        "F-CONC"
+      ],
+      "container": "web",
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "ifc_class": "IfcFooting",
+      "name": "Abut 2 footing",
+      "predefined_type": null,
+      "type": null,
+      "type_global_id": null,
+      "whole": null
+    },
+    {
+      "codes": [
+        "POSTS"
+      ],
+      "container": "web",
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "ifc_class": "IfcMember",
+      "name": "Rail post 1",
+      "predefined_type": "POST",
+      "type": "Post",
+      "type_global_id": "2$Hk5yklTTSBgJxMy_0GVr",
+      "whole": "3JMFhz_6HSox7MSMqVOmqC"
+    },
+    {
+      "codes": [],
+      "container": "web",
+      "global_id": "3JMFhz_6HSox7MSMqVOmqC",
+      "ifc_class": "IfcRailing",
+      "name": "Rail run",
+      "predefined_type": "HANDRAIL",
+      "type": "Rail",
+      "type_global_id": "3MUn6OizzVoRNrcMWEnJ_f",
+      "whole": null
+    },
+    {
+      "codes": [
+        "POSTS"
+      ],
+      "container": "web",
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "ifc_class": "IfcMember",
+      "name": "Rail post 2",
+      "predefined_type": "POST",
+      "type": "Post",
+      "type_global_id": "2$Hk5yklTTSBgJxMy_0GVr",
+      "whole": "3JMFhz_6HSox7MSMqVOmqC"
+    },
+    {
+      "codes": [
+        "W-CONC"
+      ],
+      "container": "web",
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "ifc_class": "IfcWall",
+      "name": "Abut 1 wall",
+      "predefined_type": null,
+      "type": "Stem wall",
+      "type_global_id": "3nPUzma6fP6fscNfUORIuN",
+      "whole": null
+    }
+  ],
+  "properties": [
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "property": "FireRating",
+      "pset": "Pset_WallCommon",
+      "value": "2HR",
+      "value_type": "IfcLabel"
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "property": "IsExternal",
+      "pset": "Pset_WallCommon",
+      "value": true,
+      "value_type": "IfcBoolean"
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "property": "ThermalTransmittance",
+      "pset": "Pset_WallCommon",
+      "value": 0.5,
+      "value_type": "IfcThermalTransmittanceMeasure"
+    }
+  ],
+  "quantities": [
+    {
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "quantity": "Count",
+      "value": 1.0
+    },
+    {
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "quantity": "GrossArea",
+      "value": 18.580682323
+    },
+    {
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "quantity": "GrossVolume",
+      "value": 16.990209896
+    },
+    {
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "quantity": "Height",
+      "value": 0.914401829
+    },
+    {
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "quantity": "Length",
+      "value": 6.096012192
+    },
+    {
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "quantity": "Perimeter",
+      "value": 18.288036576
+    },
+    {
+      "global_id": "0VIDtiYujPoAyzSb6f9pxJ",
+      "quantity": "Width",
+      "value": 3.048006096
+    },
+    {
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "quantity": "Count",
+      "value": 1.0
+    },
+    {
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "quantity": "GrossArea",
+      "value": 5.574204697
+    },
+    {
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "quantity": "GrossVolume",
+      "value": 20.388251876
+    },
+    {
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "quantity": "Height",
+      "value": 3.657607315
+    },
+    {
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "quantity": "Length",
+      "value": 6.096012192
+    },
+    {
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "quantity": "Perimeter",
+      "value": 14.020828042
+    },
+    {
+      "global_id": "0WUmPPfifRbfC0DaBW2xpJ",
+      "quantity": "Width",
+      "value": 0.914401829
+    },
+    {
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "quantity": "Count",
+      "value": 1.0
+    },
+    {
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "quantity": "GrossArea",
+      "value": 0.003716136
+    },
+    {
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "quantity": "GrossVolume",
+      "value": 0.001585753
+    },
+    {
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "quantity": "Height",
+      "value": 0.426720853
+    },
+    {
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "quantity": "Length",
+      "value": 0.060960122
+    },
+    {
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "quantity": "Perimeter",
+      "value": 0.243840488
+    },
+    {
+      "global_id": "1aIf6s02fNIwwqMJtIv8_h",
+      "quantity": "Width",
+      "value": 0.060960122
+    },
+    {
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "quantity": "Count",
+      "value": 1.0
+    },
+    {
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "quantity": "GrossArea",
+      "value": 18.580682323
+    },
+    {
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "quantity": "GrossVolume",
+      "value": 16.990209896
+    },
+    {
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "quantity": "Height",
+      "value": 0.914401829
+    },
+    {
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "quantity": "Length",
+      "value": 6.096012192
+    },
+    {
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "quantity": "Perimeter",
+      "value": 18.288036576
+    },
+    {
+      "global_id": "27oDpL5mfSzfEGxPQmjT9m",
+      "quantity": "Width",
+      "value": 3.048006096
+    },
+    {
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "quantity": "Count",
+      "value": 1.0
+    },
+    {
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "quantity": "GrossArea",
+      "value": 0.003716136
+    },
+    {
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "quantity": "GrossVolume",
+      "value": 0.001585753
+    },
+    {
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "quantity": "Height",
+      "value": 0.426720853
+    },
+    {
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "quantity": "Length",
+      "value": 0.060960122
+    },
+    {
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "quantity": "Perimeter",
+      "value": 0.243840488
+    },
+    {
+      "global_id": "3FckosLBfM3gbZA6ZRcjQI",
+      "quantity": "Width",
+      "value": 0.060960122
+    },
+    {
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "quantity": "Count",
+      "value": 1.0
+    },
+    {
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "quantity": "GrossArea",
+      "value": 0.003716136
+    },
+    {
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "quantity": "GrossVolume",
+      "value": 0.001585753
+    },
+    {
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "quantity": "Height",
+      "value": 0.426720853
+    },
+    {
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "quantity": "Length",
+      "value": 0.060960122
+    },
+    {
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "quantity": "Perimeter",
+      "value": 0.243840488
+    },
+    {
+      "global_id": "3US0_OQtXSmvs5PC6Ph0d0",
+      "quantity": "Width",
+      "value": 0.060960122
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "quantity": "Count",
+      "value": 1.0
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "quantity": "GrossArea",
+      "value": 5.574204697
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "quantity": "GrossVolume",
+      "value": 20.388251876
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "quantity": "Height",
+      "value": 3.657607315
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "quantity": "Length",
+      "value": 6.096012192
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "quantity": "Perimeter",
+      "value": 14.020828042
+    },
+    {
+      "global_id": "3XqSqk_N1NBwpaYRwcs9t_",
+      "quantity": "Width",
+      "value": 0.914401829
+    }
+  ],
+  "types": []
+}

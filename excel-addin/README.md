@@ -103,6 +103,46 @@ that names the pack is set (`ESTIMATING_PROFILES`), or add `--format <pack direc
    After editing a pane file, reload the pane: right-click inside it and choose Reload, or close
    and reopen it.
 
+## IFC Navigator (prototype)
+
+A second pane in the same tree, `panes/ifc/ifc.html`, with its own manifest
+(`manifests/ifc-navigator.xml`, `OUT/ifc-manifest.xml` in a packaged build). It views and
+edits IFC data without parsing IFC: bimforge flattens the model into a *sheet bundle* and the
+pane writes that into sheets, measures on the bundle's geometry, and hands the edits back as a
+*change-set* that bimforge writes into the IFC.
+
+```bash
+est-bim sheet-bundle model.ifc -o model-sheet/      # manifest.json + chunks/<id>.json + chunks/<id>.glb
+# ... in Excel: Model > Choose folder (or a URL where model-sheet/ is served) > Load a chunk
+# ... edit IFC Properties, rename on IFC Elements, measure on the Measure tab
+# ... Changes > Check changes > Save change-set  ->  changes.json
+est-bim apply-changes model.ifc changes.json -o model.edited.ifc
+```
+
+- **Model**: open a bundle, see its chunks (one per spatial container, so a large model loads one
+  container's worth of cells and triangles at a time), load one. Loading writes `IFC Elements`,
+  `IFC Properties` (long form, with each value's IFC type), `IFC Types` and `IFC Quantities`
+  (SI and estimator units, read-only: they come from geometry), plus hidden origin copies and a
+  custom document property that remembers the bundle.
+- **Inspect**: the selected element (selection on any IFC sheet, or a click in the viewer) with
+  its properties and quantities; one-click snapshot views of a property set, one column per
+  property.
+- **Measure**: three.js over the chunk's GLB, the same tessellation the takeoff's volume and SFCA
+  checks run on. Select (click selects the row), Distance (two points, vertices snap), Face (a
+  coplanar face's area) and Box (an element's L, W, H). A result goes to the active cell or to
+  an `IFC Measurements` log with the GlobalIds and IFC coordinates behind it.
+- **Changes**: diffs `IFC Properties` and the Name column against the origin copies, groups the
+  operations for review, reports cells it cannot parse (and leaves those properties alone), and
+  saves `changes.json` with the command that applies it. GlobalIds and quantities never change.
+
+Layout: `core/ifc/` is pure and tested under `node --test` (`bundle.js` tables and cell parsing,
+`glb.js` the GLB reader, `measure.js` snapping, face growth and box dims, `changes.js` the diff);
+`panes/ifc/excel.js` is the only Office.js caller; `panes/ifc/viewer.js` is the only three.js
+caller, loaded from a pinned CDN build through the page's import map. `tests/fixtures/ifc/` is a
+bundle built from BIMForge's web fixture model. Known limits of the prototype: picking raycasts
+every element (a GPU id buffer is the next step for very large chunks), pset view sheets are
+snapshots rather than edit surfaces, and curved bodies measure as chords.
+
 ## Manual test script
 
 Excel cannot run in CI. `tests/panes.test.js` renders the tabs against a fake DOM and

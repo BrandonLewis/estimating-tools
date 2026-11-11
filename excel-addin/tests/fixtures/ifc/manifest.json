@@ -1,0 +1,46 @@
+{
+  "chunks": [
+    {
+      "elements": 9,
+      "files": {
+        "data": "chunks/web.json",
+        "geometry": "chunks/web.glb"
+      },
+      "id": "web",
+      "label": "web",
+      "properties": 3
+    }
+  ],
+  "contract": "bimforge-sheet/1",
+  "geometry": {
+    "format": "glb",
+    "offset_m": [
+      -2.0,
+      -4.0,
+      -1.0
+    ],
+    "up": "Y"
+  },
+  "model": {
+    "counts": {
+      "chunks": 1,
+      "elements": 9,
+      "properties": 3,
+      "types": 3
+    },
+    "file": "web.ifc",
+    "generator": "bimforge 0.1.108",
+    "project": "Web Fixture",
+    "schema": "IFC4X3",
+    "site": "Site"
+  },
+  "psets": [
+    "Pset_WallCommon"
+  ],
+  "units": {
+    "area": "m2",
+    "length": "m",
+    "mass": "kg",
+    "volume": "m3"
+  }
+}

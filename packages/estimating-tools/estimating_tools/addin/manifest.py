@@ -9,7 +9,9 @@ resolves to, three levels up from `panes/taskpane.html`. Deriving it keeps
 the manifest and the pane from ever disagreeing about where the brand lives.
 The add-in id is a UUID5 of that normalised brand folder URL (host
 lower-cased, default port dropped), so each deployment keeps one id across
-versions and two deployments never share one.
+versions and two deployments never share one. A second pane in the same
+build (`pane="panes/ifc/ifc.html"`, IFC Navigator) is a second add-in and
+gets a second id, derived from the same folder plus the pane path.
 """
 from __future__ import annotations
 
@@ -24,6 +26,9 @@ from estimating_tools.addin.brand import ICON_SIZES, SHORT_NAME_MAX
 
 _VERSION = re.compile(r"^\d+\.\d+\.\d+\.\d+$")
 _SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,62}$")
+_PANE = re.compile(r"^panes/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.html$")
+#: The pane a manifest opens unless told otherwise: Estimate Navigator's.
+DEFAULT_PANE = "panes/taskpane.html"
 _CONTROL_CHARS = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F]")
 _NAME_MAX = 125
 _DESCRIPTION_MAX = 250
@@ -77,26 +82,33 @@ def _origin(url: str, label: str) -> str:
     return f"https://{host}:{port}" if port and port != 443 else f"https://{host}"
 
 
-def _brand_id(brand_url: str) -> str:
+def _brand_id(brand_url: str, pane: str = DEFAULT_PANE) -> str:
     host, port = _host_port(brand_url, "app-url")
     netloc = f"{host}:{port}" if port and port != 443 else host
     normalised = urlunsplit(("https", netloc, urlsplit(brand_url).path, "", ""))
+    # Another pane in the same build is another add-in, so it gets its own id;
+    # the default pane keeps the id every deployment already has.
+    if pane != DEFAULT_PANE:
+        normalised += "#" + pane
     return str(uuid.uuid5(uuid.NAMESPACE_URL, normalised))
 
 
-def render_manifest(brand: dict, *, app_url: str, version: str, slug: str | None = None) -> str:
+def render_manifest(brand: dict, *, app_url: str, version: str, slug: str | None = None,
+                    pane: str = DEFAULT_PANE) -> str:
     app_url = _url("app-url", app_url)
     if not _VERSION.match(version):
         raise ManifestError(f"--version {version!r} must be four numbers, e.g. 1.0.0.0")
     if slug is not None and not _SLUG.match(slug):
         raise ManifestError(f"--slug {slug!r}: lower-case letters, digits and hyphens only")
+    if not _PANE.match(pane):
+        raise ManifestError(f"--pane {pane!r}: a relative path under panes/ ending in .html")
     _check_brand(brand)
     # Two levels above app_url: three above panes/taskpane.html, where the
     # pane's own brandPath climbs to resolve the same brand folder.
     brand_url = urljoin(app_url, "../../" + (f"{slug}/" if slug else ""))
-    pane = app_url + "panes/taskpane.html" + (f"?brand={slug}" if slug else "")
+    pane_url = app_url + pane + (f"?brand={slug}" if slug else "")
     values = {
-        "id": _brand_id(brand_url),
+        "id": _brand_id(brand_url, pane),
         "version": version,
         "provider": brand["provider"],
         "name": brand["name"],
@@ -104,7 +116,7 @@ def render_manifest(brand: dict, *, app_url: str, version: str, slug: str | None
         "description": brand["description"],
         "support_url": brand["support_url"],
         "origin": _origin(app_url, "app-url"),
-        "pane_url": pane,
+        "pane_url": pane_url,
         **{f"icon_{n}": brand_url + brand["icons"][str(n)] for n in ICON_SIZES},
     }
     text = files("estimating_tools.addin").joinpath("manifest.xml.tmpl").read_text(encoding="utf-8")
