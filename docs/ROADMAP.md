@@ -35,6 +35,7 @@ Update it in the same PR that finishes or adds an item.
 2. ~~Merge #430 (the #425 review fixes) and #429 (false pin-override notice, #427).~~ **Done: #430, #429.**
 3. ~~Cut v0.1.96 (D8): carries the quote sync (#416, #422, #429, #432), the exchange step 1 (#425, #430) and the `bimforge>=0.1.99` dependency.~~ **Done: #434.** ~~The next release (0.1.97) carries exchange step 2 (#437, #440) and the Phase 0 fixes; the bundled wheels were rebuilt in place at 0.1.96 since, so the release must bump the version.~~ **Done: #449** (also carries exchange step 3, #444 and #446, and #436).
 4. Move the open `bimforge` issues to BIMForge's tracker (D3), and port the catalog tests there (BIMForge #5).
+5. Model exchange (4.12 to 4.14): the takeoff contract as IDS, the draft family dictionary and the IFC2X3 refusal are built on BIMForge branch `ccr-54271403-o967qd` (2026-11-11), not merged. Detail and next steps are in BIMForge's `ROADMAP.md`.
 
 **Next** (in this order)
 
@@ -78,6 +79,8 @@ Update it in the same PR that finishes or adds an item.
 | D5 | Navigator store listing | The 2026-10-18 design decided to submit the generic build to Microsoft AppSource at v1 with a sample workbook, an empty state and store pages. Submit now with fieldbook only, or after the adapters read any pack. **Recommendation:** after 1.6, so the first listing reads both reference packs. |
 | D7 | Where bimforge is developed | **Decided 2026-11-04: BIMForge is upstream (option b).** Opened 2026-11-04. The export script assumes this repository is upstream and BIMForge a copy, but BIMForge 0.1.96 and 0.1.97 were built and released there, while #400, #402 and #404 were built here. A normal export would have erased the BIMForge work. Options: (a) this repository stays upstream and BIMForge takes no direct commits; (b) BIMForge becomes upstream, this repository bundles its released wheel, `packages/bimforge` and the export script retire, and the release gate stops requiring bimforge's version to equal the plugin's. **Recommendation:** (b). It is the end state the export script's own docstring names, and it is how the work is already happening. |
 | D8 | Next version number | Follows D7. The plugin's contour work goes upstream (BIMForge PR #4) and ships as bimforge 0.1.98 on PyPI, since a PyPI version cannot be re-uploaded with other contents. The plugin then drops `packages/bimforge`, depends on `bimforge>=0.1.98`, bundles that released wheel, and its release gate stops checking bimforge's version (all done 2026-11-03: BIMForge #4, bimforge 0.1.98, #433). **Recommendation:** the next plugin tag is v0.1.96, carrying the quote sync, exchange step 1 and the bimforge dependency change. |
+| D9 | IFC schema | **Decided 2026-11-11.** IFC4X3 is the target and IFC4 the fallback; Revit does not open IFC4X3, so Revit exchanges on IFC4. IFC2X3 is not supported: bimforge refuses it by name (4.14). `docs/ifc-takeoff-contract.md` said IFC2X3 opens; it never read a classified IFC2X3 element. |
+| D10 | buildingSMART Data Dictionary (bSDD) | **Decided 2026-11-11.** The family vocabulary is one dictionary file in bSDD's import format, kept in BIMForge, so bimforge, Revit and Tekla name the same thing the same way (4.13). Publishing to the bSDD service, calling its API and stamping bSDD URIs on classifications are deferred: Caltrans bid items and the org's cost codes are not in bSDD and nothing downstream reads a URI. Reopen when an owner requires it or third-party models arrive classified against bSDD (4.19). |
 | D6 | Fixture provenance | #322: three estimate-spec fixtures derive from a real public-works bid and one test reads a local-only path. Rebuild them from a published agency bid tab, or keep them private and excluded from the export. **Recommendation:** rebuild; it is a prerequisite for D2. |
 
 ---
@@ -165,6 +168,14 @@ Waits on D7 for where these are built and D3 for where they are tracked. BIMForg
 | 4.9 | #145 Spiral (clothoid) alignment elements. | `bimforge/geometry/alignment` | M |
 | 4.10 | #380 Pay-item / cost-code tinting (`style_by: paycode`). Deferred by the styling design; not scheduled. | `bimforge/bim/styling` | S |
 | 4.11 | #321 An end-to-end test for the web KMZ degenerate-ring drop. | `bimforge/bim/tests` | S |
+| 4.12 | **Built 2026-11-11 on BIMForge branch `ccr-54271403-o967qd`, not merged.** The takeoff contract as IDS 1.0: `takeoff.ids` (a classified element has a quantity to measure, quantities are stored as their own dimension, references carry a code) and the advisory `takeoff-coverage.ids`, generated from `ifc_takeoff`'s tables. Any IDS checker can run them on a Revit or Tekla export. IFC4X3 and IFC4 (D9). | `bimforge/bim/takeoff_ids.py`, `bimforge/bim/contract` | M |
+| 4.13 | **Draft built 2026-11-11 on the same branch, not merged.** A family dictionary in bSDD's import format: Type 842 and 732SW barrier runs, B11-51 handrailing and its parts, the D90 guardrail, the linear-reference properties. Local file; nothing is published and nothing reads it yet (D10). | `bimforge/author/dictionary` | S |
+| 4.14 | **Built 2026-11-11 on the same branch, not merged.** bimforge refuses an IFC2X3 model by name (D9); it used to raise an AttributeError mid-read. | `bimforge/bim/ifc_takeoff.py` | S |
+| 4.15 | Families read their type names and standard-plan references from the dictionary, and section size becomes a property instead of part of the type name. | `bimforge/author` | M |
+| 4.16 | Type the untyped families (retaining wall, box culvert, headwalls, wingwalls, approach slab, bridge) so the dictionary can cover them. | `bimforge/author/families` | M |
+| 4.17 | Revit and Tekla: IFC4 export presets and property mappings generated from the dictionary; run `takeoff.ids` on real exports from both. | `bimforge`, in-house templates | L |
+| 4.18 | An `est-bim` subcommand that runs the contract, and a `calc-bim` skill step that runs it before `est-bim takeoff`. | `bimforge/bim/cli.py`, `plugins/calc-bim` | S |
+| 4.19 | Deferred (D10): register a bSDD organisation code, publish the dictionary, write bSDD URIs on IfcClassification and its references. | `bimforge/author`, `bimforge/bim` | M |
 
 ## Phase 5 — Estimating knowledge
 
