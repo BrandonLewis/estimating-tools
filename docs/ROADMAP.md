@@ -35,7 +35,7 @@ Update it in the same PR that finishes or adds an item.
 2. ~~Merge #430 (the #425 review fixes) and #429 (false pin-override notice, #427).~~ **Done: #430, #429.**
 3. ~~Cut v0.1.96 (D8): carries the quote sync (#416, #422, #429, #432), the exchange step 1 (#425, #430) and the `bimforge>=0.1.99` dependency.~~ **Done: #434.** ~~The next release (0.1.97) carries exchange step 2 (#437, #440) and the Phase 0 fixes; the bundled wheels were rebuilt in place at 0.1.96 since, so the release must bump the version.~~ **Done: #449** (also carries exchange step 3, #444 and #446, and #436).
 4. Move the open `bimforge` issues to BIMForge's tracker (D3), and port the catalog tests there (BIMForge #5).
-5. Model exchange (4.12 to 4.14): the takeoff contract as IDS, the draft family dictionary and the IFC2X3 refusal are built on BIMForge branch `ccr-54271403-o967qd` (2026-11-11), not merged. Detail and next steps are in BIMForge's `ROADMAP.md`.
+5. Model exchange (4.12 to 4.14): the takeoff contract as IDS, the draft family dictionary and the IFC2X3 refusal are built (2026-11-11) and in review as BIMForge #48. Detail and next steps are in BIMForge's `ROADMAP.md`.
 
 **Next** (in this order)
 
@@ -168,9 +168,9 @@ Waits on D7 for where these are built and D3 for where they are tracked. BIMForg
 | 4.9 | #145 Spiral (clothoid) alignment elements. | `bimforge/geometry/alignment` | M |
 | 4.10 | #380 Pay-item / cost-code tinting (`style_by: paycode`). Deferred by the styling design; not scheduled. | `bimforge/bim/styling` | S |
 | 4.11 | #321 An end-to-end test for the web KMZ degenerate-ring drop. | `bimforge/bim/tests` | S |
-| 4.12 | **Built 2026-11-11 on BIMForge branch `ccr-54271403-o967qd`, not merged.** The takeoff contract as IDS 1.0: `takeoff.ids` (a classified element has a quantity to measure, quantities are stored as their own dimension, references carry a code) and the advisory `takeoff-coverage.ids`, generated from `ifc_takeoff`'s tables. Any IDS checker can run them on a Revit or Tekla export. IFC4X3 and IFC4 (D9). | `bimforge/bim/takeoff_ids.py`, `bimforge/bim/contract` | M |
-| 4.13 | **Draft built 2026-11-11 on the same branch, not merged.** A family dictionary in bSDD's import format: Type 842 and 732SW barrier runs, B11-51 handrailing and its parts, the D90 guardrail, the linear-reference properties. Local file; nothing is published and nothing reads it yet (D10). | `bimforge/author/dictionary` | S |
-| 4.14 | **Built 2026-11-11 on the same branch, not merged.** bimforge refuses an IFC2X3 model by name (D9); it used to raise an AttributeError mid-read. | `bimforge/bim/ifc_takeoff.py` | S |
+| 4.12 | **Built 2026-11-11; in review as BIMForge #48.** The takeoff contract as IDS 1.0: `takeoff.ids` (a classified element has a quantity to measure, quantities are stored as their own dimension, references carry a code) and the advisory `takeoff-coverage.ids`, generated from `ifc_takeoff`'s tables. Any IDS checker can run them on a Revit or Tekla export. IFC4X3 and IFC4 (D9). | `bimforge/bim/takeoff_ids.py`, `bimforge/bim/contract` | M |
+| 4.13 | **Draft built 2026-11-11; in review as BIMForge #48.** A family dictionary in bSDD's import format: Type 842 and 732SW barrier runs, B11-51 handrailing and its parts, the D90 guardrail, the linear-reference properties. Local file; nothing is published and nothing reads it yet (D10). | `bimforge/author/dictionary` | S |
+| 4.14 | **Built 2026-11-11; in review as BIMForge #48.** bimforge refuses an IFC2X3 model by name (D9); it used to raise an AttributeError mid-read. | `bimforge/bim/ifc_takeoff.py` | S |
 | 4.15 | Families read their type names and standard-plan references from the dictionary, and section size becomes a property instead of part of the type name. | `bimforge/author` | M |
 | 4.16 | Type the untyped families (retaining wall, box culvert, headwalls, wingwalls, approach slab, bridge) so the dictionary can cover them. | `bimforge/author/families` | M |
 | 4.17 | Revit and Tekla: IFC4 export presets and property mappings generated from the dictionary; run `takeoff.ids` on real exports from both. | `bimforge`, in-house templates | L |

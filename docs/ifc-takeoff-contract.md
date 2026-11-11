@@ -18,8 +18,8 @@ documents (`bimforge/bim/contract/takeoff.ids`, and the advisory
 `takeoff-coverage.ids`), generated from the reader's own tables. Run them
 in any IDS checker, or `python -m ifctester takeoff.ids model.ifc` after
 `pip install 'bimforge[ids]'`. IDS selects quantity sets by name, so name
-them `Qto_*` or `*BaseQuantities`. Available once BIMForge branch
-`ccr-54271403-o967qd` is released.
+them `Qto_*` or `*BaseQuantities`. Available in the bimforge release
+that carries BIMForge #48.
 
 ## The one-paragraph version
 
