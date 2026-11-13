@@ -3,13 +3,13 @@ Excel would (insert, copy, cut, delete rows), save, read it back."""
 from __future__ import annotations
 
 import json
+import types
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
 from openpyxl import load_workbook
 from openpyxl.formula.translate import Translator
 
-from estimating_tools.heavybook import build, style
 from estimating_tools.heavybook.columns import CR, CW
 
 FIXTURE = Path(__file__).parent / "fixtures" / "workbook.json"
@@ -47,6 +47,40 @@ def fixture_doc():
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
 
 
+#: Fixture fields newer than the committed regression books, which are an
+#: earlier release's output, committed untouched: the read gained these in
+#: BidSheet.ai #1622, after those books were built.
+FIXTURE_FIELDS_SINCE_OLD_BOOKS = {("estimate", "project", "display_project_id"),
+                                  ("estimate", "project", "project_reference")}
+
+
+def _has_path(doc: dict, path: tuple) -> bool:
+    *parents, leaf = path
+    for key in parents:
+        doc = doc[key]
+    return leaf in doc
+
+
+def fixture_doc_as_of_old_books():
+    """The fixture without ``FIXTURE_FIELDS_SINCE_OLD_BOOKS``."""
+    doc = fixture_doc()
+    for path in FIXTURE_FIELDS_SINCE_OLD_BOOKS:
+        *parents, leaf = path
+        node = doc
+        for key in parents:
+            node = node[key]
+        del node[leaf]
+    return doc
+
+
+def assert_old_book_doc(doc: dict) -> None:
+    """An old book's baseline is the fixture as of its release: it lacks the
+    newer fields (so the exception hides nothing) and equals the rest."""
+    for path in FIXTURE_FIELDS_SINCE_OLD_BOOKS:
+        assert not _has_path(doc, path), path
+    assert doc == fixture_doc_as_of_old_books()
+
+
 def linked_doc():
     """The fixture with resource 1 (CAT 336) linked to equipment rate 7."""
     doc = fixture_doc()
@@ -58,12 +92,133 @@ def linked_doc():
     return doc
 
 
+def edge_doc():
+    """The fixture with two activities whose crews the export does not carry
+    (one library-crew activity priced per shift, one with no shifts), a
+    BidSheet.ai warning, an element quantity paying no item, and one bid
+    total over every schedule that is not marked primary."""
+    doc = fixture_doc()
+    for a in doc["activities"]:
+        if a["id"] == 5:
+            a["warnings"] = ["No production rate"]
+        if a["id"] == 6:
+            a["crew_id"] = 99
+        if a["id"] == 7:
+            a.update(crew_id=98, duration_shifts=None)
+    doc["elements"][1]["quantities"][0]["pay_item_id"] = None
+    doc["estimate"]["bid_totals"] = [
+        {"amount": "100.00", "display_order": 0, "id": 3, "includes_unscheduled": False,
+         "is_primary": False, "name": "All schedules", "schedule_ids": None}]
+    return doc
+
+
+def implicit_doc():
+    """The fixture with no bid total definitions: the implicit total."""
+    doc = fixture_doc()
+    doc["estimate"]["bid_totals"] = []
+    return doc
+
+
+FIRST_ROW = 5
+AT = "2026-10-20T09:00:00Z"
+
+
 def build_book(doc, path):
-    """Build ``doc`` and save it to ``path``; returns ``path``."""
-    book = build.build(doc, style=style.load_style(), exported_at="2026-10-20T09:00:00Z",
-                       host="www.bidsheet.ai")
-    build.save(book, path)
+    """Build ``doc`` with the heavybook pack (the template fill) and save it
+    to ``path``; returns ``path``."""
+    from estimating_tools.heavybook import pack as hb_pack
+
+    hb_pack.pack().build(doc, Path(path), options={"exported_at": AT, "host": "www.bidsheet.ai"})
     return Path(path)
+
+
+def build_wb(doc, tmp_path, name="built.xlsx"):
+    """The built book, opened (formulas, not values)."""
+    return load_workbook(build_book(doc, Path(tmp_path) / name))
+
+
+TEMPLATES = "_templates"          # the template's prototype rows (hidden)
+
+
+def evaluate(book, tmp_path, name="eval.xlsx") -> dict:
+    """``{"Sheet!A1": value}`` for an openpyxl book, computed by xlcalc (the
+    engine every build caches its values with). An Excel error is its text
+    (``"#REF!"``). A formula xlcalc cannot evaluate raises ``AssertionError``
+    naming the cell -- a None would read as 0 through the tests' number
+    helpers and pass an assertion vacuously -- except on ``_templates``,
+    whose prototype rows read their own blank id tags (None there)."""
+    from estimating_tools.xlcalc.book import Book
+    from estimating_tools.xlcalc.evaluate import Failed, evaluate as xl
+    from estimating_tools.xlcalc.values import Err
+
+    path = Path(tmp_path) / name
+    book.save(path)
+    results = xl(Book.load(path))
+    out = {}
+    for ws in load_workbook(path).worksheets:
+        for row in ws.iter_rows():
+            for c in row:
+                v = results.get((ws.title, c.row, c.column), c.value)
+                if isinstance(v, Err):
+                    v = v.code
+                if isinstance(v, Failed):
+                    if ws.title != TEMPLATES:
+                        raise AssertionError(f"xlcalc could not evaluate {ws.title}!"
+                                             f"{c.coordinate} ({c.value}): {v.reason}")
+                    v = None
+                out[f"{ws.title}!{c.coordinate}"] = v
+    return out
+
+
+class _At:
+    def __init__(self, row):
+        self.row = row
+
+
+def plan_of(book):
+    """The Cost Report's, Crews' and Bid Form's rows by id, under the names
+    the code build's layout plan gave them (``plan.activity_rows[id].row``,
+    ``plan.resource_span[id]`` ...), read from the book's tags."""
+    p = types.SimpleNamespace(item_rows={}, activity_rows={}, resource_rows={}, step_rows={},
+                              quantity_rows={}, resource_span={}, step_span={}, crew_rows={},
+                              member_rows={}, crew_span={}, bid_rows={})
+    cr = book[CR_TAB]
+    current = steps = start = None
+    for r in range(FIRST_ROW, cr.max_row + 1):
+        kind, ident = cr[f"{CR.KIND}{r}"].value, cr[f"{CR.ID}{r}"].value
+        if kind == "ITEM":
+            p.item_rows[ident] = _At(r)
+        elif kind == "ACTIVITY":
+            p.activity_rows[ident], current, steps = _At(r), ident, None
+        elif kind == "RESOURCE":
+            p.resource_rows[ident] = _At(r)
+        elif kind == "STEP":
+            p.step_rows[ident] = _At(r)
+        elif kind == "ELEMENT_QTY":
+            p.quantity_rows[(ident, cr[f"{CR.KEY}{r}"].value)] = _At(r)
+        elif kind == "STEPS":
+            steps = r
+        elif kind == "START":
+            start = r
+            if steps is not None:
+                p.step_span[current] = (steps, r)
+        elif kind == "END":
+            p.resource_span[current] = (start, r)
+    cw = book[CW_TAB]
+    crew = None
+    for r in range(FIRST_ROW, cw.max_row + 1):
+        kind, ident = cw[f"{CW.KIND}{r}"].value, cw[f"{CW.ID}{r}"].value
+        if kind == "CREW":
+            p.crew_rows[ident], crew = _At(r), (ident, r)
+        elif kind == "MEMBER":
+            p.member_rows[ident] = _At(r)
+        elif kind == "CREW_END" and crew is not None:
+            p.crew_span[crew[0]] = (crew[1], r)
+    bf = book[BF_TAB]
+    for r in range(1, bf.max_row + 1):
+        if bf[f"J{r}"].value == "ITEM_BID":
+            p.bid_rows[bf[f"K{r}"].value] = _At(r)
+    return p
 
 
 def open_book(path):
@@ -157,11 +312,52 @@ def copy_row(ws, src, dst):
                 d.data_type = s.data_type
 
 
+def shift_references(wb, sheet, at, count):
+    """Shift every reference into ``sheet`` at or below row ``at`` down by
+    ``count``, as Excel's whole-row insert does: the formulas on every sheet
+    and the defined names, through ``exchange.refs.insert`` -- the shifter the
+    exchange writer's row ops use. openpyxl's ``insert_rows`` moves cells and
+    never rewrites a formula, so without this a formula below the insert
+    reads the rows it read before."""
+    from openpyxl.worksheet.formula import ArrayFormula
+
+    from estimating_tools.exchange import refs
+
+    order = wb.sheetnames
+
+    def moved(body, own):
+        return refs.insert(body, sheet=sheet, own=own, at=at, count=count, sheets=order)
+
+    for ws in wb.worksheets:
+        own = ws.title == sheet
+        for row in ws.iter_rows():
+            for c in row:
+                v = c.value
+                if isinstance(v, ArrayFormula):
+                    v.text = "=" + moved(v.text.lstrip("="), own)
+                elif c.data_type == "f" and isinstance(v, str) and v.startswith("="):
+                    c.value = "=" + moved(v[1:], own)
+    scopes = [wb.defined_names] + [ws.defined_names for ws in wb.worksheets]
+    for names in scopes:
+        for dn in names.values():
+            if dn.attr_text:
+                dn.attr_text = moved(dn.attr_text, False)
+
+
 def insert_copies(ws, first, last, before):
     """Insert copies of rows ``first..last`` above row ``before`` (Excel's
     "Insert Copied Cells"). Returns the first inserted row. ``before`` may
     fall inside ``first..last``: Excel copies the range as it was, so each
-    source row below the insert is read from where the insert pushed it."""
+    source row below the insert is read from where the insert pushed it.
+    Every reference into the sheet below the insert shifts with it
+    (``shift_references``), so a formula further down still reads its rows."""
+    n = last - first + 1
+    shift_references(ws.parent, ws.title, before, n)
+    _insert_copies_unshifted(ws, first, last, before)
+    return before
+
+
+def _insert_copies_unshifted(ws, first, last, before):
     n = last - first + 1
     ws.insert_rows(before, n)
     for k in range(n):
@@ -172,9 +368,11 @@ def insert_copies(ws, first, last, before):
 
 def cut_rows(ws, first, last, before):
     """Move rows ``first..last`` above row ``before`` (Excel's "Insert Cut
-    Cells"). Returns the row the block now starts on."""
+    Cells"). Returns the row the block now starts on. References are not
+    shifted: openpyxl's insert and delete move cells only, so a formula
+    below both ends of the move reads its rows as before."""
     n = last - first + 1
-    insert_copies(ws, first, last, before)
+    _insert_copies_unshifted(ws, first, last, before)
     if first >= before:
         first += n
     ws.delete_rows(first, n)

@@ -259,7 +259,7 @@ def test_a_crew_row_inserted_from_templates_reads_back(tmp_path):
     # The pasted row chains to the row above it, prices its own count x days,
     # and the subtotal (pushed down one) grew to take it in.
     assert ws[f"R{end}"].value == f"=R{end - 1}"
-    assert ws[f"F{end}"].value == f"=D{end}*E{end}*'Rates'!$B$2"
+    assert ws[f"F{end}"].value == f"=D{end}*E{end}*IF($Z{end}=\"HOURS\",1,'Rates'!$B$2)"
     # Excel's insert leaves a reference to a row above the insert point alone,
     # so the END row (pushed down one) still chains past the new row to the
     # row above it -- the same task code either way.

@@ -263,7 +263,7 @@ def test_a_self_perform_crew_reads_the_switch_and_keeps_its_arr_basis(wb):
     (pipe,) = [r for r in block["CREW"] if item[f"A{r}"].value == "Pipelayer"]
     assert item[f"E{pipe}"].value == f"=2*'Sub Valves'!$X${_item_row(pkg, '3')}"
     assert item[f"U{pipe}"].value == "SP"
-    assert item[f"V{pipe}"].value == f"=D{pipe}*(2)*'Rates'!$B$2*G{pipe}"
+    assert item[f"V{pipe}"].value == f"=D{pipe}*(2)*IF($Z{pipe}=\"HOURS\",1,'Rates'!$B$2)*G{pipe}"
     sub = block["SUBTOTAL"][0]
     head, end = block["TASK"][0], block["END"][0]
     assert item[f"V{sub}"].value == f'=SUMIF(U{head}:U{end},"SP",V{head}:V{end})'
@@ -288,7 +288,7 @@ def test_a_supply_package_never_claims_the_self_perform_switch():
     assert "Sub Castings" not in str(item[f"E{pipe}"].value)
     frames = {f.name: f for f in build_package_frames(spec, QUOTES, spare_columns=4)}
     assert frames["Castings"].sp_tasks == {}
-    assert frames["Valves"].sp_tasks == {"3": ["task[02-510]"]}
+    assert frames["Valves"].sp_tasks == {"3": ["task[01]"]}
 
 
 def test_a_support_task_and_its_lines_render_as_before(wb):
@@ -298,7 +298,7 @@ def test_a_support_task_and_its_lines_render_as_before(wb):
         assert _blank(item[f"U{r}"].value)
     (crew,) = [r for r in block["CREW"] if item[f"A{r}"].value == "Pipelayer"]
     assert item[f"E{crew}"].value == 8
-    assert item[f"V{crew}"].value == f"=D{crew}*E{crew}*'Rates'!$B$2*G{crew}"
+    assert item[f"V{crew}"].value == f"=D{crew}*E{crew}*IF($Z{crew}=\"HOURS\",1,'Rates'!$B$2)*G{crew}"
     (rock,) = [r for r in block["LINE"] if item[f"A{r}"].value == "Bedding rock"]
     assert item[f"V{rock}"].value == f"=B{rock}*G{rock}"
     assert item[f"I{rock}"].value == "PLUG"

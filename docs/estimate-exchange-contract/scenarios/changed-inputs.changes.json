@@ -1,0 +1,68 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [],
+ "ops": [
+  {
+   "fields": {
+    "estimated_unit_price": "150"
+   },
+   "op": "item.update",
+   "ref": 1,
+   "v": "973354cc8099ae7e"
+  },
+  {
+   "fields": {
+    "key": "concrete_cy",
+    "override_value": "70"
+   },
+   "op": "element.set_quantity",
+   "ref": 1,
+   "v": "2a3e3582b51671fb"
+  },
+  {
+   "fields": {
+    "production_rate": "2"
+   },
+   "op": "activity.update",
+   "ref": 2,
+   "v": "b96859bc0ac1b1c5"
+  },
+  {
+   "fields": {
+    "quantity": "40"
+   },
+   "op": "resource.update",
+   "ref": 1,
+   "v": "8351b6e723234615"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 5,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 1,
+   "row": 6,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 2,
+   "row": 11,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 3,
+   "row": 9,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Cost Report row 5: item 12 estimated_unit_price (blank) → 150",
+  "Cost Report row 6: Wall A concrete_cy override_value 64 → 70",
+  "Cost Report row 11: activity 'Walls' production_rate 1.5 → 2",
+  "Cost Report row 9: 'CAT 336' quantity 30 → 40"
+ ]
+}

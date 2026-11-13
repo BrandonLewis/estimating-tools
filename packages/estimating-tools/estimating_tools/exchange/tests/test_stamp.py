@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from openpyxl import load_workbook
@@ -69,6 +70,26 @@ def test_with_baseline_replaces_only_the_baseline_fields():
     assert doc["estimate_v"] == "e"                          # the input is not mutated
 
 
+def test_a_stale_list_is_kept_and_only_grows():
+    doc = _make()
+    assert "stale" not in doc and stamp.parse(doc).stale == ()      # as built, and older stamps
+    _chunks, meta = baseline.encode({"estimate": {"id": 1, "v": "f"}, "items": []})
+    once = stamp.with_baseline(doc, meta, estimate_v="f", exported_at="x", stale=("shares",))
+    assert stamp.parse(once).stale == ("shares",)
+    twice = stamp.with_baseline(once, meta, estimate_v="g", exported_at="y", stale=("rates",))
+    assert twice["stale"] == ["shares", "rates"]
+    assert "stale" not in stamp.with_baseline(doc, meta, estimate_v="f", exported_at="x")
+    with pytest.raises(stamp.StampError, match="stale list"):
+        stamp.parse(dict(doc, stale="shares"))
+    # stale_of agrees with parse: a malformed list is refused, never read
+    # as none.
+    for bad in ("shares", ["shares", 1]):
+        with pytest.raises(stamp.StampError, match="stale list"):
+            stamp.stale_of(dict(doc, stale=bad))
+        with pytest.raises(stamp.StampError, match="stale list"):
+            stamp.parse(dict(doc, stale=bad))
+
+
 def test_page_of_reads_the_fetch_record():
     assert stamp.page_of({"items": []}) == (False, None)
     assert stamp.page_of({"_fetch": None}) == (False, None)
@@ -90,8 +111,8 @@ def test_page_of_refuses_a_malformed_fetch_record(rec):
 def test_a_built_book_carries_the_stamp_under_both_names(tmp_path):
     path = H.build_book(H.fixture_doc(), tmp_path / "e1.xlsx")
     wb = load_workbook(path, read_only=True)
-    for name in (stamp.NAME, "hc.layout"):
-        assert list(wb.defined_names[name].destinations) == [("_wb", "$A$1")]
+    assert list(wb.defined_names[stamp.NAME].destinations) == [("_wb", "$A$1")]
+    assert "hc.layout" not in wb.defined_names      # only the code-built books had it
     st = stamp.read(path)
     assert st.pack["name"] == "heavybook" and st.page is False and st.item_ids is None
     assert st.host == "www.bidsheet.ai" and st.estimate_id == 1
@@ -148,23 +169,27 @@ def test_covered_reads_a_page_without_stamped_ids_from_the_baseline(tmp_path):
     assert stamp.covered(path) == (True, [item])
 
 
-def test_build_refuses_a_stamp_that_cannot_fit_the_cell(monkeypatch):
+def test_build_refuses_a_stamp_that_cannot_fit_the_cell(monkeypatch, tmp_path):
     """When the stamp is too long even without the ids, nothing is written:
-    openpyxl would truncate the cell and the book would be refused on read."""
-    from estimating_tools.heavybook import build, declaration, style
+    Excel would truncate the cell and the book would be refused on read."""
+    from estimating_tools.exchange.types import BuildRefused
+    from estimating_tools.heavybook import pack as hb_pack
 
-    monkeypatch.setattr(declaration, "generate",
-                        lambda tabs: {"schema": 1, "pad": "x" * (stamp.CELL_LIMIT + 1)})
+    monkeypatch.setattr(stamp, "dumps", lambda doc: "x" * (stamp.CELL_LIMIT + 1))
     doc, _ = _page_doc()
-    with pytest.raises(baseline.BaselineError, match="Excel holds 32767 per cell"):
-        build.build(doc, style=style.load_style(), exported_at="2026-10-20T09:00:00Z",
-                    host="www.bidsheet.ai")
+    out = tmp_path / "big.xlsx"
+    with pytest.raises(BuildRefused, match="Excel holds 32767 per cell"):
+        hb_pack.pack().build(doc, out, options={"exported_at": "2026-10-20T09:00:00Z"})
+    assert not out.exists()
 
 
 def test_covered_falls_back_to_the_baseline_for_a_step1_book(tmp_path):
     """A book stamped before this task has no page flag: its baseline's items
     are its items, as ``covered_item_ids`` read them."""
-    path = H.build_book(H.fixture_doc(), tmp_path / "old.xlsx")
+    import shutil
+
+    path = tmp_path / "old.xlsx"                  # a code-built book carries its layout
+    shutil.copy(Path(H.__file__).parent / "fixtures" / "v1-book.xlsx", path)
     wb = load_workbook(path)
     ws = wb["_wb"]
     doc = json.loads(ws["A1"].value)

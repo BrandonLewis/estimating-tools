@@ -52,17 +52,19 @@ def test_read_build_and_patch_refuse_until_1_11(tmp_path):
         p.read(tmp_path / "b.xlsx")
     with pytest.raises(NotYet, match="est-estimate build"):
         p.build({}, tmp_path / "b.xlsx", options={})
-    with pytest.raises(NotYet, match="no server identity"):
+    with pytest.raises(NotYet, match="patches through the engine in delivery 3"):
         p.patch(tmp_path / "b.xlsx", None, None, {})
+    with pytest.raises(NotYet, match="refreshes through the engine in delivery 3"):
+        p.refresh(tmp_path / "b.xlsx", {})
 
 
 def test_the_declaration_is_the_bundled_layout_map_lifted():
-    """``Pack.declaration()`` for fieldbook: the bundled pack's ``layout_map``
-    lifted into a recipe declaration (no sheet binds a field until 1.11)."""
+    """``Pack.declaration()`` for fieldbook: ``pack.yaml`` with the bundled
+    pack's ``layout_map`` lifted into its navigator section and prototypes."""
     pack = fb_pack.pack()
     decl = pack.declaration()
     assert (decl.pack.name, decl.pack.version, decl.kind) == ("fieldbook", "2", "recipe")
-    assert decl.sheets == {}
+    assert list(decl.sheets) == ["items", "rates"]
     assert decl.prototypes == {"task": "est.tpl.task", "crew": "est.tpl.crew",
                                "line": "est.tpl.line"}
     assert set(decl.prototypes.values()) == {k.name for k in pack.templates()}

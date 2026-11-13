@@ -178,11 +178,16 @@ class RefreshExtras:
     """A pack's own part of a new baseline (``Pack.refresh_extras``): value
     cells (``{tab: {ref: value}}``) on sheets no row op moves, changes the
     book cannot take in place (``structural``: each ends in what to do),
-    ``notes``, and whether the cells feed formulas (``recalc``)."""
+    ``notes``, whether the cells feed formulas (``recalc``), and ``stale``:
+    the names of what the book shows as of export that the structural lines
+    are about (``exchange.stamp``'s ``stale``) -- a patch that takes the new
+    baseline anyway stamps them, so later reads keep reporting them until a
+    rebuild; a pack reports the stamp's own names again (``stamp.stale_of``)."""
     cells: dict = field(default_factory=dict)
     structural: list = field(default_factory=list)
     notes: list = field(default_factory=list)
     recalc: bool = False
+    stale: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -236,6 +241,10 @@ class RefreshReport:
 
 @dataclass(frozen=True)
 class BuildReport:
-    """Where a build wrote the book, and the export time it stamped."""
+    """Where a build wrote the book, and the export time it stamped.
+    ``dropped``: what a template holds on a prototype row that its fill did
+    not copy onto the rows it placed (a template pack built with
+    ``allow_dropped``)."""
     path: Path
     exported_at: str
+    dropped: list = field(default_factory=list)

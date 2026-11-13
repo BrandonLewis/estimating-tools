@@ -1,0 +1,46 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [
+  "Cost Report row 14: not priced live in this book: the typed line 'Pump' (its cost, and on the Flat sheet and the Checks rows) -- it shows after the apply and a rebuild",
+  "Cost Report row 15: 'Foreman' is renumbered (sort order 0 -> 1) so a new row above keeps its place: BidSheet.ai does not renumber siblings"
+ ],
+ "ops": [
+  {
+   "fields": {
+    "activity_id": 2,
+    "component_type": "equipment",
+    "name": "Pump",
+    "quantity": "1",
+    "sort_order": 0,
+    "unit_cost": "250"
+   },
+   "op": "resource.create",
+   "ref": "new:r1"
+  },
+  {
+   "fields": {
+    "sort_order": 1
+   },
+   "op": "resource.update",
+   "ref": 3,
+   "v": "3e5541b841ecfc01"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 14,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 1,
+   "row": 15,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Cost Report row 14: new line 'Pump'",
+  "Cost Report row 15: 'Foreman' sort_order 0 → 1"
+ ]
+}

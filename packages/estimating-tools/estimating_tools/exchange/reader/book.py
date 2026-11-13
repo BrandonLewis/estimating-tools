@@ -118,6 +118,24 @@ class Book:
 
         return estimate_inputs(self)
 
+    @functools.cached_property
+    def rate_table(self):
+        """The tagged rates sheet's rates (``reader.rates.table``), or None."""
+        from estimating_tools.exchange.reader import rates
+
+        return rates.table(self)
+
+    def named_cell(self, name):
+        """``(worksheet, coordinate)`` of a workbook-scoped defined name's
+        first cell, or None when the book has no such name."""
+        dn = self.wb.defined_names.get(name)
+        if dn is None:
+            return None
+        for title, coord in dn.destinations:
+            if title in self.wb.sheetnames:
+                return self.wb[title], coord.replace("$", "").split(":")[0]
+        return None
+
     def ws(self, key):
         return self.wb[self.tab(key)]
 
@@ -134,6 +152,22 @@ def decode(ws, meta) -> dict:
         return hc_baseline.decode(exchange_stamp.chunks_of(ws), meta)
     except hc_baseline.BaselineError as exc:
         refuse(f"{exc} -- {REBUILD}", sheet=exchange_stamp.SHEET)
+
+
+def prototype_tabs(wb, decl) -> set:
+    """The sheets the declaration's prototypes sit on (``_templates``):
+    never a tab of an ``each`` sheet, though a prototype item opens one."""
+    return {title for name in decl.prototypes.values() if name in wb.defined_names
+            for title, _coord in wb.defined_names[name].destinations}
+
+
+def each_tabs(wb, sheet, skip=()) -> list:
+    """The worksheets an ``each`` sheet stands for, in workbook order: those
+    whose kind cell at the sheet's first row holds a form of its container
+    kind (fieldbook: every item sheet opens with its ITEM row), bar ``skip``."""
+    letter, forms = sheet.tag("kind"), set(sheet.forms(sheet.each))
+    return [ws.title for ws in wb.worksheets if ws.title not in skip
+            and str(ws[f"{letter}{sheet.first_row}"].value or "").strip() in forms]
 
 
 def load(path, pack=None) -> Book:
@@ -192,6 +226,9 @@ def load(path, pack=None) -> Book:
     if st.pack.get("name") != decl.pack.name:
         refuse(f"the stamp names pack {st.pack.get('name')!r} but its declaration is "
                f"{decl.pack.name!r} -- {REBUILD}", sheet=exchange_stamp.SHEET)
+    # A sheet declared ``each`` stands for one tab per container row
+    # (fieldbook's item sheets): laid out before anything is read.
+    decl = decl.expand(lambda sheet: each_tabs(wb, sheet, skip=prototype_tabs(wb, decl)))
     kinds = decl.row_kinds()
     stale = next((p.value for p in wb.custom_doc_props.props if p.name == STALE_PROPERTY), None)
     if stale not in (None, ""):

@@ -63,9 +63,11 @@ def _sent(cells, key, edit, op):
     ref = cells.book.decl.sheets[key].tag("ref")
     for rr in edit.roster:
         values = F.read_line(cells.book, rr.line, "MEMBER").values
-        out.append({"classification": values.get("classification"),
-                    "count": values.get("count"),
-                    "hourly_rate_override": values.get("hourly_rate_override"),
+        keep = rr.base or rr.source      # a field the sheet does not bind is the member's
+        kept = lambda name: F.bound_or_kept(values, keep, "MEMBER", name)  # noqa: E731
+        out.append({"classification": kept("classification"),
+                    "count": kept("count"),
+                    "hourly_rate_override": kept("hourly_rate_override"),
                     "labor_rate_id": norm_id(ws[f"{ref}{rr.line.row}"].value) if ref else None})
     return out
 

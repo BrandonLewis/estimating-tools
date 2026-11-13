@@ -36,8 +36,9 @@ from dataclasses import dataclass
 
 from openpyxl.formula.tokenizer import Token, Tokenizer, TokenizerError
 
-__all__ = ["Delete", "Insert", "RefsError", "could_mention", "delete", "insert", "mentions",
-           "relative_rows", "span", "sqref_delete", "sqref_insert"]
+__all__ = ["Delete", "Insert", "Reference", "RefsError", "could_mention", "delete", "functions",
+           "insert", "mentions", "place", "references", "relative_rows", "span", "sqref_delete",
+           "sqref_insert"]
 
 #: Excel's last row and column.
 MAX_ROW = 1048576
@@ -424,3 +425,174 @@ def sqref_delete(text: str, first: int, count: int) -> str:
     """A range list after a delete: ranges wholly deleted drop out; ``""``
     when nothing is left."""
     return _sqref(text, Delete(first, count))
+
+
+# -- a prototype row copied into place (template fill) ----------------------------
+
+def _placed_row(row: int, absolute: bool, qualified: bool, origin: int, dest: int,
+                block) -> int:
+    if absolute:
+        return row
+    if not qualified and row in block:
+        return block[row]
+    new = row + dest - origin
+    if not 1 <= new <= MAX_ROW:
+        raise RefsError(f"row {row} copied from row {origin} to row {dest} would be row {new}, "
+                        "off the sheet")
+    return new
+
+
+def _placed(ref: str, qualified: bool, origin: int, dest: int, block):
+    """``ref`` (no sheet prefix) copied from row ``origin`` to row ``dest``, or
+    None when it is not a cell, area, row range or chain (a column range, a
+    name): left as it is."""
+    def at(text, absolute):
+        return _placed_row(int(text), absolute, qualified, origin, dest, block)
+
+    m = _CELL.match(ref)
+    if m and _col_ok(m.group(1)) and _row_ok(m.group(2)):
+        return f"{m.group(1)}{at(m.group(2), m.group(1).endswith('$'))}"
+    m = _AREA.match(ref)
+    if m and _col_ok(m.group(1)) and _col_ok(m.group(3)) \
+            and _row_ok(m.group(2)) and _row_ok(m.group(4)):
+        return (f"{m.group(1)}{at(m.group(2), m.group(1).endswith('$'))}:"
+                f"{m.group(3)}{at(m.group(4), m.group(3).endswith('$'))}")
+    m = _ROWS.match(ref)
+    if m and _row_ok(m.group(2)) and _row_ok(m.group(4)):
+        return (f"{m.group(1)}{at(m.group(2), bool(m.group(1)))}:"
+                f"{m.group(3)}{at(m.group(4), bool(m.group(3)))}")
+    if _CHAIN.match(ref):
+        parts = [_placed(part, qualified, origin, dest, block) for part in ref.split(":")]
+        return None if None in parts else ":".join(parts)
+    return None
+
+
+def _place_range(value: str, origin: int, dest: int, block) -> str:
+    lead = ""
+    if value.startswith(":"):
+        lead, value = ":", value[1:]
+    prefix, ref = _split(value)
+    if prefix and not _external(prefix) and _span_3d(prefix) is not None:
+        return lead + value
+    text = _placed(ref, bool(prefix), origin, dest, block)
+    return lead + value if text is None else lead + prefix + text
+
+
+def place(body: str, *, origin: int, dest: int, block=None) -> str:
+    """``body``, a formula on prototype row ``origin``, as it reads copied to
+    row ``dest`` of a sheet a template fill expands (engine spec, Fill step
+    2). Every relative row number moves by ``dest - origin``, as Excel's
+    copy moves it, except that an unqualified one naming a row in ``block``
+    (``{prototype row: placed row}``: the owner and marker rows of the block
+    the formula's row belongs to) becomes that row -- so an activity's
+    ``SUM(M7:M9)`` over its START..END prototype rows sums its own
+    START..END, however many rows the fill placed between them.
+    ``$``-anchored rows stay; columns, names, whole columns and 3-D spans
+    are left alone. ``RefsError`` for a formula the tokenizer cannot read
+    or a row pushed off the sheet."""
+    block = dict(block or {})
+    try:
+        tokens = Tokenizer("=" + body).items
+    except TokenizerError as exc:
+        raise RefsError(f"cannot read the formula ={body}: {exc}") from None
+    pieces = []
+    for t in tokens:
+        if t.type == Token.WSPACE:
+            pieces.append((None, None))
+            continue
+        core = t.value.lstrip(_SPACE)
+        new = core
+        if t.type == Token.OPERAND and t.subtype == Token.RANGE:
+            new = _place_range(core, origin, dest, block)
+        elif t.type == Token.FUNC and t.subtype == Token.OPEN:
+            m = _FUNC_REF.match(core)
+            if m is not None:
+                new = _place_range(m.group(1), origin, dest, block) + ":" + m.group(2)
+        pieces.append((core, new))
+    if all(core == new for core, new in pieces):
+        return body
+    return _splice(body, pieces)
+
+
+# -- what a formula reads (template lint) -----------------------------------------
+
+@dataclass(frozen=True)
+class Reference:
+    """One reference in a formula, as the template lint sees it. ``sheet``
+    is the sheet it names (None: unqualified, the formula's own sheet);
+    ``shape`` is ``cell``, ``area``, ``rows`` (``5:7``), ``columns``
+    (``F:F``) or ``name`` (a defined name, a table reference); ``rows`` the
+    ``(row, absolute)`` pair of each row number it holds."""
+    text: str
+    sheet: str | None
+    external: bool
+    three_d: bool
+    shape: str
+    rows: tuple = ()
+
+
+_COLUMNS = re.compile(r"^\$?[A-Za-z]{1,3}:\$?[A-Za-z]{1,3}$")
+
+
+def _reference(value: str) -> Reference:
+    prefix, ref = _split(value)
+    sheet = _unquote(prefix) if prefix else None
+    external = bool(prefix) and _external(prefix)
+    three_d = bool(prefix) and not external and _span_3d(prefix) is not None
+    m = _CELL.match(ref)
+    if m and _col_ok(m.group(1)) and _row_ok(m.group(2)):
+        return Reference(value, sheet, external, three_d, "cell",
+                         ((int(m.group(2)), m.group(1).endswith("$")),))
+    m = _AREA.match(ref)
+    if m and _col_ok(m.group(1)) and _col_ok(m.group(3)) \
+            and _row_ok(m.group(2)) and _row_ok(m.group(4)):
+        return Reference(value, sheet, external, three_d, "area",
+                         ((int(m.group(2)), m.group(1).endswith("$")),
+                          (int(m.group(4)), m.group(3).endswith("$"))))
+    m = _ROWS.match(ref)
+    if m and _row_ok(m.group(2)) and _row_ok(m.group(4)):
+        return Reference(value, sheet, external, three_d, "rows",
+                         ((int(m.group(2)), bool(m.group(1))),
+                          (int(m.group(4)), bool(m.group(3)))))
+    if _CHAIN.match(ref):
+        rows = tuple((int(c.group(2)), c.group(1).endswith("$"))
+                     for c in (_CELL.match(p) for p in ref.split(":")))
+        return Reference(value, sheet, external, three_d, "area", rows)
+    if _COLUMNS.match(ref):
+        return Reference(value, sheet, external, three_d, "columns")
+    return Reference(value, sheet, external, three_d, "name")
+
+
+def references(body: str) -> list:
+    """Every reference in ``body``, in order (``Reference``); ``RefsError``
+    for a formula the tokenizer cannot read."""
+    try:
+        tokens = Tokenizer("=" + body).items
+    except TokenizerError as exc:
+        raise RefsError(f"cannot read the formula ={body}: {exc}") from None
+    out = []
+    for t in tokens:
+        value = None
+        if t.type == Token.OPERAND and t.subtype == Token.RANGE:
+            value = t.value.lstrip(_SPACE).lstrip(":")
+        elif t.type == Token.FUNC and t.subtype == Token.OPEN:
+            m = _FUNC_REF.match(t.value.lstrip(_SPACE))
+            value = m.group(1) if m else None
+        if value:
+            out.append(_reference(value))
+    return out
+
+
+def functions(body: str) -> set:
+    """The names of the functions ``body`` calls, upper case."""
+    try:
+        tokens = Tokenizer("=" + body).items
+    except TokenizerError as exc:
+        raise RefsError(f"cannot read the formula ={body}: {exc}") from None
+    out = set()
+    for t in tokens:
+        if t.type == Token.FUNC and t.subtype == Token.OPEN:
+            name = t.value.lstrip(_SPACE)
+            m = _FUNC_REF.match(name)
+            out.add((m.group(2) if m else name)[:-1].upper())
+    return out

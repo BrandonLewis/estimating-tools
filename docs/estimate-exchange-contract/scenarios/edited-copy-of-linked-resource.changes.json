@@ -1,0 +1,33 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [
+  "Cost Report row 46: the new line 'Extra' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild"
+ ],
+ "ops": [
+  {
+   "fields": {
+    "activity_id": 8,
+    "component_type": "material",
+    "includes_burden": false,
+    "labor_cost_basis": "production",
+    "name": "Extra",
+    "quantity": "1",
+    "sort_order": 0,
+    "unit_cost": "120"
+   },
+   "op": "resource.create",
+   "ref": "new:r1"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 46,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Cost Report row 46: new line 'Extra' (an edited copy of resource 9, unlinked)"
+ ]
+}

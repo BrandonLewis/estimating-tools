@@ -47,6 +47,7 @@ layout_map:
       columns: { code: A, descr: B, listed: C }
   cells:
     direct_total: "Cost Summary!cost_summary_total.direct"
+    shift_hours: "Rates!rates_shift.shift"     # est.shift_hours: the declaration binds it by name
   tags: { kind: Q, code_chain: R }
   blocks: { item: ITEM, head: TASK, body: [NOTE, CREW, LINE], end: END, sub: SUBTOTAL, code_col: A }
   templates:

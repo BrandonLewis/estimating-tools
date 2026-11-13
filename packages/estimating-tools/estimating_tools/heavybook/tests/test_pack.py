@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -13,7 +14,7 @@ from estimating_tools.heavybook.tests import _readback as H
 
 def test_identity():
     p = hb_pack.pack()
-    assert (p.name, p.version, p.contract) == ("heavybook", "1", "1")
+    assert (p.name, p.version, p.contract) == ("heavybook", "2", "1")
 
 
 def test_detect_from_the_property_and_the_layout_cell(tmp_path):
@@ -54,6 +55,26 @@ def test_detect_says_none_for_a_fieldbook_and_newer_for_a_later_layout():
     assert p.detect(_facts(_stamp(extra={"layout": {"layout_version": 4}}))) == "newer"
     assert p.detect(_facts(_stamp(pack="other"))) == "bad"
     assert p.detect(_facts("{not json")) == "bad"
+
+
+def test_detect_reads_versions_1_and_2_and_says_newer_for_a_later_one():
+    """Version 1 is a code-built book, 2 the template's; a later version is
+    a book this plugin cannot read -- the registry says to update it."""
+    from estimating_tools.exchange.registry import pack_for
+
+    p = hb_pack.pack()
+    two = BookFacts(path="x", properties={"estimate_format": "heavybook 2"},
+                    names={"exchange.stamp": _stamp(version="2", extra=None)})
+    assert p.detect(two) == "ok"
+    assert p.detect(_facts(_stamp(version="1"))) == "ok"
+    three = BookFacts(path="x", properties={"estimate_format": "heavybook 3"},
+                      names={"exchange.stamp": _stamp(version="3", extra=None)})
+    assert p.detect(three) == "newer"
+    assert p.detect(_facts(_stamp(version="3"))) == "newer"       # the stamp decides
+    assert p.detect(_facts(_stamp(version="x"))) == "bad"
+    with pytest.raises(LookupError, match="newer version of the heavybook pack -- update "
+                                          "the plugin"):
+        pack_for(three)
 
 
 def test_build_writes_a_book(tmp_path, monkeypatch):
@@ -120,17 +141,25 @@ def test_build_matches_the_cli_byte_for_byte(tmp_path, monkeypatch):
     assert _entries(a) == _entries(b)
 
 
-def test_build_with_an_unknown_style_path_fails(tmp_path):
-    from estimating_tools.exchange.types import BuildRefused
-    with pytest.raises(BuildRefused) as exc:
-        hb_pack.pack().build(H.fixture_doc(), tmp_path / "c.xlsx",
-                             options={"style": str(tmp_path / "nope")})
-    assert exc.value.kind == "style"
-    assert not (tmp_path / "c.xlsx").exists()
+WARNING = "the book's look is its template now"
+
+
+def test_a_style_option_is_ignored_with_a_warning(tmp_path, capsys):
+    """A style pack restyled the retired code writers; a template is styled
+    by editing it. Any ``style`` option, even one naming no directory, is
+    ignored with one warning line and the book is built."""
+    out = tmp_path / "c.xlsx"
+    hb_pack.pack().build(H.fixture_doc(), out, options={"style": str(tmp_path / "nope")})
+    assert out.exists()
+    err = capsys.readouterr().err
+    assert err.count(WARNING) == 1
 
 
 def test_an_older_layout_detects_ok_and_read_refuses_it_by_layout(tmp_path):
-    path = H.build_book(H.fixture_doc(), tmp_path / "old.xlsx")
+    import shutil
+
+    path = tmp_path / "old.xlsx"                  # a code-built book carries its layout
+    shutil.copy(Path(H.__file__).parent / "fixtures" / "v1-book.xlsx", path)
     wb = H.open_book(path)
     cell = wb["_wb"]["A1"]
     doc = json.loads(cell.value)
@@ -157,28 +186,39 @@ def test_an_http_host_is_refused(tmp_path):
     assert not (tmp_path / "h.xlsx").exists()
 
 
-def test_build_honours_the_profile_option(tmp_path, monkeypatch):
-    from estimating_tools.heavybook import style as hb_style
-    seen = []
-    real = hb_style.resolve_style
-    monkeypatch.setattr(hb_style, "resolve_style",
-                        lambda path, profile: (seen.append((path, profile)), real())[1])
-    marker = object()
-    hb_pack.pack().build(H.fixture_doc(), tmp_path / "p.xlsx", options={"profile": marker})
-    assert seen == [(None, marker)]
+class _Profile:
+    def __init__(self, estimating):
+        self._estimating = estimating
+
+    def section(self, name):
+        return self._estimating if name == "estimating" else None
 
 
-def test_a_strict_profile_refusal_propagates_and_writes_nothing(tmp_path, monkeypatch):
+@pytest.mark.parametrize("estimating, warned", [({"heavycivil_style": "org-style"}, True),
+                                                ({}, False), (None, False)])
+def test_a_profile_style_is_ignored_with_a_warning(tmp_path, capsys, estimating, warned):
+    out = tmp_path / "p.xlsx"
+    hb_pack.pack().build(H.fixture_doc(), out, options={"profile": _Profile(estimating)})
+    assert out.exists()
+    assert (WARNING in capsys.readouterr().err) is warned
+
+
+def test_the_profile_is_read_only_to_warn(tmp_path, monkeypatch, capsys):
+    """Without a ``profile`` option the build loads the org profile itself,
+    for ``heavycivil_style``; a profile that does not load no longer stops the
+    build (nothing in it shapes the book)."""
     from estimating_tools.estimate_spec import format_pack
-    from estimating_tools.exchange.types import BuildRefused
+
+    seen = []
 
     def refuse(field="format"):
+        seen.append(field)
         raise format_pack.FormatPackError("org profile refused")
     monkeypatch.setattr(format_pack, "profile_for_pack", refuse)
-    with pytest.raises(BuildRefused) as exc:
-        hb_pack.pack().build(H.fixture_doc(), tmp_path / "f.xlsx", options={})
-    assert exc.value.kind == "profile"
-    assert not (tmp_path / "f.xlsx").exists()
+    out = tmp_path / "f.xlsx"
+    hb_pack.pack().build(H.fixture_doc(), out, options={})
+    assert seen == ["heavycivil_style"] and out.exists()
+    assert WARNING not in capsys.readouterr().err
 
 
 def test_build_refusals_are_pack_neutral(tmp_path, doc):
@@ -187,9 +227,6 @@ def test_build_refusals_are_pack_neutral(tmp_path, doc):
     with pytest.raises(BuildRefused) as exc:
         p.build({"estimate": {}}, tmp_path / "x.xlsx", options={})
     assert exc.value.kind == "payload"
-    with pytest.raises(BuildRefused) as exc:
-        p.build(doc, tmp_path / "x.xlsx", options={"style": str(tmp_path / "nope")})
-    assert exc.value.kind == "style"
     with pytest.raises(BuildRefused) as exc:
         p.build(doc, tmp_path / "x.xlsx", options={"host": "http://x"})
     assert exc.value.kind == "host"

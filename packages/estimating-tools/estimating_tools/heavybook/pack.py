@@ -1,34 +1,25 @@
-"""HeavyBook as a code pack (engine spec, delivery step 1): the existing
-build, read-back and templates behind the ``Pack`` protocol, plus ``patch``.
-No read-back rule changes here."""
+"""HeavyBook behind the ``Pack`` protocol. From version 2 it is a template
+pack: ``heavybook/template/`` (``pack.yaml``, ``template.xlsx``) filled by
+the engine (``exchange.template.TemplatePack``); read, patch and refresh are
+the engine's. Books the code writers built (version 1, ``kind: code`` in
+their stamp) still read, apply, patch and refresh: they carry their own
+declaration and prototypes, ``upgrade_stamp`` upgrades the older stamps as
+before, and ``refresh_extras`` refreshes their Checks figures as before
+(``heavybook.refresh``)."""
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 
 from estimating_tools.exchange.types import (ApplyResult, BookFacts, BuildReport, InsertKind,
                                              PatchReport, ReadResult, Verdict)
-from estimating_tools.heavybook import ACCEPTED_FORMATS, FORMAT_VERSION, layout
+from estimating_tools.exchange.stamp import DEFAULT_HOST, bare_host  # noqa: F401 -- re-exported
+from estimating_tools.heavybook import ACCEPTED_FORMATS, FORMAT_VERSION, codebook
 
 LAYOUT_NAME = "hc.layout"
-DEFAULT_HOST = "www.bidsheet.ai"
-
-
-def bare_host(host: str) -> str:
-    """``HTTPS://WWW.X.ai/a?q#f`` or ``www.x.ai`` -> ``www.x.ai`` (port kept).
-
-    Blank gives the default; any scheme other than https is refused."""
-    host = str(host).strip()
-    if not host:
-        return DEFAULT_HOST
-    if "://" in host:
-        scheme, host = host.split("://", 1)
-        if scheme.lower() != "https":
-            raise ValueError("the BidSheet.ai host must be https")
-    for sep in "/?#":
-        host = host.split(sep, 1)[0]
-    return host.lower() or DEFAULT_HOST
+#: The pack versions this plugin reads: 1, a code-built book; 2, the
+#: template's.
+READ_VERSIONS = ("1", "2")
 
 
 class HeavyBookPack:
@@ -39,7 +30,8 @@ class HeavyBookPack:
     contract = "1"
 
     def detect(self, facts: BookFacts) -> Verdict:
-        """Whether a book is HeavyBook: none, ok, bad (damaged stamp) or newer.
+        """Whether a book is HeavyBook: none, ok, bad (damaged stamp) or newer
+        (a later pack version than ``READ_VERSIONS``, or a later stamp).
         A book stamped before the exchange stamp (its layout JSON under
         ``hc.layout``) is ``ok``: a layout in ``legacy.UPGRADABLE`` reads
         (upgraded in memory), any other layout read refuses with its layout
@@ -71,7 +63,7 @@ class HeavyBookPack:
                 return "ok"
             # An older layout is "ok" on purpose: read refuses it with its
             # specific layout message, not the registry's generic "damaged" one.
-            return "newer" if version > layout.LAYOUT_VERSION else "ok"
+            return "newer" if version > codebook.LAYOUT_VERSION else "ok"
         try:
             st = exchange_stamp.parse(doc)
         except exchange_stamp.StampError:
@@ -82,61 +74,93 @@ class HeavyBookPack:
             return "newer"
         if st.contract != exchange_stamp.CONTRACT:
             return "newer"
+        version = str(st.pack.get("version", ""))
+        if version not in READ_VERSIONS:
+            # A later version is a book this plugin cannot read: the
+            # registry says to update the plugin.
+            newest = max(map(int, READ_VERSIONS))
+            return "newer" if version.isdigit() and int(version) > newest else "bad"
         version = (st.extra.get("layout") or {}).get("layout_version")
         if isinstance(version, int) and not isinstance(version, bool) \
-                and version > layout.LAYOUT_VERSION:
+                and version > codebook.LAYOUT_VERSION:
             return "newer"
         return "ok"
 
+    def _template(self):
+        from estimating_tools.exchange.template import TemplatePack
+
+        if not hasattr(self, "_pack"):
+            self._pack = TemplatePack.from_package("estimating_tools.heavybook.template")
+        return self._pack
+
     def build(self, payload: dict, out: Path, *, options: dict) -> BuildReport:
-        """Build the book exactly as ``est-estimate heavybook build`` does.
+        """Fill HeavyBook's template from ``payload`` (``exchange.fill``).
+        Options: ``exported_at``, ``host``, ``allow_dropped`` (the template
+        pack's). A ``style`` option or the profile's
+        ``estimating.heavycivil_style`` no longer applies -- the book's look is
+        its template -- and is ignored with one warning line. ``template``: a
+        template pack directory to build from instead of the shipped one (an
+        edited copy of ``heavybook/template/``)."""
+        import sys
 
-        ``pack().build(payload, out, options={})`` equals the CLI with no flags.
-        ``payload`` is the already-merged ``get_estimate_workbook`` document.
-        Recognised ``options`` keys, all optional:
-
-        - ``exported_at``: ISO string; default now in UTC (``%Y-%m-%dT%H:%M:%SZ``).
-        - ``host``: BidSheet.ai host to stamp; a bare host or an https URL, which
-          is reduced to the bare lowercase host (scheme, path, query and fragment
-          dropped, port kept). Blank gives the default ``www.bidsheet.ai``; a
-          scheme other than https raises ``ValueError``.
-        - ``style``: a style-pack path (the CLI's ``--style``).
-        - ``profile``: a loaded ``Profile``, used when no ``style`` is given.
-          With neither, the org profile is loaded as the CLI does.
-
-        A refused build raises ``BuildRefused`` (kind ``payload``, ``style``,
-        ``profile`` or ``host``) and writes nothing; ``OSError`` propagates.
-        """
         from estimating_tools.estimate_spec.format_pack import FormatPackError, profile_for_pack
-        from estimating_tools.exchange.model import PayloadError
-        from estimating_tools.exchange.types import BuildRefused
-        from estimating_tools.heavybook import build as hb_build
-        from estimating_tools.exchange.baseline import BaselineError
-        from estimating_tools.heavybook.style import StyleError, resolve_style
 
-        exported_at = options.get("exported_at") or datetime.now(timezone.utc).strftime(
-            "%Y-%m-%dT%H:%M:%SZ")
-        try:
-            host = bare_host(options.get("host") or DEFAULT_HOST)
-        except ValueError as exc:
-            raise BuildRefused("host", str(exc)) from exc
-        style_path = options.get("style")
+        styled = bool(options.get("style"))
         profile = options.get("profile")
-        try:
-            if profile is None and not style_path:
+        if profile is None and not styled:
+            try:
                 profile = profile_for_pack("heavycivil_style")
-        except FormatPackError as exc:
-            raise BuildRefused("profile", str(exc)) from exc
+            except FormatPackError:
+                profile = None
+        if profile is not None and (profile.section("estimating") or {}).get("heavycivil_style"):
+            styled = True
+        if styled:
+            print("warning: a HeavyBook style pack no longer applies -- the book's look is its "
+                  "template now (heavybook/template/README.md); ignored", file=sys.stderr)
+        keep = {k: options[k] for k in ("exported_at", "host", "allow_dropped") if k in options}
+        return self._template_for(options.get("template")).build(payload, Path(out),
+                                                                 options=keep)
+
+    def _template_for(self, directory):
+        """The shipped template pack, or the one in ``directory`` (``--template``:
+        an edited copy of ``heavybook/template/``). Its declaration must load,
+        be a template pack's and declare pack ``heavybook`` -- the book it
+        builds is a HeavyBook book, read back by this pack from its stamp --
+        else ``BuildRefused("template")``; the fill then lints it as any
+        template, and refuses with nothing written what the lint refuses."""
+        import yaml
+
+        from estimating_tools.exchange.declaration import DeclarationError
+        from estimating_tools.exchange.template import DECLARATION, TEMPLATE, TemplatePack
+        from estimating_tools.exchange.types import BuildRefused
+
+        if not directory:
+            return self._template()
+        root = Path(directory)
+        missing = [n for n in (DECLARATION, TEMPLATE) if not (root / n).is_file()]
+        if missing:
+            raise BuildRefused("template", f"{root}: a template pack directory holds "
+                               f"{DECLARATION} and {TEMPLATE} ({', '.join(missing)} missing)")
         try:
-            style = resolve_style(style_path, profile)
-        except StyleError as exc:
-            raise BuildRefused("style", str(exc)) from exc
-        try:
-            book = hb_build.build(payload, style=style, exported_at=exported_at, host=host)
-        except (PayloadError, BaselineError) as exc:
-            raise BuildRefused("payload", str(exc)) from exc
-        hb_build.save(book, Path(out))
-        return BuildReport(path=Path(out), exported_at=exported_at)
+            doc = yaml.safe_load((root / DECLARATION).read_text(encoding="utf-8"))
+            if not isinstance(doc, dict):
+                raise ValueError(f"{DECLARATION} is not a mapping")
+            pack = TemplatePack(root)
+            pack.declaration()
+        except (DeclarationError, OSError, ValueError, yaml.YAMLError) as exc:
+            raise BuildRefused("template", f"{root}: {exc}") from exc
+        if pack.version != FORMAT_VERSION:
+            # Version 1 books still read, but only the retired code writers
+            # built them: a template builds this plugin's version alone.
+            raise BuildRefused("template", f"{root}: {DECLARATION} declares {self.name} version "
+                               f"{pack.version!r}; this plugin builds version {FORMAT_VERSION} "
+                               f"from a template -- keep the copy's version at {FORMAT_VERSION}, "
+                               "or update the plugin for a later one")
+        if pack.name != self.name:
+            raise BuildRefused("template", f"{root}: {DECLARATION} declares pack {pack.name!r}; "
+                               f"--template builds a {self.name} book from a copy of its "
+                               "template (pack name heavybook)")
+        return pack
 
     def read(self, book: Path) -> ReadResult:
         """Read an edited book into a change set, or the refusal's problems,
@@ -161,12 +185,14 @@ class HeavyBookPack:
         return refresh(Path(book), payload, pack=self, dry_run=dry_run)
 
     def refresh_extras(self, book, payload: dict, fresh, *, exported_at: str):
-        """The Checks sheet's figures and export line, and the cost-share
-        guard (``heavybook.refresh``); optional on a pack, called by patch
-        and refresh."""
-        from estimating_tools.heavybook.refresh import extras
+        """A code-built book's Checks figures and cost-share guard
+        (``heavybook.refresh``), or a template book's display rows
+        (``TemplatePack.refresh_extras``)."""
+        if book.decl.kind == "code":
+            from estimating_tools.heavybook.refresh import extras
 
-        return extras(book, fresh, exported_at=exported_at)
+            return extras(book, fresh, exported_at=exported_at)
+        return self._template().refresh_extras(book, payload, fresh, exported_at=exported_at)
 
     def upgrade_stamp(self, raw: dict, wb) -> dict:
         """The current stamp document for any older stamp HeavyBook wrote;
@@ -198,15 +224,11 @@ class HeavyBookPack:
 
     def templates(self) -> list[InsertKind]:
         """The prototype-row insert kinds, named by their ``hc.tpl.*`` ranges."""
-        return [InsertKind(kind=k, name=n) for k, n in layout.TEMPLATE_NAMES.items()]
+        return self._template().templates()
 
     def declaration(self):
-        """HeavyBook's declaration with the default tab titles (a built book's
-        stamp carries the styled titles)."""
-        from estimating_tools.exchange.declaration import load
-        from estimating_tools.heavybook.declaration import generate
-
-        return load(generate())
+        """HeavyBook's declaration: the template pack's."""
+        return self._template().declaration()
 
 
 def pack() -> HeavyBookPack:

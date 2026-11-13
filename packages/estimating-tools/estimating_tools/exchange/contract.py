@@ -49,13 +49,15 @@ FIELDS = {
     "ITEM": {"quantity_override": Field("number", clear=True),
              "estimated_unit_price": Field("number")},
     "ELEMENT_QTY": {"override_value": Field("number", clear=True, attr="override")},
-    "ACTIVITY": {"name": Field("name"), "production_rate": Field("number"),
+    "ACTIVITY": {"name": Field("name"), "description": Field("text"),
+                 "production_rate": Field("number"),
                  "production_unit": Field("unit"), "hours_per_shift": Field("number"),
                  "crew_factor": Field("number"), "duration_shifts": Field("number"),
                  "count": Field("count")},
     "STEP": {"name": Field("name"), "duration": Field("summed"),
              "duration_unit": Field("step_unit")},
-    "RESOURCE": {"name": Field("name"), "quantity": Field("number"),
+    "RESOURCE": {"name": Field("name"), "description": Field("text"),
+                 "quantity": Field("number"),
                  "unit": Field("text", clear=True), "unit_cost": Field("number"),
                  "time_value": Field("number", clear=True),
                  "time_unit": Field("time_unit", clear=True), "component_type": Field("type"),
@@ -105,6 +107,10 @@ COLLECTIONS = {"STEP": "steps", "RESOURCE": "resources", "MEMBER": "members"}
 #: The library rate kinds, in the order the payload lists them
 #: (``model.Workbook.rates``) and a pack's rates sheet lays them out.
 RATE_KINDS = ("labor", "equipment", "material")
+#: The kind a tagged rates sheet's library rows carry (a sheet whose
+#: declaration names a ``ref`` tag: the row's link, ``labor:<id>``). Its
+#: untagged rows are the book's own local rates, never read.
+RATE_ROW = "RATE"
 #: Kinds the contract has a move op for.
 MOVABLE = ("ACTIVITY",)
 #: The two conditions a ``formulas`` entry may carry (``KIND.stepped``: an
@@ -142,3 +148,28 @@ REF_ATTR = {"RESOURCE": "rate_link", "MEMBER": "labor_rate_id"}
 #: to one moves cells the book's formulas address by position (an
 #: activity's item, parent and crew), so a refresh cannot patch it in place.
 PLACEMENT = {"ACTIVITY": ("item_id", "parent_id", "crew_id")}
+
+
+#: The row kinds an owner's read-model rows hold, per owner kind: a blocks
+#: sheet that shows the owner declares a child block for each, or every
+#: baseline row of a missing one would read as deleted (#439).
+CHILDREN = {"ACTIVITY": ("STEP", "RESOURCE"), "CREW": ("MEMBER",)}
+#: Flat kinds the read model nests under a container kind: a sheet that
+#: lists the container lists them too, or the reader would find every
+#: baseline row of theirs missing.
+UNDER = {"ITEM": ("ELEMENT_QTY",)}
+
+#: The prototype a template fill copies for an owner that has a row the
+#: plain prototype lacks: owner kind -> {that row's kind: prototype key}
+#: (a stepped activity's STEP block; a library crew's NOTE banner).
+VARIANTS = {"ACTIVITY": {"STEP": "stepped"}, "CREW": {"NOTE": "library"}}
+#: When an owner is copied from a variant, decided by the read model.
+VARIANT_WHEN = {"stepped": lambda owner: bool(owner.steps),
+                "library": lambda owner: owner.scope == "library"}
+
+#: What a new row of a growable kind is created from: a sheet that lets the
+#: kind grow binds each, or every create of it would be refused (#439,
+#: partial bindings).
+CREATE_NEEDS = {"ACTIVITY": ("name",), "STEP": ("name", "duration"),
+                "RESOURCE": ("name", "component_type"),
+                "MEMBER": ("classification", "count")}

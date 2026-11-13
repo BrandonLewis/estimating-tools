@@ -43,6 +43,29 @@ def test_uncached_cells_are_counted_and_named(tmp_path):
     assert (ws["A1"].value, ws["A2"].value, ws["A3"].value) == (None, None, 2)
 
 
+def test_a_hidden_sheets_uncached_cell_is_not_reported(tmp_path):
+    # A template book's prototype rows (hidden ``_templates``) read their own
+    # blank id tags: left uncached, never reported -- nothing the estimator
+    # sees holds them. A visible cell that reads one is reported.
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet"
+    ws["A1"] = "=1+1"
+    tpl = wb.create_sheet("_templates")
+    tpl.sheet_state = "hidden"
+    tpl["A1"] = "=SUMIF(B:B,C1,D:D)"                # C1 blank: a blank criterion
+    path = tmp_path / "h.xlsx"
+    wb.save(path)
+    out = io.StringIO()
+    report = xlcalc.cache_or_warn(path, stream=out)
+    assert (report.formulas, report.cached, report.hidden) == (2, 1, 1)
+    assert report.summary() is None and out.getvalue() == ""
+    ws["A2"] = "=_templates!A1"
+    wb.save(path)
+    assert xlcalc.cache_or_warn(path, stream=io.StringIO()).summary() == (
+        "cached 1 of 2 formulas; 1 not evaluated (depends on an unevaluated cell: 1)")
+
+
 def test_a_fully_cached_book_prints_nothing(tmp_path):
     out = io.StringIO()
     xlcalc.cache_or_warn(_save(tmp_path, {"A1": "=1+1"}), stream=out)

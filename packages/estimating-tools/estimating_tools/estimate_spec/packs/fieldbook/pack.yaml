@@ -1,0 +1,94 @@
+# Fieldbook's exchange declaration (engine spec, Layer 2; fieldbook spec,
+# "The mapping"). The recipe renders the book (recipes.yaml, units.yaml);
+# this file says what it emits, for the engine's generic reader. The
+# navigator section and the est.tpl.* prototypes are lifted from
+# format.yaml's layout_map when the pack loads (FieldbookPack.declaration):
+# the add-in's names have one source.
+schema: 1
+pack: { name: fieldbook, version: "2", contract: "1" }
+kind: recipe
+stamp: { name: exchange.stamp, sheet: _wb, cell: A1, property: estimate_format }
+# Fieldbook's row kinds keep their names in the book.
+kinds: { TASK: ACTIVITY, CREW: RESOURCE, LINE: RESOURCE }
+sheets:
+  items:                                   # one sheet per bid item
+    each: ITEM
+    role: blocks
+    first_row: 1
+    columns:
+      A: Code / resource / item
+      B: Qty
+      C: Unit
+      D: Count
+      E: Days (hrs if marked)
+      F: Hrs
+      G: Rate
+      H: Type
+      I: Source
+      J: Vendor
+      K: MH
+      L: Labor
+      M: Equip
+      N: Matl
+      O: Sub
+      P: Total
+      Z: Time unit                         # hidden in the book: a crew row's DAYS or HOURS
+    tags:
+      kind: Q
+      # The code chain (layout_map's code_chain): a formula on every row of
+      # a task block, the TASK row's own included -- a task has no parent.
+      parent: { column: R, derived: [ACTIVITY, RESOURCE, END] }
+      id: W
+      v: X
+      ref: Y
+    rows: [ITEM, HEAD, TAKEOFF, RECAP, TOTAL, SUBTOTAL]
+    # No steps; takeoff stays on the sheet, never an element quantity (BidManager #984).
+    not_shown: [STEP, ELEMENT_QTY]
+    blocks:
+      task: { kind: ACTIVITY, within: [ITEM], children: [resources] }
+      resources: { marker: { open: ACTIVITY, close: END }, row: RESOURCE }
+    markers:
+      END: { cue: { column: A, text: insert new lines above this row } }
+    spellings:
+      component_type: { Subcontract: subcontractor }
+    fields:
+      TASK:
+        name: B
+        description: { rows: NOTE, column: A, join: "\n" }   # the task's notes
+        hours_per_shift: { by_name: est.shift_hours }        # one shift length per book
+      CREW:
+        name: A
+        quantity: D                        # count
+        time_value: E                      # days, or hours where Z says HOURS
+        time_unit: Z
+        component_type: { from_rate: kind }
+        unit_cost: { from_rate: rate }
+      LINE:
+        name: A
+        quantity: B
+        unit: C
+        unit_cost: G
+        component_type: H
+        description: { cells: [I, J], join: " · " }         # QUOTE · vendor, or PLUG
+    # The task's cost code, as BidSheet.ai has it: not read until 1.4 puts
+    # the organisation's codes in the read model (#417).
+    labels:
+      TASK: { A: code }
+    written:
+      CREW: { Z: DAYS }                    # an inserted crew row's unit, not typed
+    formulas:
+      TASK: [S]
+      CREW: [F, G, H, K, L, M, P, S, T, V]
+      LINE: [M, N, O, P, S, T, V]
+      SUBTOTAL: [A, I, K, L, M, N, O, P, R, T, V]
+      RECAP: [A, B, I, K, L, M, N, O, P]
+  rates:
+    tab: Rates
+    role: rates
+    first_row: 5
+    columns: { A: Resource, B: Kind, C: Base, D: Burden %, E: Fringe, F: Includes operator,
+               G: Rate, H: $/hr }
+    tags: { kind: I, ref: J }
+    columns_by_key: { name: A, kind: B, rate: G }
+    sections: { labor: Labor, equipment: Equipment }
+    local_suffix: " (local)"

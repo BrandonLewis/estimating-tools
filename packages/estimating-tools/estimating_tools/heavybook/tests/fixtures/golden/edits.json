@@ -1,0 +1,214 @@
+{
+ "cut": {
+  "ops": [
+   {
+    "fields": {
+     "activity_id": 1,
+     "component_type": "labor",
+     "includes_burden": false,
+     "labor_cost_basis": "production",
+     "name": "Foreman",
+     "quantity": "1",
+     "sort_order": 0,
+     "time_unit": "HOURS",
+     "time_value": "4",
+     "unit_cost": "300"
+    },
+    "op": "resource.create",
+    "ref": "new:r1"
+   },
+   {
+    "fields": {},
+    "op": "resource.delete",
+    "ref": 3,
+    "v": "3e5541b841ecfc01"
+   }
+  ],
+  "problems": [],
+  "rows": [
+   {
+    "op_index": 0,
+    "row": 10,
+    "sheet": "Cost Report"
+   },
+   {
+    "op_index": 1,
+    "row": null,
+    "sheet": "Cost Report"
+   }
+  ]
+ },
+ "deleted_activity": {
+  "ops": [
+   {
+    "fields": {},
+    "op": "activity.delete",
+    "ref": 7,
+    "v": "9fbd68ff68b2ba28"
+   }
+  ],
+  "problems": [],
+  "rows": [
+   {
+    "op_index": 0,
+    "row": null,
+    "sheet": "Cost Report"
+   }
+  ]
+ },
+ "deleted_step": {
+  "ops": null,
+  "problems": [
+   "Cost Report row 20: activity 4 (Prep): all of its steps were deleted or cut away -- keep at least one step, or delete the whole block"
+  ],
+  "rows": null
+ },
+ "formula_overtyped": {
+  "ops": null,
+  "problems": [
+   "Cost Report row 11 column M: Labor held a formula and now holds a value -- undo the edit, or copy the formula back from a row of the same kind"
+  ],
+  "rows": null
+ },
+ "inputs": {
+  "ops": [
+   {
+    "fields": {
+     "estimated_unit_price": "150"
+    },
+    "op": "item.update",
+    "ref": 1,
+    "v": "973354cc8099ae7e"
+   },
+   {
+    "fields": {
+     "key": "concrete_cy",
+     "override_value": "70"
+    },
+    "op": "element.set_quantity",
+    "ref": 1,
+    "v": "2a3e3582b51671fb"
+   },
+   {
+    "fields": {
+     "production_rate": "2"
+    },
+    "op": "activity.update",
+    "ref": 2,
+    "v": "b96859bc0ac1b1c5"
+   }
+  ],
+  "problems": [],
+  "rows": [
+   {
+    "op_index": 0,
+    "row": 5,
+    "sheet": "Cost Report"
+   },
+   {
+    "op_index": 1,
+    "row": 6,
+    "sheet": "Cost Report"
+   },
+   {
+    "op_index": 2,
+    "row": 11,
+    "sheet": "Cost Report"
+   }
+  ]
+ },
+ "quantity": {
+  "ops": [
+   {
+    "fields": {
+     "quantity": "40"
+    },
+    "op": "resource.update",
+    "ref": 1,
+    "v": "8351b6e723234615"
+   }
+  ],
+  "problems": [],
+  "rows": [
+   {
+    "op_index": 0,
+    "row": 9,
+    "sheet": "Cost Report"
+   }
+  ]
+ },
+ "stale_paste": {
+  "ops": [
+   {
+    "fields": {
+     "activity_id": 1,
+     "component_type": "labor",
+     "includes_burden": false,
+     "labor_cost_basis": "production",
+     "name": "Foreman",
+     "quantity": "1",
+     "sort_order": 0,
+     "time_unit": "HOURS",
+     "time_value": "4",
+     "unit_cost": "300"
+    },
+    "op": "resource.create",
+    "ref": "new:r1"
+   }
+  ],
+  "problems": [],
+  "rows": [
+   {
+    "op_index": 0,
+    "row": 10,
+    "sheet": "Cost Report"
+   }
+  ]
+ },
+ "typed_resource": {
+  "ops": [
+   {
+    "fields": {
+     "activity_id": 2,
+     "component_type": "equipment",
+     "name": "Pump",
+     "quantity": "1",
+     "sort_order": 0,
+     "unit_cost": "250"
+    },
+    "op": "resource.create",
+    "ref": "new:r1"
+   }
+  ],
+  "problems": [],
+  "rows": [
+   {
+    "op_index": 0,
+    "row": 15,
+    "sheet": "Cost Report"
+   }
+  ]
+ },
+ "typed_step": {
+  "ops": [
+   {
+    "fields": {
+     "activity_id": 4,
+     "duration": "1",
+     "duration_unit": "DAYS",
+     "name": "Strip"
+    },
+    "op": "step.add",
+    "ref": "new:s1"
+   }
+  ],
+  "problems": [],
+  "rows": [
+   {
+    "op_index": 0,
+    "row": 23,
+    "sheet": "Cost Report"
+   }
+  ]
+ }
+}

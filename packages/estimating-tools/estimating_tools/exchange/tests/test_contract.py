@@ -40,6 +40,11 @@ def test_collections_name_attributes_of_the_read_model():
     assert "activity_id" in fields_of(model.Resource)
 
 
+#: Writable fields HeavyBook's Cost Report has no cell for: a copy carries
+#: them from its source (fieldbook binds both).
+UNBOUND = {"ACTIVITY": ("description",), "RESOURCE": ("description",)}
+
+
 def test_heavybook_binds_every_contract_field_and_nothing_else():
     """HeavyBook's declaration binds each writable field of every kind it
     carries to one column; the reader's inputs are those fields with the
@@ -53,13 +58,15 @@ def test_heavybook_binds_every_contract_field_and_nothing_else():
             assert kind not in bound, kind
             bound[kind] = set(by_field)
             inputs = F.inputs_for_decl(decl, sheet.key, kind)
-            assert [i.field for i in inputs] == list(contract.FIELDS[kind])
+            assert [i.field for i in inputs] == [f for f in contract.FIELDS[kind]
+                                                 if f not in UNBOUND.get(kind, ())]
             for inp in inputs:
                 spec = contract.FIELDS[kind][inp.field]
                 assert (inp.reader, inp.clear, inp.base_attr) == (
                     spec.reader, spec.clear, spec.attr or inp.field)
                 assert inp.letter == by_field[inp.field]
-    want = {kind: set(fields) for kind, fields in contract.FIELDS.items() if kind != "ESTIMATE"}
+    want = {kind: set(fields) - set(UNBOUND.get(kind, ()))
+            for kind, fields in contract.FIELDS.items() if kind != "ESTIMATE"}
     assert bound == want
     named = decl.sheets["bid_form"].named_rows
     assert [n for n, r in named.rows.items() if r.input] == list(contract.FIELDS["ESTIMATE"])

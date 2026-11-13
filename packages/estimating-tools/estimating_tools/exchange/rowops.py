@@ -12,6 +12,12 @@ each in the coordinates the ops before it left; :class:`RowMap` says where a
 row ended up. A caller that sorts its ops bottom-up per sheet can name every
 op by the book's original row numbers.
 
+A template fill's rows are one :class:`FillRows` op per sheet: an insert
+whose rows are each a copy of their own prototype row (:class:`FillRow`),
+formulas placed against their block by ``refs.place``. The data validations
+the copies take are not: their formulas move by the plain row offset, as an
+Excel copy moves them, never by ``refs.place``'s block mapping.
+
 What moves with the rows (Excel's rules, mirrored by the test suite's
 ``simulate_insert_copied_row`` and ``simulate_delete_row``):
 
@@ -36,8 +42,9 @@ prototype sheet's sheet-level data validations, their formulas moved as
 Excel's copy moves them (merged into an equivalent validation of the target
 sheet when there is one).
 
-Refused with nothing written (``RowOpError``): a merged range, table, auto
-filter or array formula the boundary would cut; a pivot table on the edited
+Refused with nothing written (``RowOpError``): a merged range, auto filter
+or array formula the boundary would cut, a table a delete would cut (an
+insert inside one grows it); a pivot table on the edited
 sheet or reading it; a data table; a 3-D reference whose span includes the
 edited sheet; rows that would run past Excel's last row; a deleted row
 holding a note, a hyperlink or a drawing's anchor; a conditional format or
@@ -63,7 +70,8 @@ from openpyxl.utils import column_index_from_string, get_column_letter
 from estimating_tools.exchange import refs
 from estimating_tools.exchange import writer as W
 
-__all__ = ["DeleteRows", "InsertRows", "Outcome", "RowMap", "RowOpError", "apply"]
+__all__ = ["DeleteRows", "FillRow", "FillRows", "InsertRows", "Outcome", "RowMap", "RowOpError",
+           "apply"]
 
 
 class RowOpError(ValueError):
@@ -127,6 +135,57 @@ class DeleteRows:
         return refs.Delete(self.first, self.count)
 
 
+@dataclass(frozen=True)
+class FillRow:
+    """One row a :class:`FillRows` op places: a copy of prototype row
+    ``row`` of the op's source sheet. ``block`` pairs each owner or marker
+    row of the prototype block this row belongs to with the index, among
+    the op's placed rows, of the row that stands for it, so the copy's
+    formulas read its own placed block (``refs.place``). ``level`` is the
+    row's outline level (0: none; Excel shows at most 7)."""
+    row: int
+    block: tuple = ()
+    level: int = 0
+
+
+@dataclass(frozen=True, init=False)
+class FillRows(InsertRows):
+    """Insert one row per ``placed`` above row ``before`` of ``sheet``, each a
+    copy of its own prototype row of ``source``: a template fill's rows
+    (engine spec, Fill step 2). Everything from ``before`` down moves by
+    ``len(placed)``, every reference into the sheet with it, exactly as for
+    :class:`InsertRows`; each copy's formulas are placed by ``refs.place``
+    and its outline level set from its ``FillRow`` (a level-0 row drops the
+    prototype's ``outlineLevel`` and ``collapsed``, keeps ``hidden``). The
+    prototype sheet's data validations come along with their formulas moved
+    by the plain row offset, as an Excel copy moves them -- not by
+    ``refs.place``'s block mapping. ``first`` and ``last`` span the
+    prototype rows used."""
+    placed: tuple = ()
+
+    def __init__(self, sheet: str, before: int, source: str, placed, skip=()):
+        placed = tuple(placed)
+        if not placed:
+            raise ValueError(f"FillRows({sheet!r}, before={before}): no rows to place")
+        object.__setattr__(self, "placed", placed)
+        rows = [p.row for p in placed]
+        InsertRows.__init__(self, sheet=sheet, before=before, source=source, first=min(rows),
+                            last=max(rows), times=1, skip=tuple(skip))
+
+    @property
+    def count(self) -> int:
+        return len(self.placed)
+
+
+def _pairs(op) -> list:
+    """``(source row, destination row, FillRow or None)`` for each row an
+    insert copies, in order."""
+    if isinstance(op, FillRows):
+        return [(p.row, op.before + k, p) for k, p in enumerate(op.placed)]
+    return [(op.first + offset, op.before + k * op.width + offset, None)
+            for k in range(op.times) for offset in range(op.width)]
+
+
 class RowMap:
     """Where rows end up after ``ops`` (applied in order, each in the
     coordinates the ones before it left)."""
@@ -180,6 +239,9 @@ _AFTER_DV = ("hyperlinks", "printOptions", "pageMargins", "pageSetup", "headerFo
              "rowBreaks", "colBreaks", "customProperties", "cellWatches", "ignoredErrors",
              "smartTags", "drawing", "legacyDrawing", "legacyDrawingHF", "picture",
              "oleObjects", "controls", "webPublishItems", "tableParts", "extLst")
+#: CT_Worksheet children after ``sheetFormatPr`` up to ``sheetData`` (ECMA-376
+#: part 1, 18.3.1.99): a new ``sheetFormatPr`` goes before the first of them.
+_AFTER_FORMAT = ("cols", "sheetData")
 #: Worksheet elements whose attribute holds a range list that moves with rows.
 _RANGE_ATTRS = (("ignoredError", "sqref"), ("protectedRange", "sqref"),
                 ("sortState", "ref"), ("sortCondition", "ref"))
@@ -758,6 +820,27 @@ def _within(ranges, cell) -> bool:
     return False
 
 
+def _runs(cells) -> list:
+    """``cells`` (``(column, row)`` pairs, in order) as a range list: each
+    column's consecutive rows one range (``C4:C2003``), the columns in the
+    order they first appear, so the first range starts at the first cell
+    (a validation's formulas are written for it)."""
+    by_col = {}
+    for col, row in cells:
+        by_col.setdefault(col, set()).add(row)
+    out = []
+    for col, rows in by_col.items():
+        ordered = sorted(rows)
+        start = prev = ordered[0]
+        for row in ordered[1:] + [None]:
+            if row is not None and row == prev + 1:
+                prev = row
+                continue
+            out.append(f"{col}{start}" if start == prev else f"{col}{start}:{col}{prev}")
+            start = prev = row
+    return out
+
+
 def _copy_validations(root, src_root, op):
     """The prototype sheet's sheet-level validations onto the copied cells,
     their formulas moved as Excel's copy moves them: added to an equivalent
@@ -771,11 +854,8 @@ def _copy_validations(root, src_root, op):
     for sdv in src.findall(f"{{{NS}}}dataValidation"):
         start = _anchor(sdv.get("sqref"))
         cells = []
-        for k in range(op.times):
-            for offset in range(op.width):
-                dst = op.before + k * op.width + offset
-                cells += [f"{c}{dst}" for c in _covered(sdv.get("sqref"), op.first + offset,
-                                                        op.skip)]
+        for src_row, dst, _placed in _pairs(op):
+            cells += [(c, dst) for c in _covered(sdv.get("sqref"), src_row, op.skip)]
         if not cells or start is None:
             continue
         # A copied cell reads the prototype's rule moved by the rows it moved
@@ -797,19 +877,26 @@ def _copy_validations(root, src_root, op):
                 match = d
                 break
         if match is None:
-            match = _translated(sdv, origin, cells[0])
+            match = _translated(sdv, origin, f"{cells[0][0]}{cells[0][1]}")
             if match is None:
                 raise RowOpError(f"{op.source}!{sdv.get('sqref')}: a data validation whose "
                                  "formula cannot be copied to the new rows")
             match.set("sqref", "")
             dvs.append(match)
+        # Checked against the ranges the validation held before this op only
+        # (a handful), the new cells as one set: a long fill stays linear.
         have = (match.get("sqref") or "").split()
-        match.set("sqref", " ".join(have + [c for c in cells if not _within(have, c)]))
+        new = dict.fromkeys(c for c in cells if not _within(have, f"{c[0]}{c[1]}"))
+        match.set("sqref", " ".join(have + _runs(new)))
     if dvs is not None:
         dvs.set("count", str(len(dvs.findall(f"{{{NS}}}dataValidation"))))
 
 
-def _copied_cell(op, c, col, dst, masters):
+def _copied_cell(op, c, col, dst, masters, placed=None):
+    """Cell ``c`` of the prototype copied to column ``col`` of row ``dst``:
+    its style, its value as stored, its formula translated as Excel's copy
+    translates it -- or, for a :class:`FillRows` row (``placed``), placed
+    by ``refs.place`` against the op's placed block."""
     ref = f"{col}{dst}"
     new = ET.Element(f"{{{NS}}}c", {"r": ref})
     if c.get("s") is not None:
@@ -830,7 +917,12 @@ def _copied_cell(op, c, col, dst, masters):
         if master is None:
             raise RowOpError(f"{op.source}!{c.get('r')}: a shared formula without its master")
         text = Translator("=" + master, origin=origin).translate_formula(c.get("r"))[1:]
-    if text:
+    if text and placed is not None:
+        block = {proto: op.before + index for proto, index in placed.block}
+        _col, origin = W._parse_ref(op.source, c.get("r"))
+        ET.SubElement(new, f"{{{NS}}}f").text = refs.place(text, origin=origin, dest=dst,
+                                                           block=block)
+    elif text:
         ET.SubElement(new, f"{{{NS}}}f").text = Translator(
             "=" + text, origin=c.get("r")).translate_formula(ref)[1:]
     return new
@@ -851,6 +943,22 @@ def _grow_dimension(root, cells):
     dim.set("ref", lo if lo == hi else f"{lo}:{hi}")
 
 
+def _outline_level_row(root, data):
+    """``sheetFormatPr/@outlineLevelRow`` set to the deepest row outline
+    level on the sheet, as Excel and openpyxl record it (Excel sizes the
+    outline gutter from it); a ``sheetFormatPr`` is added at its schema
+    position when the sheet has none."""
+    deepest = max((int(r.get("outlineLevel") or 0) for r in data.findall(f"{{{NS}}}row")),
+                  default=0)
+    fmt = root.find(f"{{{NS}}}sheetFormatPr")
+    if fmt is None:
+        fmt = ET.Element(f"{{{NS}}}sheetFormatPr", {"defaultRowHeight": "15"})
+        after = {f"{{{NS}}}{t}" for t in _AFTER_FORMAT}
+        at = next((i for i, child in enumerate(root) if child.tag in after), len(root))
+        root.insert(at, fmt)
+    fmt.set("outlineLevelRow", str(deepest))
+
+
 def _copy_rows(pkg, op):
     """The prototype rows into the gap the insert left."""
     part, root = pkg.worksheet(op.sheet)
@@ -860,27 +968,35 @@ def _copy_rows(pkg, op):
     source_rows = {W._row_number(op.source, r): r
                    for r in src_root.find(f"{{{NS}}}sheetData").findall(f"{{{NS}}}row")}
     new_rows = []
-    for k in range(op.times):
-        for offset in range(op.width):
-            dst = op.before + k * op.width + offset
-            row = ET.Element(f"{{{NS}}}row", {"r": str(dst)})
-            src = source_rows.get(op.first + offset)
-            if src is not None:
-                for name, value in src.attrib.items():
-                    if name not in ("r", "spans"):
-                        row.set(name, value)
-                for c in src.findall(f"{{{NS}}}c"):
-                    col, _r = W._parse_ref(op.source, c.get("r"))
-                    if col in op.skip:
-                        continue
-                    row.append(_copied_cell(op, c, col, dst, masters))
-            new_rows.append(row)
+    for src_row, dst, placed in _pairs(op):
+        row = ET.Element(f"{{{NS}}}row", {"r": str(dst)})
+        src = source_rows.get(src_row)
+        if src is not None:
+            for name, value in src.attrib.items():
+                if name not in ("r", "spans"):
+                    row.set(name, value)
+            for c in src.findall(f"{{{NS}}}c"):
+                col, _r = W._parse_ref(op.source, c.get("r"))
+                if col in op.skip:
+                    continue
+                row.append(_copied_cell(op, c, col, dst, masters, placed))
+        if placed is not None:
+            if placed.level:
+                row.set("outlineLevel", str(min(placed.level, 7)))
+            else:
+                # Out of the outline: no level, and no group to collapse.
+                # ``hidden`` stays -- a template may hide a row on purpose.
+                row.attrib.pop("outlineLevel", None)
+                row.attrib.pop("collapsed", None)
+        new_rows.append(row)
     children = list(data)
     at = next((i for i, r in enumerate(children)
                if W._row_number(op.sheet, r) >= op.before), len(children))
     for n, row in enumerate(new_rows):
         data.insert(at + n, row)
     _grow_dimension(root, [c.get("r") for row in new_rows for c in row])
+    if any(row.get("outlineLevel") for row in new_rows):
+        _outline_level_row(root, data)
     _copy_validations(root, src_root, op)
     pkg.dirty.add(part)
 
@@ -991,7 +1107,9 @@ def _tables(pkg, part, title, op):
         got = refs.span(root.get("ref") or "")
         if got is None:
             continue
-        if _cuts(*got, op):
+        # An insert inside a table grows it (``_sqref`` moves its end, as
+        # Excel does); a delete that cuts one is refused.
+        if isinstance(op, DeleteRows) and _cuts(*got, op):
             raise RowOpError(f"{title}: table {root.get('displayName') or root.get('name')} "
                              f"({root.get('ref')}) spans the rows being {_verb(op)} -- the "
                              "writer does not resize tables")

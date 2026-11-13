@@ -4,6 +4,15 @@ move payloads and change sets through files, never through the agent
 (contract rule 14). Every committed apply carries a request_id; an apply
 whose outcome is unknown is replayed with the same id (rule 12).
 
+``build`` tells its inputs apart before either builder runs
+(``check_build_inputs``): a last positional naming a workbook (``.xlsx``,
+``.xlsm``) is the output, as ``-o`` is; a BidSheet.ai payload is a JSON
+object whose ``estimate`` is an object (``is_payload`` -- a spec's schema
+admits no such key, so a spec written as JSON stays a spec); a ``.yaml`` or
+``.yml`` file is a spec. ``--pack`` builds payloads and refuses a spec
+(exit 1); without it a payload is refused with the command that builds it
+(exit 2: a payload does not say which pack lays it out).
+
 Exit codes:
 
 - 0: done (a dry-run plan, "no changes", a clean patch).
@@ -210,6 +219,7 @@ def payload_name(estimate_id: int, items) -> str:
 
 #: The message prefix per ``BuildRefused.kind``; every pack's refusal of a
 #: kind reads the same.
+#: "style"/"profile": no in-tree pack raises them; kept for the Pack interface's kinds.
 REFUSAL_PREFIX = {"payload": "payload refused", "style": "style pack refused",
                   "profile": "org profile refused", "host": "build refused",
                   "template": "template refused"}
@@ -229,15 +239,20 @@ def _load_pages(paths: list):
     saying what was wrong with a file."""
     from estimating_tools.exchange.model import PayloadError, merge_pages
 
+    import yaml
+
     docs = []
     for src in paths:
         try:
-            docs.append(json.loads(src.read_text(encoding="utf-8")))
+            docs.append(_parse(src))
         except FileNotFoundError:
             _err(f"no such file: {src}")
             return 1
         except json.JSONDecodeError as exc:
             _err(f"invalid JSON in {src}: {exc}")
+            return 1
+        except yaml.YAMLError as exc:
+            _err(f"invalid YAML in {src}: {exc}")
             return 1
         except (OSError, UnicodeDecodeError) as exc:
             _err(f"could not read {src}: {exc}")
@@ -253,10 +268,90 @@ def _load_pages(paths: list):
     return payload
 
 
+#: A last positional with one of these suffixes is the output (``build IN... OUT.xlsx``).
+BOOK_SUFFIXES = (".xlsx", ".xlsm")
+#: A build input with one of these suffixes is an estimate spec, unread.
+SPEC_SUFFIXES = (".yaml", ".yml")
+
+
+def split_output(args):
+    """``build IN... OUT.xlsx``: a last positional naming a workbook is the
+    output, as ``-o`` is. Sets ``args.output`` and ``args.config`` (the
+    inputs, a list); returns an exit code after saying why when the output
+    is given twice or no input is left, else None."""
+    config = list(args.config)
+    if config and Path(config[-1]).suffix.lower() in BOOK_SUFFIXES:
+        if len(config) == 1:
+            _err(f"build refused: {config[0]} is a workbook -- build from an estimate spec "
+                 "(YAML) or a BidSheet.ai payload (JSON): est-estimate build IN OUT.xlsx")
+            return 1
+        if args.output:
+            _err(f"build refused: the output is given twice ({config[-1]} and -o "
+                 f"{args.output}) -- give it once")
+            return 1
+        args.output = config.pop()
+    args.config = config
+    return None
+
+
+def _parse(path):
+    """A payload page's document: YAML (``yaml.safe_load``) for a
+    ``.yaml``/``.yml`` file, JSON for any other."""
+    text = Path(path).read_text(encoding="utf-8")
+    if Path(path).suffix.lower() in SPEC_SUFFIXES:
+        import yaml
+        return yaml.safe_load(text)
+    return json.loads(text)
+
+
+def is_payload(path) -> bool:
+    """Is ``path`` a BidSheet.ai workbook payload (or a page of one): a
+    mapping whose ``estimate`` is a mapping, in JSON or (for a
+    ``.yaml``/``.yml`` file) YAML? A spec has no such key (its schema admits
+    none), so a spec in either form is still a spec. A file that cannot be
+    read or parsed is not a payload here (the builder it goes to says why)."""
+    import yaml
+
+    try:
+        doc = _parse(path)
+    except (OSError, UnicodeDecodeError, ValueError, yaml.YAMLError):
+        return False
+    return isinstance(doc, dict) and isinstance(doc.get("estimate"), dict)
+
+
+def check_build_inputs(args):
+    """``build``'s inputs, before either builder runs: the output split off
+    (``split_output``); then a spec given to ``--pack`` is refused (exit 1),
+    and so is a payload given without it (exit 2), each with the command
+    that builds it. None: go on -- the pack's build with ``--pack``, else
+    the spec build."""
+    code = split_output(args)
+    if code is not None:
+        return code
+    if getattr(args, "pack", None):
+        spec = next((c for c in args.config if Path(c).suffix.lower() in SPEC_SUFFIXES
+                     and not is_payload(c)), None)
+        if spec is not None:
+            _err(f"build refused: {spec} is an estimate spec, and --pack builds from a "
+                 f"BidSheet.ai payload -- build the spec without --pack: est-estimate build "
+                 f"{spec} OUT.xlsx")
+            return 1
+        return None
+    payload = next((c for c in args.config if is_payload(c)), None)
+    if payload is not None:
+        names = ", ".join(p.name for p in registry.discover().packs) or "none"
+        _err(f"build refused: {payload} is a BidSheet.ai workbook payload -- name the pack "
+             f"that lays it out: est-estimate build --pack NAME {payload} OUT.xlsx "
+             f"(installed: {names})")
+        return 2
+    return None
+
+
 def cmd_build_pack(args) -> int:
-    """`est-estimate build --pack NAME payload.json [page.json ...] -o OUT`: the
-    pack builds the book from a read-model payload (pages are merged first).
-    A refusal is printed with the prefix its kind gets for every pack."""
+    """`est-estimate build --pack NAME payload.json [page.json ...] [OUT.xlsx |
+    -o OUT]`: the pack builds the book from a read-model payload (pages are
+    merged first). A refusal is printed with the prefix its kind gets for
+    every pack. ``check_build_inputs`` has run."""
     from estimating_tools.exchange.types import BuildRefused
 
     found = registry.discover()
@@ -276,7 +371,9 @@ def cmd_build_pack(args) -> int:
         return payload
     out = Path(args.output) if args.output else _default_book_path(paths[0])
     options = {"exported_at": getattr(args, "exported_at", None),
-               "host": getattr(args, "host", None), "style": getattr(args, "style", None)}
+               "host": getattr(args, "host", None), "style": getattr(args, "style", None),
+               "allow_dropped": getattr(args, "allow_dropped", False),
+               "template": getattr(args, "template", None)}
     try:
         report = pack.build(payload, out, options={k: v for k, v in options.items() if v})
     except NotYet as exc:
@@ -288,6 +385,8 @@ def cmd_build_pack(args) -> int:
         _err(f"could not write the workbook: {exc}")
         return 1
     emit(f"WROTE: {report.path}")
+    for what in getattr(report, "dropped", ()) or ():
+        emit(f"not copied onto the filled rows: {what}")
     _recalc(report.path, args)
     return 0
 

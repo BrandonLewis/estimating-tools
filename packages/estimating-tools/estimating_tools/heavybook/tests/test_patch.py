@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import copy
 import json
+import shutil
 import zipfile
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
+from estimating_tools.exchange import writer
 from estimating_tools.exchange.types import ApplyResult
 from estimating_tools.exchange import baseline as hb_baseline
 from estimating_tools.heavybook import pack as hb_pack
@@ -16,9 +19,17 @@ from estimating_tools.exchange.reader.book import STALE_PROPERTY
 from estimating_tools.heavybook.tests import _readback as H
 
 
-def _pasted_copy(tmp_path):
-    """A book where resource 3 (Foreman) is pasted into activity 1's block."""
-    path = H.build_book(H.fixture_doc(), tmp_path / "e1.xlsx")
+V1 = Path(H.__file__).parent / "fixtures" / "v1-book.xlsx"
+
+
+def _pasted_copy(tmp_path, v1=False):
+    """A book where resource 3 (Foreman) is pasted into activity 1's block:
+    the template build's, or (``v1``) a copy of the code-built field book."""
+    path = tmp_path / "e1.xlsx"
+    if v1:
+        shutil.copy(V1, path)
+    else:
+        H.build_book(H.fixture_doc(), path)
     wb = H.open_book(path)
     ws = wb[H.CR_TAB]
     src = H.cr_row(ws, "RESOURCE", 3)
@@ -70,8 +81,9 @@ def test_patch_writes_ids_and_v_and_replaces_the_baseline(tmp_path):
     after = _parts(path)
     changed = H.changed_beyond_cached_values(before, after)
     # The Cost Report, the Checks sheet (its export line), the stamp sheet.
-    assert changed <= {"xl/worksheets/sheet3.xml", "xl/worksheets/sheet7.xml",
-                       "xl/worksheets/sheet11.xml", "docProps/custom.xml"}
+    with zipfile.ZipFile(path) as z:
+        parts = writer._sheet_parts(z)
+    assert changed <= {parts[H.CR_TAB], parts["Checks"], parts["_wb"], "docProps/custom.xml"}
 
 
 def _baseline_cells(path):
@@ -476,6 +488,15 @@ def test_a_pasted_activity_block_is_live_after_the_patch(tmp_path):
     # The block's rows keep their owner chain (the copy brought it), which
     # now names the new activity; the patch wrote no owner tag.
     assert all(ws[f"{CR.PARENT}{r}"].value == H.owner_formula(r) for r in block if r != last + 1)
+    # The rows below the paste moved and their formulas with them: an item
+    # further down still prices to BidSheet.ai's figure on Checks.
+    assert H.cr_row(ws, "ITEM", 2) > block[-1]
+    ev = H.evaluate(H.open_book(path), tmp_path)
+    ck = H.open_book(path)["Checks"]
+    item_rows = [r for r in range(1, ck.max_row + 1)
+                 if ck[f"J{r}"].value in ("ITEM_COST", "ITEM_PRICE") and ck[f"K{r}"].value in (2, 3)]
+    assert len(item_rows) == 4
+    assert all(ev[f"Checks!I{r}"] == "OK" for r in item_rows),         [(ev[f"Checks!C{r}"], ev[f"Checks!E{r}"], ev[f"Checks!F{r}"]) for r in item_rows]
     _clean(path)
     res_row = next(r for r in block if ws[f"{CR.KIND}{r}"].value == "RESOURCE")
     ops = _edit(path, H.CR_TAB, f"{CR.QTY}{res_row}", 77)
@@ -738,12 +759,19 @@ def test_a_patch_leaves_every_formula_cached_with_current_values(tmp_path):
     assert first.change_set.ops and report.baseline_replaced, report.problems
     cached = load_workbook(path, data_only=True)
     fresh = evaluate(Book.load(path))
-    assert fresh and not [k for k, v in fresh.items() if isinstance(v, Failed)]
+    # The prototype rows on the hidden _templates sheet read their own blank
+    # id tags (a blank SUMIF criterion xlcalc refuses); every other formula
+    # computes.
+    assert fresh and not [k for k, v in fresh.items()
+                          if isinstance(v, Failed) and k[0] != "_templates"]
+    fresh = {k: v for k, v in fresh.items() if not isinstance(v, Failed)}
     wrong = []
     for (sheet, r, c), want in fresh.items():
         got = cached[sheet].cell(r, c).value
         if isinstance(got, (dt.datetime, dt.date)):
             got = to_excel(got)
+        elif isinstance(got, dt.time):                 # a time-formatted serial
+            got = (got.hour * 3600 + got.minute * 60 + got.second) / 86400
         if isinstance(want, Err):
             want = want.code
         if want == "" and got is None:
@@ -932,7 +960,12 @@ def test_a_patch_that_writes_a_tag_asks_excel_to_recalculate(tmp_path):
 
 
 def test_a_baseline_only_patch_leaves_the_workbook_part_alone(tmp_path):
-    path = H.build_book(H.fixture_doc(), tmp_path / "r.xlsx")
+    """A code-built book: a patch that tags no row and changes no formula
+    input asks Excel for no recalculation. (A template book's patch of a
+    deleted line also blanks its display rows on Checks and Flat, which
+    rightly asks for one.)"""
+    path = tmp_path / "r.xlsx"
+    shutil.copy(V1, path)
     wb = H.open_book(path)
     ws = wb[H.CR_TAB]
     ws.delete_rows(H.cr_row(ws, "RESOURCE", 3))
@@ -1123,3 +1156,35 @@ def test_a_deleted_activity_and_another_users_edit_are_patched(tmp_path):
     ws = H.open_book(path)[H.CR_TAB]
     assert ws[f"{CR.QTY}{H.cr_row(ws, 'RESOURCE', 1)}"].value == 77
     _clean(path)
+
+
+def test_a_share_change_a_patch_notes_stays_stale_until_a_rebuild(tmp_path):
+    from estimating_tools.exchange import stamp as exchange_stamp
+    from estimating_tools.heavybook.refresh import SHARES_CARRIED, SHARES_CHANGED
+
+    path = _pasted_copy(tmp_path, v1=True)       # the cost-share guard of a code-built book
+    assert "stale" not in exchange_stamp.read(path).raw          # a fresh build
+    p = hb_pack.pack()
+    result = p.read(path)
+    fresh = _fresh_with_copy()
+    fresh["shares"][0]["fraction"] = "0.9"
+    report = p.patch(path, result.change_set, _plan(result), fresh)
+    assert report.baseline_replaced and SHARES_CHANGED in report.notes
+    assert exchange_stamp.read(path).raw["stale"] == ["shares"]
+    # No new change in BidSheet.ai: current; the book still prices the old
+    # shares, which the earlier finding says.
+    again = p.refresh(path, fresh)
+    assert again.current and SHARES_CARRIED in again.notes
+    # Another user's change since: taken (the baseline's shares already are
+    # BidSheet.ai's), the carried finding a note, not a refusal.
+    other = copy.deepcopy(fresh)
+    next(r for r in other["resources"] if r["id"] == 4).update(quantity="5.000", v="6" * 16)
+    later = p.refresh(path, other)
+    assert later.clean and later.baseline_replaced and SHARES_CARRIED in later.notes
+    assert SHARES_CHANGED not in later.notes
+    assert exchange_stamp.read(path).raw["stale"] == ["shares"]
+    # A share change found now is new: refused.
+    newer = copy.deepcopy(other)
+    newer["shares"][0]["fraction"] = "0.8"
+    refused = p.refresh(path, newer)
+    assert not refused.clean and refused.structural == [SHARES_CHANGED]

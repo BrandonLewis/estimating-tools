@@ -1,0 +1,23 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [],
+ "ops": [
+  {
+   "fields": {},
+   "op": "activity.delete",
+   "ref": 7,
+   "v": "9fbd68ff68b2ba28"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": null,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Cost Report: activity 'Fence' (activity 7) deleted, with its child activities, steps and lines"
+ ]
+}

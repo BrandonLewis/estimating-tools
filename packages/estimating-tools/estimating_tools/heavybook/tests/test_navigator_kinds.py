@@ -1,12 +1,15 @@
-"""Estimate Navigator's HeavyBook test fixture, written from the golden book
-and checked for drift: ``excel-addin/tests/fixtures/heavycivil-kinds.json``.
+"""Estimate Navigator's HeavyBook test fixture, written from the committed
+code-built field book (``fixtures/v1-book.xlsx``, the golden payload built by
+the retired code writers) and checked for drift:
+``excel-addin/tests/fixtures/heavycivil-kinds.json``.
 
 The add-in's ``node --test`` suites run against the Cost Report's and Crews'
-kind, id and parent columns of the fixture book, spelled as Office.js hands
-them back (a blank cell is ""; a number is a number; a formula cell -- a
-block row's owner tag -- its computed value, here pycel's), plus the book's
-layout JSON (``_wb!A1``) without its baseline. Regenerate with
-UPDATE_GOLDEN=1 after a reviewed change to the build.
+kind, id and parent columns of that book, spelled as Office.js hands them
+back (a blank cell is ""; a number is a number; a formula cell -- a block
+row's owner tag -- its cached value), plus the book's layout JSON (the
+stamp's ``extra.layout``, which only a code-built book carries). It describes
+the books in the field; a template book's stamp has no layout JSON.
+Regenerate with UPDATE_GOLDEN=1 only after a reviewed change.
 """
 from __future__ import annotations
 
@@ -17,14 +20,31 @@ from pathlib import Path
 import pytest
 
 from estimating_tools.heavybook.columns import CR, CW
-from estimating_tools.heavybook.layout import FIRST_ROW
+from estimating_tools.heavybook.codebook import FIRST_ROW
 
-#: The repo root: tests/ -> heavycivil -> estimating_tools -> estimating-tools -> packages.
+#: The repo root: tests/ -> heavybook -> estimating_tools -> estimating-tools -> packages
+#: -> the root.
 ROOT = Path(__file__).resolve().parents[5]
 KINDS = ROOT / "excel-addin" / "tests" / "fixtures" / "heavycivil-kinds.json"
+FIELD_BOOK = Path(__file__).parent / "fixtures" / "v1-book.xlsx"
 #: Per sheet key: (field, column letter), in the order the JSON lists them.
 COLUMNS = {"cost_report": (("kind", CR.KIND), ("id", CR.ID), ("parent", CR.PARENT)),
            "crews": (("kind", CW.KIND), ("id", CW.ID), ("parent", CW.CREW))}
+
+
+@pytest.fixture
+def book():
+    from openpyxl import load_workbook
+    return load_workbook(FIELD_BOOK)
+
+
+@pytest.fixture
+def evaluated():
+    """The field book's cached values (``ev["Sheet!A1"]``)."""
+    from openpyxl import load_workbook
+    wb = load_workbook(FIELD_BOOK, data_only=True)
+    return {f"{ws.title}!{c.coordinate}": c.value
+            for ws in wb.worksheets for row in ws.iter_rows() for c in row}
 
 
 def _office(value):
@@ -65,7 +85,7 @@ def test_heavycivil_kinds_fixture_has_not_drifted(book, evaluated):
                            + "\n").encode("utf-8"))
     assert got == json.loads(KINDS.read_text(encoding="utf-8")), (
         "excel-addin/tests/fixtures/heavycivil-kinds.json is stale: regenerate it with "
-        "UPDATE_GOLDEN=1 pytest .../heavycivil/tests/test_navigator_kinds.py")
+        "UPDATE_GOLDEN=1 pytest .../heavybook/tests/test_navigator_kinds.py")
 
 
 def test_the_fixture_columns_line_up(book, evaluated):

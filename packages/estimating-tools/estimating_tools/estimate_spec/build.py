@@ -363,7 +363,7 @@ class Resolver:
 # =============================================================================
 
 _RESERVED_CELL_KEYS = {"value", "formula", "style", "optional", "if_ref", "if_param", "if_it",
-                        "validation", "ref_error", "comment", "hide_column"}
+                        "validation", "ref_error", "comment", "hide_column", "text"}
 
 #: A cell key placed relative to a column landmark (`"{col:vl+2}"`) instead of
 #: at a fixed letter -- for a cell that sits past a `repeat_cols` band.
@@ -858,6 +858,10 @@ class EstimateBuilder:
                         f"got {cell['hide_column']!r}")
                 if cell["hide_column"]:
                     self.hidden_cols.add((sheet, col))
+            if "text" in cell and not isinstance(cell["text"], bool):
+                raise R.RecipeError(
+                    f"unit {unit!r} cell {col}: text must be true or false, "
+                    f"got {cell['text']!r}")
             if "comment" in cell and not (isinstance(cell["comment"], str) and cell["comment"]):
                 raise R.RecipeError(
                     f"unit {unit!r} cell {col}: comment must be a non-empty template, "
@@ -868,6 +872,7 @@ class EstimateBuilder:
                 optional=cell.get("optional", False), if_ref=cell.get("if_ref"),
                 if_param=cell.get("if_param"), if_it=cell.get("if_it"),
                 validation=cell.get("validation"), ref_error=cell.get("ref_error"),
+                text=cell.get("text", False),
                 params=params, item=item, landmarks=landmarks,
                 band_col=band_col, binds=binds,
                 globals=dict(self.sheet_globals.get(sheet, {})),   # snapshot, as item_qty was
@@ -1443,8 +1448,11 @@ class EstimateBuilder:
                             f"{where}: ref_error itself failed to resolve: {e2}") from e2
                     raise R.RecipeError(message) from e
                 raise
-            literal_text = isinstance(value, str) and value.startswith(_LITERAL_TEXT)
-            value = _unliteral(_coerce(value))
+            # ``text: true``: the resolved text as is, never a number or a
+            # date (a row's ``v`` is hex, and may look like either).
+            literal_text = p["text"] or (isinstance(value, str)
+                                         and value.startswith(_LITERAL_TEXT))
+            value = _unliteral(value if p["text"] else _coerce(value))
             if value == "" or value is None:
                 if p["optional"]:
                     self._lock_blank_cell(p)
@@ -1758,7 +1766,8 @@ def _write_layout(wb, builder, *, spec_name=None, brand=None) -> None:
     wb.custom_doc_props.append(StringProperty(name="estimate_layout", value=str(LM.LAYOUT_VERSION)))
 
 
-def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None, quotes=None):
+def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None, quotes=None,
+             exchange=None):
     """Render an estimate workbook (openpyxl Workbook) from a config in a format pack.
 
     `pack` defaults to the bundled pack. With `stamp`, the workbook carries the
@@ -1781,13 +1790,25 @@ def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None, quote
     frames, and the config is replaced by `package_frames.apply_packages`'s
     transformed copy before anything is laid out -- after validation, so the
     schema only ever sees the spec as written.
+
+    ``exchange`` (an ``identity.Baseline``): the config is BidSheet.ai's
+    read model laid out (delivery 2's ``from_model``), not a spec. The
+    payload is checked by the read model's parser instead of the spec
+    schema (whose vocabulary -- its seed trade names among them -- is an
+    authoring rule), no ``estimate_spec_sha`` is written, and the book gets
+    the exchange stamp (``identity.write``). Fieldbook only.
     """
     from openpyxl.packaging.custom import StringProperty
 
-    from estimating_tools.estimate_spec.format_pack import bundled_pack
-    fingerprint = spec_fingerprint(config) if stamp else None
+    from estimating_tools.estimate_spec.format_pack import bundled_pack, readback_family
+    if exchange is not None and not stamp:
+        raise ValueError("a build from the read model is stamped: its stamp is how the book "
+                         "reads back")
+    fingerprint = spec_fingerprint(config) if stamp and exchange is None else None
     effective_pack = pack or bundled_pack()
-    if effective_pack.strict:
+    if exchange is not None and effective_pack.name != "fieldbook":
+        raise ValueError(f"{effective_pack.name} does not build from the read model")
+    if effective_pack.strict and exchange is None:
         import jsonschema
         try:
             jsonschema.validate(config, effective_pack.schema)
@@ -1797,6 +1818,9 @@ def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None, quote
 
     from estimating_tools.estimate_spec.validate import validate_cross_references
     validate_cross_references(config)
+    if exchange is None and readback_family(effective_pack) == "fieldbook":
+        from estimating_tools.estimate_spec.validate import check_one_task_per_code
+        check_one_task_per_code(config)
     if config.get("work_packages"):
         from estimating_tools.estimate_spec.package_frames import (
             apply_packages,
@@ -1817,9 +1841,16 @@ def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None, quote
     if stamp:
         wb.custom_doc_props.append(StringProperty(
             name="estimate_format", value=builder.pack.stamp))
-        wb.custom_doc_props.append(StringProperty(name="estimate_spec_sha", value=fingerprint))
+        if exchange is None:
+            wb.custom_doc_props.append(StringProperty(name="estimate_spec_sha",
+                                                      value=fingerprint))
         if builder.pack.layout_map:
             _write_layout(wb, builder, spec_name=spec_name, brand=brand)
+        if exchange is not None:
+            from estimating_tools.estimate_spec import identity
+            from estimating_tools.estimate_spec.pack import FieldbookPack
+
+            identity.write(wb, exchange, FieldbookPack().declaration())
     return wb
 
 
@@ -1852,6 +1883,11 @@ def _blame_quote_text(exc, quotes) -> None:
 
 def build(config_path, out_path=None, pack=None, *, stamp=True, lint=True, brand=None):
     config = yaml.safe_load(Path(config_path).read_text(encoding="utf-8"))
+    if not isinstance(config, dict):
+        # A JSON or YAML document whose top level is a list or a scalar: the
+        # CLI reports a ValueError as an invalid spec.
+        raise ValueError("the spec must be a mapping (an object) at its top level, not "
+                         f"{'empty' if config is None else type(config).__name__}")
     quotes = None
     if config.get("work_packages"):
         from estimating_tools.quotes.files import load_quotes

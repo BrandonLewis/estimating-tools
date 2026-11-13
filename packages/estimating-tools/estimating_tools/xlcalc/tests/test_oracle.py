@@ -7,7 +7,6 @@ is asserted first, so it cannot pass by caching nothing either.
 from __future__ import annotations
 
 import datetime as dt
-import json
 from pathlib import Path
 
 import pytest
@@ -19,7 +18,7 @@ from estimating_tools.estimate_spec.tests._formula_eval import _ast_str_shim, _r
 
 ROOT = Path(__file__).resolve().parents[2]
 FIELDBOOK = ROOT / "estimate_spec" / "packs" / "fieldbook" / "examples"
-HEAVYBOOK = ROOT / "heavybook" / "tests" / "fixtures" / "workbook.json"
+HEAVYBOOK_V1 = ROOT / "heavybook" / "tests" / "fixtures" / "v1-book.xlsx"
 
 
 def _fieldbook(name, tmp_path):
@@ -30,12 +29,14 @@ def _fieldbook(name, tmp_path):
 
 
 def _heavybook(tmp_path):
-    from estimating_tools.heavybook import build, style
-    doc = json.loads(HEAVYBOOK.read_text(encoding="utf-8"))
-    book = build.build(doc, style=style.load_style(), exported_at="2026-10-20T09:00:00Z",
-                       host="www.bidsheet.ai")
+    """The committed code-built field book: its formulas (the retired code
+    writers') keep checking xlcalc against pycel. The template build's
+    formulas need defined names pycel's openpyxl wrapper does not read; its
+    values are checked against the code build's (``test_golden_values``)."""
+    import shutil
+
     out = tmp_path / "heavybook.xlsx"
-    build.save(book, out)
+    shutil.copy(HEAVYBOOK_V1, out)
     return out
 
 

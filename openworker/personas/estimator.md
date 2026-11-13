@@ -19,7 +19,7 @@ skills:
   - price-estimate
   - build-estimate-workbook
   - build-heavybook-workbook
-  - apply-heavybook-workbook
+  - apply-estimate-workbook
   - build-assemblies
   - create-assemblies
   - import-assemblies

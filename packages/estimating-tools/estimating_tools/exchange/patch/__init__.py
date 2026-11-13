@@ -36,7 +36,11 @@ apply's own rows set aside: they are the apply's, neither collisions nor
 additions) and taken in the same verified write; a change the merge cannot
 take (a collision, or a structural change such as an activity's crew) is
 never written, since a copy could read back clean while its formulas price
-the old structure: the book goes stale. When any cell outside the stamp sheet is written, the
+the old structure: the book goes stale. What the pack reports the book
+shows as of export and BidSheet.ai changed (``Pack.refresh_extras``'
+structural lines) is a note, and the baseline is still replaced; its names
+(``stale``) go into the stamp's ``stale`` list, so every later patch and
+refresh keeps reporting it until the book is rebuilt. When any cell outside the stamp sheet is written, the
 book also asks Excel to recalculate on open. Nothing else is touched.
 
 The reader never sends the ``v`` stored in a row's v cell: every op's ``v``
@@ -132,8 +136,10 @@ def patch(book: Path, change_set, result: ApplyResult, payload: dict, *,
         pending = run_ops(cells, scanned, change_set, result, fresh)
         patch_crews(cells, scanned, changes, result, fresh, pending)
         exported_at = verify.now()
-        stamp = verify.stamp_cells(opened, payload, exported_at)
         extras = verify.extras(pack, opened, payload, fresh, exported_at)
+        # What the new baseline hides (it equals BidSheet.ai there now) the
+        # stamp keeps as stale: later patches and refreshes still report it.
+        stamp = verify.stamp_cells(opened, payload, exported_at, stale=extras.stale)
         merge = merge_mod.plan(opened, scanned, changes, change_set, fresh, applied=result)
         # Other users' changes since the read: taken in the same write.
         absorb = (layout_mod.layout(opened, merge)

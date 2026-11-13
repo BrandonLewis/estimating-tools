@@ -1,0 +1,318 @@
+{
+ "bidmanager_commit": "dfa841ea19b7f2a0640ee19bc851588141cb010a",
+ "fingerprints": {
+  "activity": "activity_v",
+  "crew": "crew_v",
+  "element": "element_v",
+  "estimate": "estimate_v",
+  "item": "item_v",
+  "quantity": "quantity_v",
+  "resource": "resource_v",
+  "section": "section_v",
+  "step": "step_v"
+ },
+ "max_ops": 5000,
+ "new_token": "^new:[A-Za-z0-9_.-]{1,64}$",
+ "ops": {
+  "activity.create": {
+   "creates": true,
+   "kind": "activity",
+   "needs_v": false
+  },
+  "activity.delete": {
+   "creates": false,
+   "kind": "activity",
+   "needs_v": true
+  },
+  "activity.move": {
+   "creates": false,
+   "kind": "activity",
+   "needs_v": true
+  },
+  "activity.set_crew": {
+   "creates": false,
+   "kind": "activity",
+   "needs_v": true
+  },
+  "activity.set_links": {
+   "creates": false,
+   "kind": "activity",
+   "needs_v": true
+  },
+  "activity.set_spread": {
+   "creates": false,
+   "kind": "activity",
+   "needs_v": true
+  },
+  "activity.update": {
+   "creates": false,
+   "kind": "activity",
+   "needs_v": true
+  },
+  "bid_totals.set": {
+   "creates": false,
+   "kind": "estimate",
+   "needs_v": true
+  },
+  "crew.update_members": {
+   "creates": false,
+   "kind": "crew",
+   "needs_v": true
+  },
+  "element.create": {
+   "creates": true,
+   "kind": "element",
+   "needs_v": false
+  },
+  "element.delete": {
+   "creates": false,
+   "kind": "element",
+   "needs_v": true
+  },
+  "element.set_quantity": {
+   "creates": false,
+   "kind": "quantity",
+   "needs_v": null
+  },
+  "element.update": {
+   "creates": false,
+   "kind": "element",
+   "needs_v": true
+  },
+  "estimate.update": {
+   "creates": false,
+   "kind": "estimate",
+   "needs_v": true
+  },
+  "item.update": {
+   "creates": false,
+   "kind": "item",
+   "needs_v": true
+  },
+  "resource.create": {
+   "creates": true,
+   "kind": "resource",
+   "needs_v": false
+  },
+  "resource.delete": {
+   "creates": false,
+   "kind": "resource",
+   "needs_v": true
+  },
+  "resource.update": {
+   "creates": false,
+   "kind": "resource",
+   "needs_v": true
+  },
+  "section.delete": {
+   "creates": false,
+   "kind": "section",
+   "needs_v": true
+  },
+  "section.upsert": {
+   "creates": null,
+   "kind": "section",
+   "needs_v": null
+  },
+  "step.add": {
+   "creates": true,
+   "kind": "step",
+   "needs_v": false
+  },
+  "step.delete": {
+   "creates": false,
+   "kind": "step",
+   "needs_v": true
+  },
+  "step.update": {
+   "creates": false,
+   "kind": "step",
+   "needs_v": true
+  }
+ },
+ "placement": {
+  "activity.create": [
+   "estimate_item_id",
+   "parent_id"
+  ],
+  "resource.create": [
+   "activity_id"
+  ],
+  "step.add": [
+   "activity_id"
+  ]
+ },
+ "request_id": {
+  "characters": "[A-Za-z0-9._:-]",
+  "max_length": 128,
+  "retention_hours": 24
+ },
+ "required_on_create": {
+  "activity.create": [
+   "assembly_type",
+   "estimate_item_id",
+   "name"
+  ],
+  "element.create": [
+   "name"
+  ],
+  "resource.create": [
+   "activity_id"
+  ],
+  "step.add": [
+   "activity_id"
+  ]
+ },
+ "section_upsert_fields": [
+  "display_order",
+  "name",
+  "schedule_id"
+ ],
+ "structured": [
+  "activity.delete",
+  "bid_totals.set",
+  "crew.update_members",
+  "element.delete",
+  "resource.delete",
+  "section.delete",
+  "section.upsert",
+  "step.delete"
+ ],
+ "v_pattern": "^[0-9a-f]{16}$",
+ "writable": {
+  "activity.create": [
+   "activity_code_id",
+   "assembly_type",
+   "basis_quantity",
+   "basis_unit",
+   "count",
+   "crew_factor",
+   "description",
+   "hours_per_shift",
+   "name",
+   "production_rate",
+   "production_unit",
+   "sort_order"
+  ],
+  "activity.move": [
+   "item_id",
+   "parent_id",
+   "sort_order"
+  ],
+  "activity.set_crew": [
+   "crew_id",
+   "duration_shifts"
+  ],
+  "activity.set_links": [
+   "element_ids",
+   "measured_by",
+   "paid_as_part_of"
+  ],
+  "activity.set_spread": [
+   "basis",
+   "item_ids",
+   "scope"
+  ],
+  "activity.update": [
+   "activity_code_id",
+   "basis_quantity",
+   "basis_unit",
+   "concrete_section_type",
+   "count",
+   "crew_factor",
+   "description",
+   "dimensions",
+   "duration_shifts",
+   "hours_per_shift",
+   "name",
+   "production_rate",
+   "production_unit",
+   "sort_order",
+   "structure_count",
+   "structure_quantity",
+   "waste_factor"
+  ],
+  "element.create": [
+   "element_type",
+   "ifc_global_id",
+   "name",
+   "source",
+   "structure_id"
+  ],
+  "element.set_quantity": [
+   "override_value",
+   "pay_item_id"
+  ],
+  "element.update": [
+   "display_order",
+   "element_type",
+   "ifc_global_id",
+   "name",
+   "structure_id"
+  ],
+  "estimate.update": [
+   "markup_amount",
+   "markup_percentage"
+  ],
+  "item.update": [
+   "bid_unit_price_override",
+   "estimated_unit_price",
+   "quantity_override",
+   "scope",
+   "scope_note",
+   "section_id"
+  ],
+  "resource.create": [
+   "activity_code_id",
+   "burden_percentage",
+   "component_type",
+   "description",
+   "equipment_rate_id",
+   "includes_burden",
+   "labor_cost_basis",
+   "labor_rate_id",
+   "material_cost_id",
+   "name",
+   "pieces",
+   "quantity",
+   "sort_order",
+   "time_unit",
+   "time_value",
+   "trade",
+   "unit",
+   "unit_cost"
+  ],
+  "resource.update": [
+   "activity_code_id",
+   "burden_percentage",
+   "component_type",
+   "description",
+   "equipment_rate_id",
+   "includes_burden",
+   "labor_cost_basis",
+   "labor_rate_id",
+   "material_cost_id",
+   "name",
+   "pieces",
+   "quantity",
+   "sort_order",
+   "time_unit",
+   "time_value",
+   "trade",
+   "unit",
+   "unit_cost"
+  ],
+  "step.add": [
+   "activity_code_id",
+   "duration",
+   "duration_unit",
+   "name"
+  ],
+  "step.update": [
+   "activity_code_id",
+   "duration",
+   "duration_unit",
+   "name"
+  ]
+ }
+}

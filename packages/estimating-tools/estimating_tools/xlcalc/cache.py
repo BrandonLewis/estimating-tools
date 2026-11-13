@@ -24,19 +24,25 @@ from estimating_tools.xlcalc.values import Err
 @dataclass
 class Report:
     """How many formulas the book has, how many were cached, and why the
-    rest were not (``{reason: count}``)."""
+    rest were not (``{reason: count}``). ``hidden``: formulas on hidden
+    sheets left uncached -- a template book's prototype rows, which read
+    their own blank tags -- counted apart and never reported: a visible
+    cell that reads one is itself uncached and reported."""
     formulas: int = 0
     cached: int = 0
     reasons: dict = field(default_factory=dict)
+    hidden: int = 0
 
     def summary(self) -> str | None:
-        """One line when a formula was left uncached; None when all were."""
-        if self.cached == self.formulas:
+        """One line when a formula a visible sheet holds was left uncached;
+        None when all were."""
+        shown = self.formulas - self.hidden
+        if self.cached == shown:
             return None
         why = ", ".join(f"{reason}: {n:,}" for reason, n in
                         sorted(self.reasons.items(), key=lambda kv: (-kv[1], kv[0])))
-        return (f"cached {self.cached:,} of {self.formulas:,} formulas; "
-                f"{self.formulas - self.cached:,} not evaluated ({why})")
+        return (f"cached {self.cached:,} of {shown:,} formulas; "
+                f"{shown - self.cached:,} not evaluated ({why})")
 
 
 def _cell_value(v):
@@ -49,15 +55,19 @@ def _cell_value(v):
 
 def cache_values(path) -> Report:
     """Evaluate the book at ``path`` and write the cached values in place."""
-    results = evaluate(Book.load(path))
-    values, reasons = {}, Counter()
+    book = Book.load(path)
+    results = evaluate(book)
+    values, reasons, hidden = {}, Counter(), 0
     for (sheet, row, col), v in results.items():
         if isinstance(v, Failed):
-            reasons[v.reason] += 1
+            if sheet in book.hidden:
+                hidden += 1
+            else:
+                reasons[v.reason] += 1
             continue
         values.setdefault(sheet, {})[f"{get_column_letter(col)}{row}"] = _cell_value(v)
     cached = writer.write_cached(path, values)
-    return Report(formulas=len(results), cached=cached, reasons=dict(reasons))
+    return Report(formulas=len(results), cached=cached, reasons=dict(reasons), hidden=hidden)
 
 
 def cache_or_warn(path, *, stream=None, label: str | None = None) -> Report | None:

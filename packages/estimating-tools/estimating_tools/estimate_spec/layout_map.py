@@ -20,7 +20,7 @@ TABLE_COLUMNS = {
     "checks": ("rule_no", "rule", "item", "status"),
     "codes": ("code", "descr", "listed"),
 }
-CELLS = ("direct_total",)
+CELLS = ("direct_total", "shift_hours")
 TAGS = ("kind", "code_chain")
 BLOCK_KEYS = ("item", "head", "body", "end", "sub", "code_col")
 TEMPLATE_ROWS = ("crew", "line")

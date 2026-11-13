@@ -1,0 +1,704 @@
+# HeavyBook's template pack declaration (engine spec, Layer 2). With
+# template.xlsx, the pack's source: edit both by hand (heavybook/template/README.md).
+schema: 1
+pack:
+  name: heavybook
+  version: '2'
+  contract: '1'
+kind: template
+stamp:
+  name: exchange.stamp
+  sheet: _wb
+  cell: A1
+  property: estimate_format
+prototypes:
+  activity: hc.tpl.activity
+  stepped: hc.tpl.stepped
+  resource: hc.tpl.resource
+  step: hc.tpl.step
+  member: hc.tpl.member
+  item: hb.fill.item
+  element_qty: hb.fill.element_qty
+  group: hb.fill.group
+  crew: hb.fill.crew
+  library: hb.fill.library
+navigator:
+  templates:
+    activity: hc.tpl.activity
+    stepped: hc.tpl.stepped
+    resource: hc.tpl.resource
+    step: hc.tpl.step
+    member: hc.tpl.member
+  statuses:
+    pass:
+    - OK
+    fail:
+    - DIFF
+    - CHANGED
+    info:
+    - export
+  tables:
+    checks:
+      sheet: Checks
+      name: hc.checks
+      columns:
+        kind: A
+        code: B
+        measure: D
+        status: I
+  cells:
+    bid_totals: hc.bid_totals
+sheets:
+  cost_report:
+    tab: Cost Report
+    role: blocks
+    first_row: 5
+    header_row: 4
+    columns:
+      A: Code
+      B: Description
+      C: Quantity
+      D: Unit
+      E: Unit cost
+      F: Production
+      G: Prod unit
+      H: Hrs/shift
+      I: Crew factor
+      J: Shifts
+      K: Count
+      L: Man-hours
+      M: Labor
+      N: Equipment
+      O: Material
+      P: Subcontract
+      Q: Other
+      R: Total
+      S: Type
+      T: Labor basis
+      U: Burden %
+      V: Burden incl.
+    tags:
+      kind: W
+      id: X
+      v: Y
+      parent:
+        column: Z
+        derived:
+        - STEP
+        - RESOURCE
+        - STEPS
+        - START
+        - END
+      key: AD
+      ref: AE
+      owner_row: AJ
+    rows:
+    - ITEM
+    - ELEMENT_QTY
+    - GROUP
+    blocks:
+      activity:
+        kind: ACTIVITY
+        recursive: true
+        within:
+        - ITEM
+        - GROUP
+        children:
+        - steps
+        - resources
+      steps:
+        marker:
+          open: STEPS
+          close: START
+        row: STEP
+        optional: true
+      resources:
+        marker:
+          open: START
+          close: END
+        row: RESOURCE
+    markers:
+      STEPS: {}
+      START: {}
+      END:
+        cue:
+          column: B
+          text: insert lines above
+    fields:
+      ITEM:
+        quantity_override: C
+        estimated_unit_price: E
+      ELEMENT_QTY:
+        override_value: C
+      ACTIVITY:
+        name: B
+        production_rate: F
+        production_unit: G
+        hours_per_shift: H
+        crew_factor: I
+        duration_shifts: J
+        count: K
+      STEP:
+        name: B
+        duration: C
+        duration_unit: D
+      RESOURCE:
+        name: B
+        quantity: C
+        unit: D
+        unit_cost: E
+        time_value: F
+        time_unit: G
+        component_type: S
+        labor_cost_basis: T
+        burden_percentage: U
+        includes_burden: V
+    export_values:
+      ELEMENT_QTY:
+        E: derived
+      ITEM:
+        AF: schedule_quantity
+      ACTIVITY:
+        AC: manhours
+        AE: crew_id
+        AU: duration_shifts
+        AW: count
+    formulas:
+      ITEM:
+      - AG
+      - AH
+      - AI
+      - M
+      - N
+      - O
+      - P
+      - Q
+      - R
+      ELEMENT_QTY:
+      - AG
+      - B
+      ACTIVITY:
+      - AA
+      - AF
+      - AH
+      - AI
+      - AL
+      - AM
+      - AN
+      - AO
+      - AP
+      - AQ
+      - AR
+      - AS
+      - AV
+      - L
+      - M
+      - N
+      - O
+      - P
+      - Q
+      - R
+      RESOURCE:
+      - L
+      - M
+      - N
+      - O
+      - P
+      - Q
+      - R
+      - AF
+      - AG
+      '*':
+      - AJ
+      - AK
+      ACTIVITY.stepped:
+      - J
+    written:
+      STEP:
+        A: step
+    labels:
+      ITEM:
+        A: item_number
+        B: description
+        D: unit
+        AB: total
+        AE: scope
+        AX: calculated_unit_price
+      ELEMENT_QTY:
+        A: key
+        D: unit
+        AE: element_id
+        AH: override
+        AY: element.name
+        AZ: label
+      ACTIVITY:
+        A: code
+        C: basis_quantity
+        D: basis_unit
+        AB: cost
+        AT: cost_split.labor
+      RESOURCE:
+        AB: cost
+    header:
+      AK2: estimate.name
+      AL2: estimate.project_title
+  crews:
+    tab: Crews
+    role: blocks
+    first_row: 5
+    header_row: 4
+    columns:
+      A: Code / class
+      B: Name
+      C: Count
+      D: Library rate
+      E: Rate override
+      F: Rate
+      G: Hrs/shift
+      H: Crew factor
+      I: Headcount
+      J: Crew $/hr
+    tags:
+      kind: K
+      id: L
+      v: M
+      parent:
+        column: N
+        derived:
+        - MEMBER
+        - NOTE
+        - CREW_END
+      ref: O
+      owner_row: R
+    blocks:
+      crew:
+        kind: CREW
+        children:
+        - members
+      members:
+        marker:
+          open: CREW
+          close: CREW_END
+        row: MEMBER
+        banner: NOTE
+    markers:
+      NOTE:
+        cue:
+          column: B
+          text: Library crew -- an edit copies it into this estimate.
+      CREW_END:
+        cue:
+          column: B
+          text: insert members above
+    fields:
+      MEMBER:
+        classification: A
+        count: C
+        hourly_rate_override: E
+    export_values:
+      CREW:
+        G: hours_per_shift
+        H: crew_factor
+      MEMBER:
+        P: effective_hourly_rate
+    formulas:
+      CREW:
+      - A
+      - I
+      - J
+      MEMBER:
+      - D
+      - F
+      - Q
+      '*':
+      - R
+      - S
+    labels:
+      CREW:
+        B: name
+        U: code
+        P: hourly_rate
+    header:
+      U2: estimate.name
+  bid_form:
+    tab: Bid Form
+    role: flat
+    first_row: 1
+    header_row: 12
+    columns:
+      A: Item
+      B: Description
+      C: Schedule
+      D: Bid qty
+      E: Unit
+      F: Scope
+      G: Price override
+      H: Bid unit price
+      I: Bid total
+    tags:
+      kind: J
+      id: K
+      v: L
+      name: T
+    rows:
+    - SECTION
+    - ITEM_BID
+    - GROUP
+    - BID_TOTAL
+    fields:
+      ITEM_BID:
+        scope: F
+        bid_unit_price_override: G
+    export_values:
+      ITEM_BID:
+        D: schedule_quantity
+    formulas:
+      ITEM_BID:
+      - H
+      - I
+      - M
+      - N
+      - O
+      - P
+      - Q
+      - U
+      - V
+      - W
+      BID_TOTAL:
+      - A
+      - I
+      - W
+      SECTION:
+      - W
+      GROUP:
+      - W
+    named_rows:
+      name_column: T
+      value_column: C
+      rows:
+        markup_percentage:
+          kind: ESTIMATE
+          input: true
+        markup_amount:
+          kind: BID_INPUT
+          input: true
+        indirect_cost:
+          kind: BID_FIGURE
+        direct_cost:
+          kind: BID_FIGURE
+          formula: true
+        markup_total:
+          kind: BID_FIGURE
+          formula: true
+        bid_factor:
+          kind: BID_FIGURE
+          formula: true
+        excluded_cost:
+          kind: BID_FIGURE
+          formula: true
+    regions:
+    - at: 13
+      rows:
+      - SECTION
+      - ITEM_BID
+      - GROUP
+    - at: 15
+      rows:
+      - BID_TOTAL
+    prototypes:
+      SECTION: hb.fill.bid_form.section
+      ITEM_BID: hb.fill.bid_form.item_bid
+      GROUP: hb.fill.bid_form.group
+      BID_TOTAL: hb.fill.bid_form.bid_total
+    labels:
+      SECTION:
+        A: name
+      ITEM_BID:
+        A: item_number
+        B: description
+        C: schedule_label
+        E: unit
+        R: bid_unit_price
+        S: bid_total
+        X: schedule_id
+      BID_TOTAL:
+        Z: name
+        AA: is_primary
+    header:
+      U2: estimate.name
+      V2: estimate.project_title
+  rates:
+    tab: Rates
+    role: rates
+    columns_by_key:
+      id: A
+      name: B
+      unit: C
+      rate: D
+    sections:
+      labor: Labor rates
+      equipment: Equipment rates
+      material: Material costs
+    first_row: 1
+    tags:
+      kind: F
+    regions:
+    - at: 1
+      rows:
+      - RATE_SECTION
+    prototypes:
+      RATE_SECTION: hb.fill.rates.section
+    labels:
+      RATE_TITLE:
+        A: title
+      RATE:
+        A: id
+        B: name
+        C: unit
+        D: rate
+        E: link
+  recap:
+    tab: Recap
+    role: display
+    first_row: 5
+    header_row: 4
+    tags:
+      kind: O
+      id: P
+    regions:
+    - at: 5
+      rows:
+      - ITEM
+    prototypes:
+      ITEM: hb.fill.recap.item
+    labels:
+      ITEM:
+        A: item_number
+        B: description
+        D: unit
+    header:
+      Q2: estimate.name
+  schedule:
+    tab: Schedule
+    role: display
+    first_row: 5
+    header_row: 4
+    tags:
+      kind: G
+      id: H
+    regions:
+    - at: 5
+      rows:
+      - SCHEDULE
+    prototypes:
+      SCHEDULE: hb.fill.schedule.activity
+    labels:
+      ACTIVITY:
+        A: code
+        B: name
+        C: item.item_number
+        D: start_date
+        I: finish_date
+        J: duration_days
+  flat:
+    tab: Flat
+    role: display
+    first_row: 5
+    header_row: 4
+    tags:
+      kind: J
+      id: K
+    regions:
+    - at: 5
+      rows:
+      - ACTIVITY
+    prototypes:
+      ACTIVITY: hb.fill.flat.activity
+      ACTIVITY.crew: hb.fill.flat.activity.crew
+    labels:
+      CREW_CHARGE:
+        A: item.item_number
+        B: code
+        C: name
+        N: id
+        O: crew.name
+        P: crew_id
+      RESOURCE:
+        A: activity.item.item_number
+        B: activity.code
+        C: activity.name
+        D: name
+        G: unit
+        N: activity_id
+    header:
+      L2: estimate.name
+  checks:
+    tab: Checks
+    role: display
+    first_row: 5
+    header_row: 4
+    tags:
+      kind: J
+      id: K
+    regions:
+    - at: 5
+      rows:
+      - ACTIVITY
+      - RESOURCE
+      - ITEM
+      - CREW
+      - ESTIMATE
+      - ITEM_BID
+      - BID_TOTAL
+      - SCHEDULE
+      - ELEMENT_QTY
+    - at: 7
+      rows:
+      - WARNING
+      - MISSING_CREW
+      - NO_SHIFTS
+    prototypes:
+      ACTIVITY: hb.fill.checks.activity
+      ACTIVITY.stepped: hb.fill.checks.activity.stepped
+      RESOURCE: hb.fill.checks.resource
+      ITEM: hb.fill.checks.item
+      ITEM.excluded: hb.fill.checks.item.excluded
+      CREW: hb.fill.checks.crew
+      ESTIMATE: hb.fill.checks.estimate
+      ITEM_BID: hb.fill.checks.item_bid
+      BID_TOTAL: hb.fill.checks.bid_total
+      SCHEDULE: hb.fill.checks.schedule
+      ELEMENT_QTY: hb.fill.checks.element_qty
+      WARNING: hb.fill.checks.warning
+      MISSING_CREW: hb.fill.checks.missing_crew
+      NO_SHIFTS: hb.fill.checks.no_shifts
+    labels:
+      ACTIVITY_COST:
+        B: code
+        C: name
+        N: cost
+      ACTIVITY_MH:
+        B: code
+        C: name
+        N: manhours
+      ACTIVITY_SHIFTS:
+        B: code
+        C: name
+        N: duration_shifts
+      RESOURCE_COST:
+        C: name
+        N: cost
+      ITEM_PRICE:
+        B: item_number
+        C: description
+        N: calculated_unit_price
+      ITEM_COST:
+        B: item_number
+        C: description
+        O: estimated_unit_price
+        P: calculated_unit_price
+        Q: quantity
+      ITEM_EXPORT:
+        B: item_number
+        C: description
+        N: total
+      CREW_RATE:
+        B: code
+        C: name
+        N: hourly_rate
+      ESTIMATE_DIRECT:
+        N: total_estimated_cost
+      ESTIMATE_MARKUP:
+        N: markup_total
+      ESTIMATE_FACTOR:
+        N: live_bid_factor
+      ESTIMATE_EXCLUDED:
+        N: excluded_cost
+      BID_PRICE:
+        B: item_number
+        C: description
+        N: bid_unit_price
+      BID_ITEM_TOTAL:
+        B: item_number
+        C: description
+        N: bid_total
+      TOTAL_AMOUNT:
+        C: name
+        N: amount
+      FINISH:
+        B: code
+        C: name
+        N: finish_date
+      OVERRIDE:
+        B: key
+        O: element.name
+        P: label
+        F: override
+      WARNING:
+        B: activity.code
+        N: activity.name
+        O: text
+      NO_SHIFTS:
+        B: code
+        N: name
+    header:
+      J2: host
+      K2: estimate.name
+      L2: estimate.id
+      M2: exported_at
+  allocation:
+    tab: Allocation
+    role: display
+    first_row: 2
+    header_row: 1
+    tags:
+      kind: O
+      id: P
+    regions:
+    - at: 2
+      rows:
+      - SHARE
+    prototypes:
+      SHARE: hb.fill.allocation.share
+    labels:
+      SHARE:
+        A: activity_id
+        B: item_id
+        C: fraction
+        L: cost
+        N: element_id
+  coverage:
+    tab: Bid Coverage
+    role: display
+    first_row: 2
+    header_row: 1
+    tags:
+      kind: G
+      id: H
+    regions:
+    - at: 2
+      rows:
+      - COVERAGE
+    prototypes:
+      COVERAGE: hb.fill.coverage.row
+    labels:
+      COVERAGE:
+        A: total_key
+        B: schedule_id
+        D: primary
+        F: name
+  calendar:
+    tab: _cal
+    role: display
+    first_row: 1
+    tags:
+      kind: B
+    regions:
+    - at: 1
+      rows:
+      - WORKDAY
+    prototypes:
+      WORKDAY: hb.fill.cal.day
+    labels:
+      WORKDAY:
+        A: day

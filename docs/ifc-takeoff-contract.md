@@ -11,6 +11,16 @@ artifact.)
 
 Verified against `ifc_takeoff.py` as of 0.1.21.
 
+## Checking a model against this contract
+
+The testable part of this contract ships with bimforge as IDS 1.0
+documents (`bimforge/bim/contract/takeoff.ids`, and the advisory
+`takeoff-coverage.ids`), generated from the reader's own tables. Run them
+in any IDS checker, or `python -m ifctester takeoff.ids model.ifc` after
+`pip install 'bimforge[ids]'`. IDS selects quantity sets by name, so name
+them `Qto_*` or `*BaseQuantities`. Available in the bimforge release
+that carries BIMForge #48.
+
 ## The one-paragraph version
 
 `est-bim takeoff` walks every `IfcElement`, reads its **classification
@@ -160,7 +170,8 @@ takeoff-only convenience.
 
 ## Minimal conforming IFC checklist
 
-- [ ] IFC4 (IFC2X3/IFC4X3 also open), project length unit **metres**
+- [ ] IFC4X3 (the target) or IFC4 (the fallback); IFC2X3 is refused by
+      name. Project length unit **metres**
 - [ ] One `IfcClassification` naming your system (e.g. `BidSchedule`)
 - [ ] One `IfcClassificationReference` per pay code
       (`Identification` = code, `Name` = bid-item name,

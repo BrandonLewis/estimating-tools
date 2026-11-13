@@ -1,0 +1,114 @@
+{
+ "created": {},
+ "deleted": [],
+ "dry_run": true,
+ "ops": [
+  {
+   "after": {
+    "estimated_unit_price": "150.00"
+   },
+   "before": {
+    "estimated_unit_price": null
+   },
+   "index": 0,
+   "op": "item.update",
+   "ref": 1
+  },
+  {
+   "after": {
+    "override_value": "70",
+    "pay_item_id": 1
+   },
+   "before": {
+    "override_value": "64.0000",
+    "pay_item_id": 1
+   },
+   "index": 1,
+   "op": "element.set_quantity",
+   "ref": 1
+  },
+  {
+   "after": {
+    "production_rate": "2.00"
+   },
+   "before": {
+    "production_rate": "1.50"
+   },
+   "index": 2,
+   "op": "activity.update",
+   "ref": 2
+  },
+  {
+   "after": {
+    "quantity": "40.000"
+   },
+   "before": {
+    "quantity": "30.000"
+   },
+   "index": 3,
+   "op": "resource.update",
+   "ref": 1
+  }
+ ],
+ "totals": {
+  "after": {
+   "bid_total": "5661.90",
+   "bid_totals": [
+    {
+     "amount": "5661.90",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "575.45",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "741.54",
+   "total_estimated_cost": "4915.40"
+  },
+  "before": {
+   "bid_total": "20163.00",
+   "bid_totals": [
+    {
+     "amount": "20163.00",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "556.90",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2059.50",
+   "total_estimated_cost": "18095.00"
+  }
+ },
+ "warnings": []
+}

@@ -17,9 +17,16 @@ The book takes the copy only when that read has no problems and sends the
 same ops the book sent before (by op, ref and fields), less what both sides
 made equal (``merge.expected``); a dry run reads the copy and discards it.
 
-Known limits: rows a refresh adds are not listed on the summary sheets the
-declaration does not bind (a rebuild lists them), and labels of fields the
-book does not bind stay as built -- display, not prices. Hidden figures a
+What a patch found stale (the stamp's ``stale``) is a note here, not a
+refusal: the baseline already holds BidSheet.ai's version of it, so taking
+the rest cannot make the book worse; only a change the pack finds now
+refuses (``Pack.refresh_extras``' structural lines).
+
+Known limits: display rows (a template pack's display sheets) are brought
+up to date in place -- labels rewritten, a row whose object BidSheet.ai
+removed blanked -- but rows BidSheet.ai added are not listed there: a note
+says so, and a rebuild lists them. A code-built HeavyBook book's summary
+sheets are refreshed only as far as its Checks figures. Hidden figures a
 pack computes from the export rather than copies from it stay as of the
 build too: for HeavyBook, an activity's cost and man-hours at export
 (``AB``/``AC``) and, for an activity whose crew is not on the Crews sheet,
@@ -103,7 +110,12 @@ def refresh(book, payload: dict, *, pack, dry_run: bool = False) -> RefreshRepor
         if problems.items:
             raise ValueError(_refused([str(p) for p in problems.items]))
         if _same(opened.doc, payload):
-            return RefreshReport(dry_run=dry_run, baseline_replaced=False, current=True)
+            # Current. What a patch stamped stale is still said (the pack's
+            # notes) until a rebuild.
+            notes = (list(verify.extras(pack, opened, payload, fresh, verify.now()).notes)
+                     if opened.stamp.stale else [])
+            return RefreshReport(dry_run=dry_run, baseline_replaced=False, current=True,
+                                 notes=notes)
         merge = merge_mod.plan(opened, scanned, changes, change_set, fresh)
         exported_at = verify.now()
         extras = verify.extras(pack, opened, payload, fresh, exported_at)
@@ -114,14 +126,13 @@ def refresh(book, payload: dict, *, pack, dry_run: bool = False) -> RefreshRepor
                                  collisions=list(merge.collisions),
                                  structural=list(merge.structural), notes=list(merge.notes))
         rows, cells = layout_mod.layout(opened, merge)
-        moved = {op.sheet for op in rows}
-        for tab, refs in extras.cells.items():
-            if tab in moved:
-                raise ValueError(f"internal error: the pack's cells on {tab} would land on rows "
-                                 "a refresh moves")
+        # The pack's cells are addressed as the book stands (a header cell
+        # above a sheet's rows, a display row): moved where the row ops
+        # move their rows.
+        for tab, refs in layout_mod.remap(extras.cells, rowops.RowMap(rows)).items():
             cells.setdefault(tab, {}).update(refs)
         cells.setdefault(verify.STAMP_SHEET, {}).update(
-            verify.stamp_cells(opened, payload, exported_at))
+            verify.stamp_cells(opened, payload, exported_at, stale=extras.stale))
         expected = merge_mod.expected(change_set, merge)
         lost_ok = verify.display_tabs(opened)
         recalc = bool(rows) or bool(merge.cells) or extras.recalc

@@ -1,11 +1,11 @@
-"""Every HeavyBook sheet's columns, fixed in code.
-
-Read-back depends on these letters, so a style pack may rename a column's
-heading, change its width, or hide an ``optional`` one -- and nothing else.
-Hidden columns (kind, id, v, ...) are never styleable at all.
+"""Every HeavyBook sheet's columns, fixed in code: the letters the template
+(``heavybook/template/``) keeps where the retired code writers put them, and
+that a version-1 book's support (``declaration.generate``, ``legacy_checks``)
+and the tests read. New helper columns of the template sit to the right.
+Hidden columns (kind, id, v, ...) are tags.
 
 Cost Report rows of different kinds reuse the same columns (HeavyBid style);
-``layout.py`` documents which cells each kind fills.
+the template's ``pack.yaml`` says which cells each kind fills.
 """
 from __future__ import annotations
 
@@ -140,7 +140,8 @@ CHECKS = (
 
 
 class SH:
-    """``_shares`` letters (hidden sheet; not styleable)."""
+    """The allocation letters: a code-built book's hidden ``_shares`` sheet, the
+    template book's visible Allocation sheet."""
     ACTIVITY, ITEM, FRACTION, ROW = "A", "B", "C", "D"
     LAB, EQP, MAT, SUB, OTH, TOTAL, MH, EXPORT = "E", "F", "G", "H", "I", "J", "K", "L"
     SPLIT = (("labor", "E"), ("equipment", "F"), ("material", "G"),
@@ -268,7 +269,7 @@ FLAT = (
 )
 
 
-#: Styleable sheets, in tab order (``_shares``/``_wb`` are hidden machinery,
-#: never styled).
+#: The visible sheets with declared columns, in tab order (``_shares``/``_wb`` are
+#: a code-built book's hidden machinery).
 SHEETS = {"bid_form": BID_FORM, "recap": RECAP, "cost_report": COST_REPORT, "crews": CREWS,
           "rates": RATES, "schedule": SCHEDULE, "checks": CHECKS, "flat": FLAT}

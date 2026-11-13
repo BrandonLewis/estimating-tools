@@ -65,7 +65,7 @@
         },
         "heavycivil_style": {
           "type": "string",
-          "description": "HeavyCivil workbook style pack: a directory holding tokens.yaml and/or sheets.yaml (partial files are merged over the bundled style). Relative paths resolve against this profile's directory."
+          "description": "No longer applies: the HeavyBook book's look is its template pack (build with --template DIR from an edited copy). A value is ignored with a warning."
         }
       }
     },

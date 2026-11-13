@@ -468,7 +468,20 @@ class _Plan:
 
     def items(self):
         base, fresh = self.base, self.fresh
-        included = any("ITEM.included" in s.formulas for s in self.book.decl.sheets.values())
+        sheets = self.book.decl.sheets.values()
+        # A code-built book's in-scope item rows alone carry formulas; a
+        # template book's item formulas read the item's scope from a label
+        # on its blocks row, which a refresh leaves as built (the known
+        # limit of Cost Report labels). Either way the book cannot price an
+        # item BidSheet.ai brought into scope until a rebuild.
+        formulas = any("ITEM.included" in s.formulas for s in sheets)
+        scoped = [key for key, s in self.book.decl.sheets.items()
+                  if s.role == "blocks" and any(label.paths == ("scope",) for label
+                                                in s.labels.get("ITEM", {}).values())]
+        as_built = bool(scoped)
+        included = formulas or as_built
+        why = ("its row has no in-scope formulas" if formulas else
+               "its row prices it as excluded until a rebuild")
         for item in base.items:
             label = f"item {item.item_number}"
             if self.by_apply("ITEM", item.id):
@@ -481,12 +494,19 @@ class _Plan:
                 self.structural(f"{label} moved to another section or schedule in BidSheet.ai")
                 continue
             if included and item.scope == "excluded" and new.scope != "excluded":
-                self.structural(f"{label} was brought into scope in BidSheet.ai; its row has no "
-                                "in-scope formulas")
+                self.structural(f"{label} was brought into scope in BidSheet.ai; {why}")
                 continue
+            if scoped and item.scope != "excluded" and new.scope == "excluded":
+                # The refresh stays clean (the totals are unaffected); only
+                # the scope label still reads "included", as built.
+                self.m.notes.append(f"{label} was excluded in BidSheet.ai; its "
+                                    f"{self.book.tab(scoped[0])} scope label reads as built "
+                                    "until a rebuild")
             lines = self.changes.items.get(item.id) or {}
+            # A declaration without a flat (or an activity) sheet has no line
+            # there (#439).
             pairs = [(lines[k], kind) for k, kind in (("cost", "ITEM"), ("bid", "ITEM_BID"))
-                     if k in lines]
+                     if lines.get(k) is not None]
             if pairs:
                 self.row("ITEM", item.id, label, pairs, item, new)
         for item in fresh.items:
@@ -514,6 +534,9 @@ class _Plan:
 
     def activities(self):
         occs = {occ.id: occ for occ in self.changes.activities}
+        # Steps the sheet does not show: a stepped activity is no different
+        # in the book (#439).
+        hidden = self.book.decl.sheets[self.scanned.sheet_of("ACTIVITY")].not_shown
         for a in self.base.activities:
             label = f"activity {a.name!r}"
             if self.by_apply("ACTIVITY", a.id):
@@ -533,7 +556,7 @@ class _Plan:
             if moved:
                 self.structural(f"{label}: its {', '.join(moved)} changed in BidSheet.ai")
                 continue
-            if bool(a.steps) != bool(new.steps):
+            if bool(a.steps) != bool(new.steps) and "STEP" not in hidden:
                 what = "gained its first step" if new.steps else "lost its last step"
                 self.structural(f"{label} {what} in BidSheet.ai")
                 continue
@@ -556,6 +579,8 @@ class _Plan:
         if key is None:
             return
         block = Blocks(book.decl.sheets[key]).block_of_row(kind)
+        if block is None:
+            return                             # not shown (``not_shown``, #439)
         if kind == "STEP":
             old = {st.id: (st, a) for a in self.base.activities for st in a.steps}
             new = {st.id: (st, a) for a in self.fresh.activities for st in a.steps}
@@ -796,9 +821,18 @@ def plan(book, scanned, changes, change_set, fresh, *, applied=None) -> Merge:
     ``change_set`` (the patch's use; see the module docstring)."""
     p = _Plan(book, scanned, changes, change_set, fresh, applied)
     p.estimate()
-    p.items()
-    p.quantities()
-    p.activities()
+    # A kind no declared sheet shows is nothing the book holds: a structural
+    # change to it (an activity's first step, an item added) cannot refuse
+    # the refresh (#439). Items show on an activity or a flat sheet, element
+    # quantities and activities on an activity sheet -- as classify reads
+    # them. ``children`` and ``crews`` already return for an absent sheet.
+    activity_sheet = scanned.sheet_of("ACTIVITY") is not None
+    if activity_sheet or scanned.flat_sheet is not None:
+        p.items()
+    if activity_sheet:
+        if "ELEMENT_QTY" not in book.decl.sheets[scanned.sheet_of("ACTIVITY")].not_shown:
+            p.quantities()
+        p.activities()
     p.children("STEP")
     p.children("RESOURCE")
     p.crews()

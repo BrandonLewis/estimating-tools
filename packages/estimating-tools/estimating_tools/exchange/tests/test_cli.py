@@ -55,7 +55,7 @@ def _plan(eid, ops, *, dry_run=True, request_id=None, host=None):
 def test_packs_lists_them(capsys):
     assert cli.main(["packs"]) == 0
     out = capsys.readouterr().out
-    assert "heavybook 1" in out and "fieldbook 2" in out
+    assert "heavybook 2" in out and "fieldbook 2" in out
 
 
 def test_packs_prints_discovery_problems(monkeypatch, capsys):
@@ -135,7 +135,6 @@ def test_build_pack_matches_the_heavybook_verb_byte_for_byte(tmp_path, host):
 
 @pytest.mark.parametrize("argv, err", [
     (["--host", "http://www.bidsheet.ai"], "https"),
-    (["--style", "no-such-style-dir"], "style pack refused"),
 ])
 def test_build_pack_and_the_heavybook_verb_refuse_alike(tmp_path, capsys, argv, err):
     src = tmp_path / "e1.workbook.json"
@@ -147,6 +146,21 @@ def test_build_pack_and_the_heavybook_verb_refuse_alike(tmp_path, capsys, argv, 
     second = capsys.readouterr().err
     assert err in first and first == second
     assert not a.exists() and not b.exists()
+
+
+def test_build_pack_and_the_heavybook_verb_ignore_a_style_pack_alike(tmp_path, capsys):
+    """``--style`` no longer applies (the book's look is its template): both
+    verbs build the same book and print the same one warning line."""
+    src = tmp_path / "e1.workbook.json"
+    src.write_text(json.dumps(H.fixture_doc()))
+    a, b = tmp_path / "a.xlsx", tmp_path / "b.xlsx"
+    argv = ["--style", "no-such-style-dir", "--exported-at", "x"]
+    assert cli.main(["build", "--pack", "heavybook", str(src), "-o", str(a), *argv]) == 0
+    first = capsys.readouterr().err
+    assert cli.main(["heavybook", "build", str(src), "-o", str(b), *argv]) == 0
+    second = capsys.readouterr().err
+    assert "the book's look is its template now" in first and first == second
+    assert a.read_bytes() == b.read_bytes()
 
 
 @pytest.mark.parametrize("text, err", [
@@ -509,12 +523,13 @@ def test_apply_commit_refuses_a_read_only_book_before_sending(monkeypatch, tmp_p
     assert path.read_bytes() == before
 
 
-def test_heavycivil_alias_prints_a_notice(tmp_path, capsys):
+@pytest.mark.parametrize("verb", ["build", "read"])
+def test_the_retired_heavycivil_alias_points_at_heavybook(tmp_path, capsys, verb):
     out = tmp_path / "a.xlsx"
-    assert cli.main(["heavycivil", "build", str(H.FIXTURE), "-o", str(out),
-                     "--exported-at", "x"]) == 0
+    assert cli.main(["heavycivil", verb, str(H.FIXTURE), "-o", str(out)]) == 2
     err = capsys.readouterr().err
-    assert err.count("`heavycivil` is now `heavybook`") == 1
+    assert err.count("`heavycivil` was renamed `heavybook` in 0.1.96 and is gone") == 1
+    assert not out.exists()
 
 
 def test_heavybook_without_a_sub_verb_names_the_choices(capsys):
@@ -666,13 +681,9 @@ def test_a_not_yet_message_does_not_double_the_pack_name(tmp_path, capsys):
 
 def _book_for_host(tmp_path, host):
     """An edited book stamped for ``host`` (a bare host, as HeavyBook writes it)."""
-    from estimating_tools.heavybook import build as hb_build
-    from estimating_tools.heavybook import style as hb_style
-
     path = tmp_path / "e1.xlsx"
-    book = hb_build.build(H.fixture_doc(), style=hb_style.load_style(),
-                          exported_at="2026-10-20T09:00:00Z", host=host)
-    hb_build.save(book, path)
+    hb_pack.pack().build(H.fixture_doc(), path,
+                         options={"exported_at": "2026-10-20T09:00:00Z", "host": host})
     wb = H.open_book(path)
     ws = wb[H.CR_TAB]
     ws[f"{CR.QTY}{H.cr_row(ws, 'RESOURCE', 1)}"] = 31
@@ -747,7 +758,11 @@ def test_an_unstamped_book_goes_to_the_given_host_else_the_stored_tokens():
 
 
 def test_apply_with_a_damaged_host_stamp_is_refused(monkeypatch, tmp_path, capsys):
-    path = _book_for_host(tmp_path, "https://www.bidsheet.ai/estimates")
+    from estimating_tools.exchange import writer
+
+    # The build stamps a bare host; a damaged stamp is one edited afterwards.
+    path = _book_for_host(tmp_path, "www.bidsheet.ai")
+    writer.write(path, properties={"bidsheet_host": "https://www.bidsheet.ai/estimates"})
     sent = []
     monkeypatch.setattr(client, "apply", lambda *a, **k: sent.append(1))
     assert cli.main(["apply", str(path)]) == 2

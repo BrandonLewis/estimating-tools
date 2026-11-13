@@ -134,6 +134,13 @@ class Line:
     #: The cells read as fields: ``fields``' cache of ``fields.Read`` by how
     #: the row was read (``(kind, stepped)``, or ``("estimate", name)``).
     read: object = None
+    #: The row's kind as tagged -- a pack's form (fieldbook's TASK, CREW,
+    #: LINE); ``kind`` is its contract kind. None for a typed row, and on a
+    #: flat sheet (read as ``kind``).
+    form: str | None = None
+    #: ``(sheet rank, row)``: where the row sits across several sheets (one
+    #: per item), the order lists of rows are sorted in.
+    at: tuple = ()
 
 
 @dataclass(eq=False)
@@ -166,6 +173,9 @@ class Occurrence:
     head_steps: list = field(default_factory=list)
     #: The closing marker's row, once reached.
     end_row: int | None = None
+    #: Joined kind -> its rows in this block (a task's notes, joined into
+    #: its description by a ``rows`` binding).
+    joined: dict = field(default_factory=dict)
 
     def rows_of(self, kind) -> list:
         """The rows of the child block holding ``kind`` (empty when the
@@ -204,7 +214,7 @@ class Occurrence:
 class Scan:
     """The scanned sheets: per sheet key, its lines and (a blocks sheet) its
     occurrences. The named properties find a sheet by the contract kind it
-    owns (``cost_report``: the ACTIVITY sheet; ``crew_lines``: the CREW
+    owns (``cost_report``: the ACTIVITY sheets'; ``crew_lines``: the CREW
     sheet; ``bid_form``: the flat sheet)."""
     decl: object = None
     lines: dict = field(default_factory=dict)
@@ -221,12 +231,17 @@ class Scan:
     def _sheets(self):
         return self.decl.sheets.items() if self.decl is not None else ()
 
+    def sheets_of(self, owner_kind) -> list:
+        """The keys of the blocks sheets whose owner block is
+        ``owner_kind``, in declaration order (fieldbook: one per item)."""
+        return [key for key, sheet in self._sheets()
+                if sheet.role == "blocks" and any(b.kind == owner_kind
+                                                  for b in sheet.owner_blocks())]
+
     def sheet_of(self, owner_kind):
-        """The key of the blocks sheet whose owner block is ``owner_kind``, or None."""
-        for key, sheet in self._sheets():
-            if sheet.role == "blocks" and any(b.kind == owner_kind for b in sheet.owner_blocks()):
-                return key
-        return None
+        """The key of the first blocks sheet whose owner block is ``owner_kind``, or None."""
+        found = self.sheets_of(owner_kind)
+        return found[0] if found else None
 
     @property
     def flat_sheet(self):
@@ -245,7 +260,8 @@ class Scan:
 
     @property
     def cost_report(self) -> list:
-        return self._lines(self.sheet_of("ACTIVITY"))
+        """Every line of every ACTIVITY sheet, sheet by sheet."""
+        return [x for key in self.sheets_of("ACTIVITY") for x in self._lines(key)]
 
     @property
     def crew_lines(self) -> list:
@@ -257,7 +273,8 @@ class Scan:
 
     @property
     def activities(self) -> list:
-        return self._owners(self.sheet_of("ACTIVITY"))
+        """Every activity occurrence of every ACTIVITY sheet, sheet by sheet."""
+        return [o for key in self.sheets_of("ACTIVITY") for o in self._owners(key)]
 
     @property
     def crews(self) -> list:
@@ -297,7 +314,8 @@ _SKIP_WHAT = {"STEP": "an empty inserted step", "RESOURCE": "an empty inserted r
 
 def _skip_blank_new(decl, ws, s, sheet, line) -> bool:
     """A blank-id row left untouched: noted in ``s.skipped`` (True), not read."""
-    if line.id is not None or not untouched_row(decl, ws, line.row, sheet, line.kind):
+    if line.id is not None or not untouched_row(decl, ws, line.row, sheet,
+                                                line.form or line.kind):
         return False
     s.skipped.append((sheet, line.row,
                       _SKIP_WHAT.get(line.kind, f"an empty inserted {_noun(line.kind)}")))
@@ -517,14 +535,24 @@ def _walk_blocks(book, s, problems, key):
         if kind not in kinds:
             problems.add(tab, r, kind_col, f"unknown row kind {kind!r} -- {REBUILD}")
             continue
-        line = _line(book.decl, ws, key, r, kind, kinds[kind])
+        # The tag names the row's form; blocks and markers speak contract kinds.
+        form, kind = kind, sheet.contract_kind(kind)
+        line = _line(book.decl, ws, key, r, kind, kinds[form])
+        line.form = form
         line.item_id = container
         lines.append(line)
         if kind in blocks.within:
             _close(book, ws, s, occ, problems, tab)
             occ = None
             container = line.id if kind == blocks.container else None
-        elif classes.get(kind) == "row":
+        elif classes.get(form) == "joined":
+            # A joined row (a task's note) belongs to the block it sits in;
+            # outside one it is the sheet's own (an item's scope note), and
+            # nothing reads it.
+            if occ is not None and not occ.closed:
+                line.occ = occ
+                occ.joined.setdefault(form, []).append(line)
+        elif classes.get(form) == "row":
             if occ is not None and not occ.closed:
                 problems.add(tab, r, None, _inside(book, blocks, occ, kind))
         elif kind == blocks.owner.kind:
@@ -555,13 +583,13 @@ def _walk_blocks(book, s, problems, key):
             else:
                 occ.closed, occ.end_row = True, r
                 _check_steps_marker(book, occ, problems, tab)
-        elif classes.get(kind) == "banner":
+        elif classes.get(form) == "banner":
             if occ is None or occ.closed or _foreign(sheet, line, occ):
                 problems.add(tab, r, None, f"{_marker_label(book, blocks, line, occ)}: {MARKER}")
                 continue
             line.occ = occ
             _check_marker_blank(book.decl, ws, key, tab, r, kind, problems)
-        elif classes.get(kind) == "child":
+        elif classes.get(form) == "child":
             child = blocks.block_of_row(kind)
             if (kind in blocks.optional_head_rows and line.id is None
                     and occ is not None and not occ.closed):
@@ -631,11 +659,22 @@ def _walk_order(item) -> int:
     return 2
 
 
+def sheet_ranks(decl) -> dict:
+    """Sheet key -> its rank in the walk (``_walk_order``, then declaration
+    order): the first part of ``Line.at``, and how notes across sheets sort."""
+    return {key: n for n, (key, _sheet) in enumerate(sorted(decl.sheets.items(),
+                                                             key=_walk_order))}
+
+
 def scan(book, problems) -> Scan:
     s = Scan(decl=book.decl)
+    ranks = sheet_ranks(book.decl)
     for key, sheet in sorted(book.decl.sheets.items(), key=_walk_order):
+        rank = ranks[key]
         if sheet.role == "blocks":
             _walk_blocks(book, s, problems, key)
         elif sheet.role == "flat":
             _walk_flat(book, s, problems, key)
+        for line in s.lines.get(key, ()):
+            line.at = (rank, line.row)
     return s

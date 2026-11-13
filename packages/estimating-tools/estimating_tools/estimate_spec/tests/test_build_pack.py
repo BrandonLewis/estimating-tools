@@ -122,3 +122,16 @@ def test_cli_build_reports_a_spec_the_pack_refuses(tmp_path, capsys):
     assert rc == 1
     assert "invalid spec" in capsys.readouterr().err
     assert not (tmp_path / "o.xlsx").exists()
+
+
+@pytest.mark.parametrize("text", ["[1, 2]", "7", '"a spec"'])
+def test_cli_build_refuses_a_spec_that_is_not_an_object(tmp_path, capsys, text):
+    bad = tmp_path / "x.estimate.json"
+    bad.write_text(text, encoding="utf-8")
+    rc = main(["build", str(bad), "-o", str(tmp_path / "o.xlsx")])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert (f"invalid spec {bad}: ValueError: the spec must be a mapping (an object) at its "
+            "top level") in err
+    assert "Traceback" not in err
+    assert not (tmp_path / "o.xlsx").exists()

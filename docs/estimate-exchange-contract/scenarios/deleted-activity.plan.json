@@ -1,0 +1,89 @@
+{
+ "created": {},
+ "deleted": [
+  {
+   "cascade": {
+    "child_activities": [],
+    "components": [
+     8
+    ],
+    "element_ids": [],
+    "item_ids": [],
+    "package_members": 0,
+    "steps": []
+   },
+   "id": 7,
+   "index": 0,
+   "kind": "activity"
+  }
+ ],
+ "dry_run": true,
+ "ops": [
+  {
+   "index": 0,
+   "op": "activity.delete",
+   "ref": 7
+  }
+ ],
+ "totals": {
+  "after": {
+   "bid_total": "20163.00",
+   "bid_totals": [
+    {
+     "amount": "20163.00",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "0.00",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2059.50",
+   "total_estimated_cost": "18095.00"
+  },
+  "before": {
+   "bid_total": "20163.00",
+   "bid_totals": [
+    {
+     "amount": "20163.00",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "556.90",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2059.50",
+   "total_estimated_cost": "18095.00"
+  }
+ },
+ "warnings": []
+}

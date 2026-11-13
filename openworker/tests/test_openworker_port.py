@@ -165,6 +165,7 @@ THIRD_PARTY_METHODS = {
 # pattern for `open_artifact_editor`, so this is where its collateral lands.
 NOT_CALLABLES = {
     "open_questions",                     # read-station-plans: a YAML key
+    "update_members",                     # crew.update_members: a change-set op name
 }
 
 # Tools on MCP servers this port does NOT configure (openworker/mcp/

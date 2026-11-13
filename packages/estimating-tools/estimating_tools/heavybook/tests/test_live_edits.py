@@ -3,15 +3,15 @@ from __future__ import annotations
 
 import pytest
 
-from estimating_tools.estimate_spec.tests._formula_eval import evaluate as _evaluate
 from estimating_tools.exchange import model
-from estimating_tools.heavybook import layout, style
 from estimating_tools.heavybook.columns import CR, CW
+from estimating_tools.heavybook.tests import _readback as H
+from estimating_tools.heavybook.tests._readback import evaluate as _evaluate
 
 
-def _ctx(doc):
+def _ctx(doc, book):
     wb = model.parse(doc)
-    return wb, layout.plan(wb, style.load_style())
+    return wb, H.plan_of(book)
 
 
 def evaluate(book, path):
@@ -25,7 +25,7 @@ def _f(v):
 
 
 def test_crew_count_edit_moves_crew_rate_and_activity(doc, book, tmp_path):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     crew = next(c for c in wb.crews if c.scope == "estimate")
     member = next(m for m in crew.members if m.hourly_rate_override is not None)
     a = next(x for x in wb.activities if x.crew_id == crew.id)
@@ -40,7 +40,7 @@ def test_crew_count_edit_moves_crew_rate_and_activity(doc, book, tmp_path):
 
 
 def test_production_rate_edit_scales_production_labor(doc, book, tmp_path):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     a = next(x for x in wb.activities if x.production_rate is not None)
     r = plan.activity_rows[a.id].row
     before = evaluate(book, tmp_path / "a")
@@ -50,7 +50,7 @@ def test_production_rate_edit_scales_production_labor(doc, book, tmp_path):
 
 
 def test_unit_cost_edit_moves_item_cost(doc, book, tmp_path):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     item = next(i for i in wb.items if i.item_number == "12")
     res = next(x for x in wb.resources if x.component_type == "equipment")
     before = evaluate(book, tmp_path / "a")
@@ -62,7 +62,7 @@ def test_unit_cost_edit_moves_item_cost(doc, book, tmp_path):
 
 
 def test_manual_price_wins_over_breakdown(doc, book, tmp_path):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     item = next(i for i in wb.items if i.item_number == "12")
     r = plan.item_rows[item.id].row
     book["Cost Report"][f"{CR.UCOST}{r}"] = 7.5
@@ -71,7 +71,7 @@ def test_manual_price_wins_over_breakdown(doc, book, tmp_path):
 
 
 def test_shifts_cleared_falls_back_to_resource_labor(doc, book, tmp_path):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     a = next(x for x in wb.activities if x.crew_id and x.duration_shifts is not None
              and wb.crew(x.crew_id))
     r = plan.activity_rows[a.id].row
@@ -89,11 +89,11 @@ def _prep(wb, plan):
 
 
 def test_stepped_activity_shifts_are_a_live_formula(doc, book):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     _, r, _ = _prep(wb, plan)
     cell = book["Cost Report"][f"{CR.SHIFTS}{r}"]
     assert isinstance(cell.value, str) and cell.value.startswith("=")
-    input_fill = "FF" + style.load_style().tokens["fills"]["input"]
+    input_fill = "FF" + "FFF8DC"
     assert cell.fill.fgColor.rgb != input_fill
 
 
@@ -105,7 +105,7 @@ def test_stepped_activity_shifts_are_a_live_formula(doc, book):
     (1.5, None, 1.5),           # a blank unit is DAYS
 ])
 def test_step_duration_edit_moves_shifts(doc, book, tmp_path, duration, unit, shifts):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     _, r, step = _prep(wb, plan)
     ws = book["Cost Report"]
     ws[f"{CR.QTY}{step}"] = duration
@@ -115,7 +115,7 @@ def test_step_duration_edit_moves_shifts(doc, book, tmp_path, duration, unit, sh
 
 
 def test_step_hours_use_eight_when_hours_per_shift_blank(doc, book, tmp_path):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     _, r, step = _prep(wb, plan)
     ws = book["Cost Report"]
     ws[f"{CR.HPS}{r}"] = None
@@ -128,7 +128,7 @@ def test_step_hours_use_eight_when_hours_per_shift_blank(doc, book, tmp_path):
 def test_negative_quantity_prices_like_calculate_total(doc, book, tmp_path):
     """Only a blank or zero quantity zeroes the cost; a negative one still
     multiplies the manual price (the calculated price is blank below zero)."""
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     m1 = next(i for i in wb.items if i.item_number == "M1")
     twelve = next(i for i in wb.items if i.item_number == "12")
     ws = book["Cost Report"]
@@ -141,7 +141,7 @@ def test_negative_quantity_prices_like_calculate_total(doc, book, tmp_path):
 
 def _check_rows(book, kind):
     ws = book["Checks"]
-    r, out = layout.FIRST_ROW, {}
+    r, out = H.FIRST_ROW, {}
     while ws[f"A{r}"].value:
         if ws[f"A{r}"].value == kind:
             out[ws[f"B{r}"].value, ws[f"C{r}"].value] = r
@@ -150,7 +150,7 @@ def _check_rows(book, kind):
 
 
 def test_element_quantities_read_ok_until_edited(doc, book, tmp_path):
-    wb, plan = _ctx(doc)
+    wb, plan = _ctx(doc, book)
     rows = _check_rows(book, "element")
     assert len(rows) == sum(len(e.quantities) for e in wb.elements)
     ev = evaluate(book, tmp_path / "a")
