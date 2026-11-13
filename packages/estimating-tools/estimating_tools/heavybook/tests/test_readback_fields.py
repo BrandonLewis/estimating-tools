@@ -8,6 +8,7 @@ from decimal import Decimal
 import pytest
 from openpyxl import Workbook
 
+from estimating_tools.exchange.fill.lint import owner_row_formula
 from estimating_tools.heavybook.tests import _readback as H
 from estimating_tools.heavybook.columns import BF, CR, CW
 from estimating_tools.exchange.reader import ReadRefused, book as reader_book, fields, scan
@@ -118,7 +119,9 @@ def test_a_cleared_crew_row_helper_is_refused(path):
     read through; a cleared one is refused as a hidden helper cell."""
     wb = H.open_book(path)
     row = H.cw_row(wb[H.CW_TAB], "MEMBER", 1, parent=1)
-    assert wb[H.CW_TAB][f"{CW.OWNER}{row}"].value == H.crew_row_formula(row)
+    # The engine's owner-row helper (``fill.lint.owner_row_formula``).
+    assert wb[H.CW_TAB][f"{CW.OWNER}{row}"].value == owner_row_formula(CW.KIND, "CREW", CW.OWNER,
+                                                                       4, row)
     _edit(path, lambda ws: {f"{CW.OWNER}{row}": None}, sheet=H.CW_TAB)
     [problem] = _problems(path)
     assert (problem.row, problem.column) == (row, CW.OWNER)

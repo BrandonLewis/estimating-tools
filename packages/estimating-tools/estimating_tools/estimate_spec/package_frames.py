@@ -70,6 +70,7 @@ class PackageLine:
     qty: float | str
     plug_price: float
     task_key: str
+    code: str = ""           # the task's cost code (the key is its slot)
 
 
 @dataclass
@@ -119,7 +120,7 @@ class PackageFrame:
             line = {
                 "key": ln.key, "item_no": ln.item_no, "item_sheet": ln.item_sheet,
                 "task_key": ln.task_key, "line_index": ln.line_index, "name": ln.name,
-                "code": ln.task_key[len("task["):-1],
+                "code": ln.code,
                 "uom": ln.uom, "qty": ln.qty, "plug_price": ln.plug_price,
                 "pick": self.effective_source(ln.item_no), "carry": self.carry_for(ln),
                 "item_pick": literal(self.picks.get(ln.item_no, "")),
@@ -227,7 +228,8 @@ def _package_lines(name: str, item: dict) -> list[PackageLine]:
                 key=f"{item_no}/{slot}/{i}", item_no=item_no,
                 item_sheet=str(item.get("sheet", "")), slot=slot, line_index=i,
                 name=line["name"], uom=line.get("uom", ""), qty=line["qty"],
-                plug_price=line["unit_price"], task_key=f"task[{block.get('cost_code', '')}]"))
+                plug_price=line["unit_price"], task_key=f"task[{slot}]",
+                code=str(block.get("cost_code", ""))))
     return out
 
 
@@ -493,7 +495,7 @@ def build_package_frames(spec: dict, quotes: list[CanonicalQuote], *, spare_colu
             if n in switched:
                 continue
             switched.add(n)
-            sp_tasks[n] = [f"task[{b.get('cost_code', '')}]" for b in items[n].get("labor") or []
+            sp_tasks[n] = [f"task[{b.get('slot', '')}]" for b in items[n].get("labor") or []
                            if b.get("carry") == "self_perform"]
         out.append(PackageFrame(
             name=name, kind=pkg.get("kind", "subcontract"), title=title, items=pkg_items,

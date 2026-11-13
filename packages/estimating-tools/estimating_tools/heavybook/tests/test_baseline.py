@@ -9,7 +9,7 @@ import zlib
 import pytest
 
 from estimating_tools.exchange import baseline
-from estimating_tools.heavybook import build, style
+from estimating_tools.heavybook.tests import _readback as H
 
 
 def test_round_trip(doc):
@@ -132,7 +132,7 @@ def test_book_carries_the_payload_it_was_built_from(doc, book):
     assert baseline.decode(chunks, meta) == doc
 
 
-def test_large_payload_spreads_over_cells_under_excels_limit(doc):
+def test_large_payload_spreads_over_cells_under_excels_limit(doc, tmp_path):
     base = list(doc["resources"])
     next_id = max(r["id"] for r in base) + 1
     for _ in range(200):
@@ -141,7 +141,7 @@ def test_large_payload_spreads_over_cells_under_excels_limit(doc):
             v = hashlib.sha256(str(next_id).encode("ascii")).hexdigest()
             doc["resources"].append(dict(r, id=next_id, v=v))
             next_id += 1
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+    book = H.build_wb(doc, tmp_path)
     meta = json.loads(book["_wb"]["A1"].value)["baseline"]
     chunks = [book["_wb"][f"B{n}"].value for n in range(1, meta["chunks"] + 1)]
     assert meta["chunks"] > 1
@@ -149,15 +149,18 @@ def test_large_payload_spreads_over_cells_under_excels_limit(doc):
     assert baseline.decode(chunks, meta) == doc
 
 
-def test_a_chunk_starting_with_equals_is_stored_as_text(doc, monkeypatch):
-    """Base64 padding can make the last chunk "==" -- text, never a formula."""
-    real = baseline.encode
-
-    def padded(d):
-        chunks, meta = real(d)
-        return chunks + ["=="], dict(meta, chunks=meta["chunks"] + 1)
-
-    monkeypatch.setattr(baseline, "encode", padded)
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+def test_a_chunk_starting_with_equals_is_stored_as_text(doc, monkeypatch, tmp_path):
+    """Base64 padding can make the last chunk "==" -- text, never a formula.
+    The chunk size is set so the real encoding's padding is a chunk of its
+    own (the book must still decode: the fill reads it back)."""
+    for _ in range(3):
+        text = "".join(baseline.encode(doc)[0])
+        pad = len(text) - len(text.rstrip("="))
+        if pad:
+            break
+        doc["estimate"]["name"] = f"{doc['estimate']['name']}x"
+    assert pad
+    monkeypatch.setattr(baseline, "CHUNK", len(text) - pad)
+    book = H.build_wb(doc, tmp_path)
     cell = book["_wb"]["B2"]
-    assert cell.value == "==" and cell.data_type == "s"
+    assert cell.value == "=" * pad and cell.data_type == "s"

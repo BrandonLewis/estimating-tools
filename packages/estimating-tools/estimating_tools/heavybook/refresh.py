@@ -1,10 +1,12 @@
-"""HeavyBook's own part of a new baseline (``Pack.refresh_extras``), for a
-patch after an apply and for a refresh: what the generic engine cannot know
-about this layout.
+"""A code-built (version 1) HeavyBook book's own part of a new baseline
+(``Pack.refresh_extras`` for a ``kind: code`` stamp), for a patch after an
+apply and for a refresh: what the generic engine cannot know about that
+layout. A template book's display rows are its template pack's
+(``TemplatePack.refresh_extras``).
 
 - The Checks sheet: its "Exported from ... at ..." line, and the BidSheet.ai
   column of every Checks row the book has, matched against the figures a
-  build from the fresh read model would write (``sheets.checks.figure_rows``)
+  version-1 build from the fresh read model wrote (``legacy_checks.figure_rows``)
   by the row its Excel formula reads (the Cost Report, Crews or Bid Form row
   and that row's kind and id), and by the row's kind, code, description and
   measure where no formula says (an as-of-export row). Lines share names
@@ -15,7 +17,12 @@ about this layout.
 - The cost shares: the ``_shares`` sheet holds each activity's share of each
   item as a constant fraction, so a change in the shares (an element
   quantity, an activity's elements or spread) is a change the book cannot
-  take in place -- structural, for a refresh. A patch reports it as a note.
+  take in place -- structural, for a refresh. A patch reports it as a note
+  and stamps ``shares`` stale (``exchange.stamp``), so every later patch and
+  refresh reports it again until the book is rebuilt -- as a note
+  (``SHARES_CARRIED``): the baseline holds BidSheet.ai's shares then, so a
+  refresh still takes other users' changes; only shares that changed again
+  since the baseline refuse it.
 
 Known limit: the Cost Report's hidden figures a build computes from the
 export stay as built -- an activity's cost and man-hours at export
@@ -35,13 +42,20 @@ from estimating_tools.exchange.reader.fields import number_equal, parse_number
 from estimating_tools.exchange.types import RefreshExtras
 from estimating_tools.exchange.reader.scan import norm_id
 from estimating_tools.heavybook.columns import BF, CK, CR, CW
-from estimating_tools.heavybook.layout import FIRST_ROW
+from estimating_tools.heavybook.codebook import FIRST_ROW
 
-__all__ = ["SHARES_CHANGED", "extras"]
+__all__ = ["SHARES_CARRIED", "SHARES_CHANGED", "extras"]
 
 SHARES_CHANGED = ("the cost shares between items changed in BidSheet.ai (an element quantity, "
                   "or an activity's elements or spread): the _shares sheet holds them as of "
                   "the build -- apply this book's edits, then rebuild it from BidSheet.ai")
+#: The note for shares a patch found changed and stamped (``stale``): the
+#: baseline already holds BidSheet.ai's shares, so a refresh takes other
+#: changes and says this again.
+SHARES_CARRIED = ("the cost shares between items were found changed in BidSheet.ai earlier (a "
+                  "patch took its new baseline); the _shares sheet holds them as of the last "
+                  "build -- apply this book's edits, then rebuild it from BidSheet.ai to show "
+                  "them")
 
 
 def _shares(wb) -> list:
@@ -59,7 +73,7 @@ def _cell(value):
 
 
 #: Per sheet key, the hidden kind and id columns of the rows a Checks
-#: formula reads, and the kinds ``checks.figure_rows`` names as targets.
+#: formula reads, and the kinds ``legacy_checks.figure_rows`` names as targets.
 _TARGET_CELLS = {"cost_report": (CR.KIND, CR.ID, ("ITEM", "ACTIVITY", "RESOURCE", "ELEMENT_QTY")),
                  "crews": (CW.KIND, CW.ID, ("CREW",)),
                  "bid_form": (BF.KIND, BF.ID, ("ITEM_BID",))}
@@ -67,8 +81,8 @@ _TARGET_CELLS = {"cost_report": (CR.KIND, CR.ID, ("ITEM", "ACTIVITY", "RESOURCE"
 
 def _target(book, formula):
     """``(tab, row kind, identity)`` of the row a book's Checks formula reads
-    (as ``checks.figure_rows`` names it), or None."""
-    from estimating_tools.heavybook.sheets.checks import referenced
+    (as ``legacy_checks.figure_rows`` names it), or None."""
+    from estimating_tools.heavybook.legacy_checks import referenced
 
     where = referenced(formula)
     if where is None:
@@ -103,25 +117,30 @@ def _choose(entries, target, alike):
 def extras(book, fresh, *, exported_at) -> RefreshExtras:
     """``book`` is the reader's opened book, ``fresh`` the parsed fresh read
     model; see the module docstring."""
-    from estimating_tools.heavybook import style as hb_style
-    from estimating_tools.heavybook.sheets import checks
+    from estimating_tools.heavybook import legacy_checks
 
     structural, notes, recalc = [], [], False
+    stale = ()
     if _shares(book.model) != _shares(fresh):
         structural.append(SHARES_CHANGED)
+        stale = ("shares",)
+    elif "shares" in book.stamp.stale:
+        notes.append(SHARES_CARRIED)
     table = (book.decl.navigator.get("tables") or {}).get("checks") or {}
     tab = table.get("sheet")
     if not tab or tab not in book.wb.sheetnames:
-        return RefreshExtras(structural=structural, notes=notes)
+        return RefreshExtras(structural=structural, notes=notes, stale=stale)
     ws = book.wb[tab]
     out = {"A2": (f"Exported from {book.stamp.host} -- estimate {fresh.estimate.name} "
                   f"(#{fresh.estimate.id}) at {exported_at}")}
     try:
         entries = [(key, target, value, n) for n, (key, target, value)
-                   in enumerate(checks.figure_rows(fresh, hb_style.load_style()))]
+                   in enumerate(legacy_checks.figure_rows(
+                       fresh, {k: book.tab(k) for k in ("cost_report", "crews", "bid_form")}))]
     except Exception as exc:  # noqa: BLE001 -- the figures inform; they never block a write
         notes.append(f"{tab}: the BidSheet.ai figures were not refreshed ({exc})")
-        return RefreshExtras(cells={tab: out}, structural=structural, notes=notes)
+        return RefreshExtras(cells={tab: out}, structural=structural, notes=notes,
+                             stale=stale)
     by_key = {}
     for entry in entries:
         by_key.setdefault(entry[0], []).append(entry)
@@ -169,4 +188,5 @@ def extras(book, fresh, *, exported_at) -> RefreshExtras:
     if missing:
         notes.append(f"{tab}: {missing} figure(s) BidSheet.ai has now have no row; a rebuild "
                      "adds them")
-    return RefreshExtras(cells={tab: out}, structural=structural, notes=notes, recalc=recalc)
+    return RefreshExtras(cells={tab: out}, structural=structural, notes=notes, recalc=recalc,
+                         stale=stale)

@@ -1,53 +1,54 @@
-"""HeavyBook's declaration is generated from ``columns.py`` and its own
-tables; the shipped ``pack.yaml`` equals it (spec, Testing: declaration
-drift), and it says what the layout and the scanner say."""
+"""The declaration a code-built (version 1) HeavyBook book carries, generated
+from ``columns.py`` and its own tables (``heavybook.declaration.generate``,
+what the legacy upgrades produce): it loads and says what the layout and the
+scanner say. The version-2 pack's declaration is its template's
+``pack.yaml``."""
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-
-import yaml
 
 from estimating_tools.exchange import declaration as D, stamp as exchange_stamp
 from estimating_tools.heavybook import declaration as HD
-from estimating_tools.heavybook import layout
+from estimating_tools.heavybook import codebook
 from estimating_tools.heavybook.tests import _readback as H
-
-SHIPPED = Path(HD.__file__).with_name("pack.yaml")
-
-
-def test_the_shipped_declaration_has_not_drifted():
-    got = HD.generate()
-    if os.environ.get("UPDATE_GOLDEN") == "1":
-        SHIPPED.write_text(HD.dumps(got), encoding="utf-8", newline="\n")
-    assert yaml.safe_load(SHIPPED.read_text(encoding="utf-8")) == got, (
-        "heavybook/pack.yaml is stale: regenerate with UPDATE_GOLDEN=1 pytest "
-        "heavybook/tests/test_declaration.py")
-
 
 def test_the_generated_declaration_loads():
     decl = D.load(HD.generate())
     assert decl.pack.name == "heavybook" and decl.kind == "code"
-    assert decl.prototypes == layout.TEMPLATE_NAMES
+    assert decl.prototypes == codebook.TEMPLATE_NAMES
     assert decl.size() < 12000
 
 
-def test_row_kinds_equal_the_layouts():
-    """The declaration's row kinds are ``layout._row_kinds()`` in the generic
-    tag names (id, v, parent, key, name)."""
-    want = {}
-    rename = {"element_id": "id", "quantity_key": "key", "parent_id": "parent",
-              "activity_id": "parent", "crew_id": "parent"}
-    for entry in layout._row_kinds():
-        sheet = want.setdefault(entry["sheet"], {"kind_cell": entry["kind_cell"], "kinds": {}})
-        sheet["kinds"][entry["kind"]] = {rename.get(k, k): v
-                                        for k, v in entry["identified_by"].items()}
-    assert D.load(HD.generate()).row_kinds() == want
+#: The row kinds the retired code build's layout declared
+#: (``layout._row_kinds()``), in the generic tag names.
+ROW_KINDS = {
+    "cost_report": {"kind_cell": "W", "kinds": {
+        "ITEM": {"id": "X", "v": "Y"}, "ELEMENT_QTY": {"id": "X", "key": "AD", "v": "Y"},
+        "ACTIVITY": {"id": "X", "v": "Y", "parent": "Z"},
+        "STEP": {"id": "X", "v": "Y", "parent": "Z"},
+        "RESOURCE": {"id": "X", "v": "Y", "parent": "Z"},
+        "STEPS": {"parent": "Z"}, "START": {"parent": "Z"}, "END": {"parent": "Z"},
+        "GROUP": {}}},
+    "crews": {"kind_cell": "K", "kinds": {
+        "CREW": {"id": "L", "v": "M"}, "MEMBER": {"id": "L", "parent": "N"},
+        "NOTE": {"parent": "N"}, "CREW_END": {"parent": "N"}}},
+    "bid_form": {"kind_cell": "J", "kinds": {
+        "ESTIMATE": {"id": "K", "v": "L", "name": "T"}, "BID_INPUT": {"name": "T"},
+        "BID_FIGURE": {"name": "T"}, "SECTION": {"id": "K", "v": "L"},
+        "ITEM_BID": {"id": "K", "v": "L"}, "BID_TOTAL": {"id": "K"}, "GROUP": {}}},
+}
 
 
-def test_the_built_book_carries_a_loadable_declaration(tmp_path):
-    path = H.build_book(H.fixture_doc(), tmp_path / "e1.xlsx")
+def test_row_kinds_equal_the_code_layouts():
+    assert D.load(HD.generate()).row_kinds() == ROW_KINDS
+
+
+def test_a_code_built_book_carries_a_loadable_declaration(tmp_path):
+    import shutil
+
+    path = tmp_path / "e1.xlsx"
+    shutil.copy(Path(H.__file__).parent / "fixtures" / "v1-book.xlsx", path)
     st = exchange_stamp.read(path)
     decl = D.load(st.declaration)
     assert decl.sheets["cost_report"].tab == "Cost Report"
@@ -91,7 +92,7 @@ def test_the_declaration_says_which_tags_are_derived():
         "STEP", "RESOURCE", "STEPS", "START", "END") == HD.DERIVED["cost_report"]
     assert decl.sheets["crews"].tags["parent"].derived == (
         "MEMBER", "NOTE", "CREW_END") == HD.DERIVED["crews"]
-    assert HD.DERIVED is layout.DERIVED
+    assert HD.DERIVED is codebook.DERIVED
     # The helpers the derived tags read through: every row holds one.
     assert decl.sheets["cost_report"].tags["owner_row"].column == "AJ"
     assert decl.sheets["crews"].tags["owner_row"].column == "R"

@@ -25,13 +25,15 @@ Subcommands:
                  checks the payloads against an earlier push's files
                  (assemblies_gen.py; sends nothing)
   heavybook      build: alias of build --pack heavybook (pages merge);
-                 read: an edited HeavyBook .xlsx -> a change-set JSON
-                 (sends nothing)
-  packs, login, fetch, read, apply, build --pack
+                 read: alias of read (sends nothing)
+  packs, login, fetch, read, apply, refresh, build --pack
                  the generic exchange verbs (exchange/cli.py): list the
                  packs, store a BidSheet.ai token, fetch a payload, build a
-                 book with a named pack, read any pack's book into a change
-                 set, dry-run or --commit it and patch the book
+                 book with a named pack (build --pack NAME payload.json
+                 OUT.xlsx), read any pack's book into a change set, dry-run
+                 or --commit it and patch the book, refresh a book from
+                 BidSheet.ai. `build` tells a spec from a payload
+                 (exchange.cli.check_build_inputs); a last OUT.xlsx is -o.
 
 Deterministic file operations only; MCP lookups stay at the skill layer
 (build-estimate-workbook fetches BM bid-item scaffolds to scaffolds.json)."""
@@ -50,9 +52,13 @@ import yaml
 from estimating_tools.estimate_spec.format_pack import profile_for_pack as _profile_for_pack
 
 _SUBCOMMANDS = ("build", "scaffold", "apply-takeoff", "scaffold-save",
-                "cip-buildup", "summarize", "read-back", "packages", "heavybook", "heavycivil",
+                "cip-buildup", "summarize", "read-back", "packages", "heavybook",
                 "assemblies", "packs", "login", "fetch", "read", "apply",
                 "refresh")
+#: The retired alias of ``heavybook`` (renamed in 0.1.96): refused with a pointer.
+RETIRED = {"heavycivil": "`heavycivil` was renamed `heavybook` in 0.1.96 and is gone -- run "
+                         "est-estimate heavybook build|read, or the generic verbs "
+                         "(est-estimate build --pack heavybook, est-estimate read)"}
 
 
 def cmd_build(args) -> int:
@@ -63,17 +69,24 @@ def cmd_build(args) -> int:
     the pack refuses is a user error, not a traceback.
 
     With --pack the input is a read-model JSON and the named exchange pack
-    builds it (est-estimate build --pack heavybook e1.workbook.json).
+    builds it (est-estimate build --pack heavybook e1.workbook.json
+    e1.xlsx). ``check_build_inputs`` tells a spec from a payload first and
+    takes a last OUT.xlsx as the output.
     """
+    from estimating_tools.exchange.cli import check_build_inputs, cmd_build_pack
+
+    code = check_build_inputs(args)
+    if code is not None:
+        return code
     if getattr(args, "pack", None):
-        from estimating_tools.exchange.cli import cmd_build_pack
         return cmd_build_pack(args)
     if len(args.config) != 1:
         print("build takes one spec YAML (several files are pages: use --pack)", file=sys.stderr)
         return 1
     args.config = args.config[0]
-    if args.style or args.host or args.exported_at:
-        print("--style/--host/--exported-at apply only with --pack; ignored", file=sys.stderr)
+    if args.style or args.host or args.exported_at or getattr(args, "template", None):
+        print("--style/--template/--host/--exported-at apply only with --pack; ignored",
+              file=sys.stderr)
     from estimating_tools.addin.brand import workbook_brand
     from estimating_tools.estimate_spec.build import build
     from estimating_tools.estimate_spec.layout_map import LayoutMapError
@@ -165,13 +178,16 @@ def cmd_cip(args) -> int:
 
 def cmd_heavybook_build(args) -> int:
     """`est-estimate heavybook build PAGE.json [...]`: the HeavyBook pack's
-    build with its style options -- the same path as
-    `est-estimate build --pack heavybook`, kept as the named alias."""
-    from estimating_tools.exchange.cli import cmd_build_pack
+    build -- the same path as `est-estimate build --pack heavybook`, kept as
+    the named alias."""
+    from estimating_tools.exchange.cli import check_build_inputs, cmd_build_pack
 
     args.pack = "heavybook"
     args.config = list(args.workbook_json)
     args.format = None
+    code = check_build_inputs(args)
+    if code is not None:
+        return code
     return cmd_build_pack(args)
 
 
@@ -899,10 +915,12 @@ def _parser() -> argparse.ArgumentParser:
                     "apply a measured takeoff, build the workbook.")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p = sub.add_parser("build", help="Render an estimate config to .xlsx.")
+    p = sub.add_parser("build", help="Render an estimate spec, or with --pack a BidSheet.ai "
+                                     "payload, to .xlsx.")
     p.add_argument("config", nargs="+",
-                   help="estimate config YAML (with --pack: one or more read-model JSON "
-                        "files, the pages of one estimate)")
+                   help="estimate spec YAML (with --pack: one or more read-model JSON "
+                        "files, the pages of one estimate); a last OUT.xlsx names the "
+                        "output, as -o does")
     p.add_argument("-o", "--output", help="output .xlsx path")
     p.add_argument("--pack", default=None,
                    help="build from a read-model JSON with this exchange pack instead of a "
@@ -910,6 +928,13 @@ def _parser() -> argparse.ArgumentParser:
     p.add_argument("--exported-at", default=None, help=argparse.SUPPRESS)
     p.add_argument("--host", default=None, help=argparse.SUPPRESS)
     p.add_argument("--style", default=None, help=argparse.SUPPRESS)
+    p.add_argument("--template", default=None, metavar="DIR",
+                   help="with --pack heavybook: build from this template pack directory (an "
+                        "edited copy of the pack's template/: pack.yaml and template.xlsx)")
+    p.add_argument("--allow-dropped", action="store_true",
+                   help="with --pack (a template pack): fill even though the template holds "
+                        "what the fill does not copy onto new rows (merged cells, notes, "
+                        "conditional formats on a prototype row); the build lists it")
     p.add_argument("--format", default=None,
                    help="format pack directory (default: the org profile's "
                         "estimating.format, else the bundled pack)")
@@ -985,7 +1010,7 @@ def _parser() -> argparse.ArgumentParser:
                    help='output .xlsx path (overrides config "output")')
     p.set_defaults(func=cmd_cip)
 
-    p = sub.add_parser("heavybook", aliases=["heavycivil"],
+    p = sub.add_parser("heavybook",
                        help="HeavyBook workbook: render BidSheet.ai's estimate "
                             "workbook payload (get_estimate_workbook JSON), or read an "
                             "edited workbook back into a change set.")
@@ -993,11 +1018,18 @@ def _parser() -> argparse.ArgumentParser:
     q = hsub.add_parser("build", help="Render a get_estimate_workbook JSON to .xlsx.")
     q.add_argument("workbook_json", nargs="+",
                    help="one or more saved get_estimate_workbook responses "
-                        "(pages of one estimate)")
+                        "(pages of one estimate); a last OUT.xlsx names the output")
     q.add_argument("-o", "--output", help="output .xlsx (default: next to the JSON)")
     q.add_argument("--style", default=None,
-                   help="style pack directory (tokens.yaml and/or sheets.yaml; default: the "
-                        "org profile's estimating.heavycivil_style, else the bundled style)")
+                   help="ignored with a warning: the book's look is its template now "
+                        "(edit a copy of the template and pass --template)")
+    q.add_argument("--template", default=None, metavar="DIR",
+                   help="build from this template pack directory (an edited copy of "
+                        "heavybook's template/)")
+    q.add_argument("--allow-dropped", action="store_true",
+                   help="fill even though the template holds what the fill does not copy "
+                        "onto new rows (merged cells, notes, conditional formats on a "
+                        "prototype row); the build lists it")
     q.add_argument("--exported-at", default=None,
                    help="export timestamp to stamp (default: now, UTC)")
     q.add_argument("--host", default="www.bidsheet.ai",
@@ -1113,12 +1145,12 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in RETIRED:
+        print(RETIRED[argv[0]], file=sys.stderr)
+        return 2
     # Back-compat: `est-estimate <config.yaml> [-o out.xlsx]` == build.
     if argv and argv[0] not in _SUBCOMMANDS and argv[0] not in ("-h", "--help"):
         argv = ["build"] + argv
-    if argv and argv[0] == "heavycivil":
-        print("`heavycivil` is now `heavybook`; the old name goes away next release",
-              file=sys.stderr)
     args = _parser().parse_args(argv)
     return args.func(args)
 

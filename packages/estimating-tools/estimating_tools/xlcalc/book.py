@@ -26,6 +26,7 @@ class Book:
     constants: dict = field(default_factory=dict)
     heights: dict = field(default_factory=dict)
     names: dict = field(default_factory=dict)
+    hidden: set = field(default_factory=set)        # titles of hidden sheets
 
     @classmethod
     def load(cls, path) -> "Book":
@@ -44,6 +45,8 @@ class Book:
         for ws in wb.worksheets:
             title = ws.title
             book.sheets.append(title)
+            if ws.sheet_state != "visible":
+                book.hidden.add(title)
             book.heights[title] = ws.max_row
             for row in ws.iter_rows():
                 for c in row:

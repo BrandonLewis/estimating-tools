@@ -133,6 +133,40 @@ def test_a_library_crew_edit_names_the_copy(path):
                for n in cs.notes)
 
 
+def test_a_library_crew_edit_points_at_the_member_row(path):
+    """#460: the roster op's ``rows`` and the library-crew note name the
+    member row the estimator changed (the summary's row), not the crew's
+    header row."""
+    wb = H.open_book(path)
+    header, finisher = H.cw_row(wb[H.CW_TAB], "CREW", 2), H.cw_row(wb[H.CW_TAB], "MEMBER", 3)
+    cs = _read_after(path, H.CW_TAB, lambda ws: {f"{CW.COUNT}{finisher}": 4})
+    assert finisher != header
+    assert cs.rows == [{"op_index": 0, "sheet": H.CW_TAB, "row": finisher}]
+    assert cs.summary == [f"Crews row {finisher}: Pour crew member 'Finisher' count 3 → 4"]
+    (note,) = [n for n in cs.notes if "library crew 'Pour crew'" in n]
+    assert note.startswith(f"Crews row {finisher}: ")
+    assert not any(n.startswith(f"Crews row {header}:") for n in cs.notes)
+
+
+def test_a_roster_ops_rows_follow_its_summary(path):
+    """Every member row the op came from, in sheet order; a removed member has
+    no row, so it is ``row: None`` after them -- as the summary lists it."""
+    wb = H.open_book(path)
+    ws = wb[H.CW_TAB]
+    laborer, oper = H.cw_row(ws, "MEMBER", 1), H.cw_row(ws, "MEMBER", 2)
+    ws[f"{CW.COUNT}{laborer}"] = 3
+    ws.delete_rows(oper)
+    typed = H.type_row(ws, H.cw_row(ws, "CREW_END", parent=1), {CW.CODE: "OPER", CW.COUNT: 2})
+    H.save_book(wb, path)
+    cs = H.read(path)
+    assert [op["op"] for op in cs.ops] == ["crew.update_members"]
+    assert cs.rows == [{"op_index": 0, "sheet": H.CW_TAB, "row": laborer},
+                       {"op_index": 0, "sheet": H.CW_TAB, "row": typed},
+                       {"op_index": 0, "sheet": H.CW_TAB, "row": None}]
+    assert [s.split(":")[0] for s in cs.summary] == [
+        f"Crews row {laborer}", f"Crews row {typed}", "Crews"]
+
+
 def test_a_changed_classification_resolves_its_labour_rate(path):
     cs = _read_after(path, H.CW_TAB, lambda ws: {f"{CW.CODE}{H.cw_row(ws, 'MEMBER', 1)}": "oper"})
     members = cs.ops[0]["fields"]["members"]

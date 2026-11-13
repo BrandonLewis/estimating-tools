@@ -199,7 +199,9 @@ by parsing one.
 
 `~/.estimating/bin/est-estimate build` (fieldbook and HeavyBook) stores cached values with its
 built-in evaluator (`estimating_tools.xlcalc`, pure Python) so the delivered
-book carries them. `--recalc excel` additionally has Excel recalculate the
+book carries them. HeavyBook's book is filled from its template pack (no
+openpyxl in the build: one edit of a copy of `template.xlsx`); fieldbook's is
+rendered from its recipe. `--recalc excel` additionally has Excel recalculate the
 book (for functions the built-in evaluator does not cover); its `RECALC:` line
 says which engine ran or why none did, and by default no engine runs and no
 line is printed. For your own openpyxl output,

@@ -7,7 +7,7 @@
   "Cost Report row 45: the new line 'Curing compound' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild",
   "Cost Report row 46: the new line 'Curing labor' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild",
   "Crews row 12: not priced live in this book: the new member's library rate in Pour crew's crew rate -- it shows after the apply and a rebuild",
-  "Crews row 9: library crew 'Pour crew': BidSheet.ai copies it into this estimate and edits the copy; the library crew and other estimates are not changed",
+  "Crews row 12: library crew 'Pour crew': BidSheet.ai copies it into this estimate and edits the copy; the library crew and other estimates are not changed",
   "Cost Report row 32: an empty inserted resource line was skipped"
  ],
  "ops": [
@@ -47,6 +47,7 @@
     "component_type": "equipment",
     "name": "Pump",
     "quantity": "2",
+    "sort_order": 0,
     "unit_cost": "80"
    },
    "op": "resource.create",
@@ -58,6 +59,7 @@
     "component_type": "material",
     "name": "Curing compound",
     "quantity": "40",
+    "sort_order": 0,
     "unit": "GAL",
     "unit_cost": "12.5"
    },
@@ -70,6 +72,7 @@
     "component_type": "labor",
     "name": "Curing labor",
     "quantity": "16",
+    "sort_order": 0,
     "unit_cost": "52"
    },
    "op": "resource.create",
@@ -132,7 +135,7 @@
   },
   {
    "op_index": 6,
-   "row": 9,
+   "row": 12,
    "sheet": "Crews"
   }
  ],

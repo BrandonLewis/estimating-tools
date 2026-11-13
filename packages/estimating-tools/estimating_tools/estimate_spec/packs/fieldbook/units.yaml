@@ -5,6 +5,9 @@
 #   I Source     J Vendor  K MH  L Labor  M Equip  N Matl  O Sub  P Total
 #   Q kind (hidden)  R code (hidden)  S ok-flag (hidden)  T flag (hidden)
 #   U package tag (hidden)  V ARR-basis cost (hidden)
+#   W id  X v  Y ref (a rate link)  Z time unit (crew rows) -- hidden, stored:
+#   BidSheet.ai's identity, written by a build from the read model (blank on
+#   a spec's book but for Z, which is DAYS on every crew row)
 # Q and R are the round-trip tag pair: Q is a literal row kind (ITEM, NOTE,
 # HEAD, TAKEOFF, RECAP, TOTAL, TASK, CREW, LINE, END, SUBTOTAL), R is the row's
 # cost code as a formula -- on a TASK row `=A{r}&""` (the visible code
@@ -21,6 +24,8 @@ units:
       qty:           { type: formula }
       uom:           { type: string }
       takeoff_total: { type: formula }      # "={ref:quantity.total}" or "n/a"
+      id:            { type: string, default: "" }
+      v:             { type: string, default: "" }
     rows:
       - cells:
           A: { value: "{p.item_no}",        style: band_title }
@@ -30,6 +35,8 @@ units:
           I: { value: "Takeoff",            style: band }
           J: { formula: "{p.takeoff_total}", style: band_qty }
           Q: { value: ITEM, style: tag }
+          W: { value: "{p.id}", style: tag, optional: true }
+          X: { value: "{p.v}", style: tag, optional: true, text: true }
         merge: "B:F"
         fill_row: band
         mark: id
@@ -122,6 +129,8 @@ units:
                validation: { list: ["Yes", "No"] } }
           G: { value: "{it.rate}",                style: input_money, if_it: { base: "" } }
           H: { formula: "=IF(ISNUMBER(C{r}),ROUND(C{r}*(1+D{r})+E{r},2),G{r})", style: calc_rate }
+          I: { value: "{it.tag}", style: tag, optional: true }
+          J: { value: "{it.ref}", style: tag, optional: true, text: true }
         mark_first: first
         mark_last:  last
       # An insert-above marker, the same idea as a task block's own END row:
@@ -286,7 +295,7 @@ units:
           B: { value: "Qty",    style: head }
           C: { value: "Unit",   style: head }
           D: { value: "Count",  style: head }
-          E: { value: "Days",   style: head }
+          E: { value: "Days (hrs if marked)", style: head }
           F: { value: "Hrs",    style: head }
           G: { value: "Rate",   style: head }
           H: { value: "Type",   style: head }
@@ -341,6 +350,8 @@ units:
       ok_quote:         { type: string, default: "" }
       ok_plug:          { type: string, default: "" }
       ok_pkg:           { type: string, default: ',{ref:{it.pkg_ref}.state}="incl"' }
+      id:               { type: string, default: "" }
+      v:                { type: string, default: "" }
     rows:
       - cells:
           A: { value: "{p.cost_code}",   style: input_code, validation: { list: "={code_list}" } }
@@ -349,6 +360,8 @@ units:
           Q: { value: TASK, style: tag }
           R: { formula: '=A{r}&""', style: tag }
           S: { formula: "=IFERROR(INDEX({code_listed},MATCH(A{r},{code_range},0)),0)", style: tag }
+          W: { value: "{p.id}", style: tag, optional: true }
+          X: { value: "{p.v}", style: tag, optional: true, text: true }
         merge: "B:J"
         fill_row: task
         mark: head
@@ -363,7 +376,9 @@ units:
           A: { value: "{it.trade}",  style: input_text, validation: { list: "={rate_names}" } }
           D: { value: "{it.count}",  style: input_count }
           E: { formula: "{it.days}", style: input_count }
-          F: { formula: "=D{r}*E{r}*{shift_hours}", style: calc_hours }
+          # Days times the shift, or hours as they are: a row BidSheet.ai
+          # times in HOURS (Z) shows its hours in E.
+          F: { formula: '=D{r}*E{r}*IF($Z{r}="HOURS",1,{shift_hours})', style: calc_hours }
           G: { formula: '=IFERROR(VLOOKUP($A{r},{rate_table},8,FALSE),"")', style: calc_rate }
           H: { formula: '=IFERROR(VLOOKUP($A{r},{rate_table},2,FALSE),"No rate")', style: calc_text }
           K: { formula: '=IF(H{r}="Labor",F{r},0)', style: calc_hours }
@@ -375,7 +390,11 @@ units:
           S: { formula: '=IF(AND(ISNUMBER(G{r}),OR(H{r}="Labor",H{r}="Equipment")),1,0)', style: tag }
           T: { formula: '=IFERROR(IF(VLOOKUP($A{r},{rate_table},6,FALSE)="Yes",1,0),0)', style: tag }
           U: { value: "{it.u_tag}", style: tag, optional: true }
-          V: { formula: "=D{r}*{it.arr_days}*{shift_hours}*G{r}", style: tag }
+          V: { formula: '=D{r}*{it.arr_days}*IF($Z{r}="HOURS",1,{shift_hours})*G{r}', style: tag }
+          W: { value: "{it.id}", style: tag, optional: true }
+          X: { value: "{it.v}", style: tag, optional: true, text: true }
+          Y: { value: "{it.ref}", style: tag, optional: true, text: true }
+          Z: { value: "{it.time_unit}", style: tag }
         conditional:
           - { cells: H, formula: '=$H{r}="No rate"', style: status_bad }
       - repeat: p.lines
@@ -398,6 +417,9 @@ units:
           T: { formula: '=IF(R{r}="",1,0)', style: tag }
           U: { value: "{it.u_tag}", style: tag, optional: true }
           V: { formula: "={it.arr_qty}*{it.arr_price}", style: tag }
+          W: { value: "{it.id}", style: tag, optional: true }
+          X: { value: "{it.v}", style: tag, optional: true, text: true }
+          Y: { value: "{it.ref}", style: tag, optional: true, text: true }
         export_each: { key: "line[{it.index}]", cells: { qty: "$B${r}", price: "$G${r}" } }
         conditional:
           - { cells: I, formula: '=$I{r}="QUOTE"', style: status_ok }
@@ -442,7 +464,7 @@ units:
   # ---------------------------------------------------------------- recap
   recap:
     params:
-      tasks: { type: list }            # [{code}], one per labor block
+      tasks: { type: list }            # [{slot}], one per labor block
       uom:   { type: string }
     rows:
       - cells:
@@ -459,15 +481,15 @@ units:
         merge: "B:H"
       - repeat: p.tasks
         cells:
-          A: { formula: "={ref:task[{it.code}].code}",  style: label_bold }
-          B: { formula: "={ref:task[{it.code}].desc}",  style: label }
-          I: { formula: "={ref:task[{it.code}].plug}",  style: calc_money }
-          K: { formula: "={ref:task[{it.code}].mh}",    style: calc_hours }
-          L: { formula: "={ref:task[{it.code}].labor}", style: lane_labor }
-          M: { formula: "={ref:task[{it.code}].equip}", style: lane_equip }
-          N: { formula: "={ref:task[{it.code}].matl}",  style: lane_matl }
-          O: { formula: "={ref:task[{it.code}].sub}",   style: lane_sub }
-          P: { formula: "={ref:task[{it.code}].total}", style: calc_money }
+          A: { formula: "={ref:task[{it.slot}].code}",  style: label_bold }
+          B: { formula: "={ref:task[{it.slot}].desc}",  style: label }
+          I: { formula: "={ref:task[{it.slot}].plug}",  style: calc_money }
+          K: { formula: "={ref:task[{it.slot}].mh}",    style: calc_hours }
+          L: { formula: "={ref:task[{it.slot}].labor}", style: lane_labor }
+          M: { formula: "={ref:task[{it.slot}].equip}", style: lane_equip }
+          N: { formula: "={ref:task[{it.slot}].matl}",  style: lane_matl }
+          O: { formula: "={ref:task[{it.slot}].sub}",   style: lane_sub }
+          P: { formula: "={ref:task[{it.slot}].total}", style: calc_money }
           Q: { value: RECAP, style: tag }
         merge: "B:H"
         mark_first: first

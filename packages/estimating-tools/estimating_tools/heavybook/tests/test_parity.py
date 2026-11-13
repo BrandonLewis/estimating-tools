@@ -6,20 +6,19 @@ that does not reproduce BidSheet.ai's rule."""
 from __future__ import annotations
 
 from collections import Counter
-from decimal import Decimal
 
 import pytest
 
-from estimating_tools.estimate_spec.tests._formula_eval import evaluate
 from estimating_tools.exchange import model
-from estimating_tools.heavybook import build, layout, style
 from estimating_tools.heavybook.columns import CK, CR, CW
+from estimating_tools.heavybook.tests import _readback as H
+from estimating_tools.heavybook.tests._readback import evaluate
 
 
 @pytest.fixture
 def ctx(doc, book, evaluated):
     wb = model.parse(doc)
-    return wb, layout.plan(wb, style.load_style()), evaluated
+    return wb, H.plan_of(book), evaluated
 
 
 def _num(value):
@@ -91,8 +90,8 @@ def _exclude_b3(doc):
 def test_shares_to_an_excluded_item_leave_checks_ok(doc, tmp_path):
     _exclude_b3(doc)
     wb = model.parse(doc)
-    plan = layout.plan(wb, style.load_style())
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+    book = H.build_wb(doc, tmp_path)
+    plan = H.plan_of(book)
     ev = evaluate(book, tmp_path)
     pour = next(a for a in wb.activities if a.name == "Pour")
     r = plan.activity_rows[pour.id].row
@@ -101,7 +100,7 @@ def test_shares_to_an_excluded_item_leave_checks_ok(doc, tmp_path):
     assert _num(ev["Checks!E3"]) == 0
     statuses = {}
     ws = book["Checks"]
-    n = layout.FIRST_ROW
+    n = H.FIRST_ROW
     while ws[f"{CK.KIND}{n}"].value:
         statuses.setdefault((ws[f"{CK.DESC}{n}"].value, ws[f"{CK.MEASURE}{n}"].value),
                             ev[f"Checks!{CK.STATUS}{n}"])
@@ -147,7 +146,7 @@ def test_checks_sheet_reads_all_ok(ctx, book):
     assert _num(ev["Checks!E3"]) == 0
     assert _num(ev["Checks!G3"]) == 0
     ws = book["Checks"]
-    r = layout.FIRST_ROW
+    r = H.FIRST_ROW
     kinds = Counter()
     while ws[f"{CK.KIND}{r}"].value in ("activity", "resource", "item", "crew", "estimate",
                                         "bid item", "bid total", "schedule", "element"):
@@ -165,8 +164,8 @@ def test_missing_crew_uses_export_figures(doc, tmp_path):
     doc["crews"] = [c for c in doc["crews"]
                     if not (c["scope"] == "library" and c["name"] == "Pour crew")]
     wb = model.parse(doc)
-    plan = layout.plan(wb, style.load_style())
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+    book = H.build_wb(doc, tmp_path)
+    plan = H.plan_of(book)
     ev = evaluate(book, tmp_path)
     finish = next(a for a in wb.activities if a.name == "Finish")
     assert finish.crew_id is not None and wb.crew(finish.crew_id) is None
@@ -181,8 +180,8 @@ def test_missing_crew_follows_a_shifts_edit(doc, tmp_path):
     doc["crews"] = [c for c in doc["crews"]
                     if not (c["scope"] == "library" and c["name"] == "Pour crew")]
     wb = model.parse(doc)
-    plan = layout.plan(wb, style.load_style())
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+    book = H.build_wb(doc, tmp_path)
+    plan = H.plan_of(book)
     finish = next(a for a in wb.activities if a.name == "Finish")
     r = plan.activity_rows[finish.id].row
     book["Cost Report"][f"{CR.SHIFTS}{r}"] = float(finish.duration_shifts) * 2
@@ -208,7 +207,7 @@ def test_fixture_exercises_every_rule(doc):
 
 def _checks(book, ev=None):
     """{(kind, description, measure): (row, status)} over the Checks rows."""
-    ws, out, n = book["Checks"], {}, layout.FIRST_ROW
+    ws, out, n = book["Checks"], {}, H.FIRST_ROW
     while ws[f"{CK.KIND}{n}"].value:
         out.setdefault((ws[f"{CK.KIND}{n}"].value, ws[f"{CK.DESC}{n}"].value,
                         ws[f"{CK.MEASURE}{n}"].value),
@@ -220,7 +219,7 @@ def _checks(book, ev=None):
 def test_stepped_activity_shifts_check_ok_when_fresh(book, evaluated):
     row, status = _checks(book, evaluated)[("activity", "Prep", "shifts")]
     assert status == "OK"
-    assert book["Checks"][f"{CK.TOL}{row}"].value == Decimal("0.005")
+    assert evaluated[f"Checks!{CK.TOL}{row}"] == pytest.approx(0.005)
     assert ("activity", "Walls", "shifts") not in _checks(book)  # unstepped: no shifts row
 
 
@@ -230,49 +229,54 @@ def test_stale_step_stamp_reads_diff(doc, tmp_path):
     with the stored figure, and Checks says so."""
     prep = next(a for a in doc["activities"] if a["name"] == "Prep")
     prep["duration_shifts"] = "3.00"
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+    book = H.build_wb(doc, tmp_path)
     ev = evaluate(book, tmp_path)
     assert _checks(book, ev)[("activity", "Prep", "shifts")][1] == "DIFF"
     assert _num(ev["Checks!E3"]) == 1
 
 
-def test_item_cost_tolerance_uses_the_absolute_quantity(doc):
+def test_item_cost_tolerance_uses_the_absolute_quantity(doc, tmp_path):
     concrete = next(i for i in doc["items"] if i["description"] == "Concrete")
     concrete["quantity"] = "-10"
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+    book = H.build_wb(doc, tmp_path)
+    ev = evaluate(book, tmp_path)
     row, _ = _checks(book)[("item", "Concrete", "cost")]
-    assert book["Checks"][f"{CK.TOL}{row}"].value == Decimal("0.105")
+    assert ev[f"Checks!{CK.TOL}{row}"] == pytest.approx(0.105)
 
 
-def test_near_one_in_bid_fraction_is_exactly_one(doc):
-    from estimating_tools.heavybook.sheets.cost_report import in_bid_fraction
+def test_near_one_in_bid_fraction_is_exactly_one(doc, tmp_path):
+    from estimating_tools.heavybook.legacy_checks import in_bid_fraction
     pour = next(a for a in doc["activities"] if a["name"] == "Pour")
     a, b = [s for s in doc["shares"] if s["activity_id"] == pour["id"]]
     a["fraction"], b["fraction"] = "0.5", "0.4999999999999999999"
     wb = model.parse(doc)
     f = in_bid_fraction(wb, wb.activity(pour["id"]))
     assert f == 1 and str(f) == "1"
-    plan = layout.plan(wb, style.load_style())
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
-    assert book["Cost Report"][f"{CR.H1}{plan.activity_rows[pour['id']].row}"].value == 1
-    row, _ = _checks(book)[("activity", "Pour", "cost")]
-    assert "$AF$" not in book["Checks"][f"{CK.EXCEL}{row}"].value
+    book = H.build_wb(doc, tmp_path)
+    plan = H.plan_of(book)
+    ev = evaluate(book, tmp_path)
+    assert ev[f"Cost Report!{CR.H1}{plan.activity_rows[pour['id']].row}"] == 1
+    _, status = _checks(book, ev)[("activity", "Pour", "cost")]
+    assert status == "OK"
 
 
-def _notes(book):
+def _notes(book, tmp_path):
+    """The Checks sheet's descriptions as Excel shows them (a warning's text
+    is a template formula over its activity's name)."""
+    ev = evaluate(book, tmp_path, "notes.xlsx")
     ws = book["Checks"]
-    return [ws[f"{CK.DESC}{r}"].value for r in range(1, ws.max_row + 1)
-            if ws[f"{CK.DESC}{r}"].value]
+    return [ev[f"Checks!{CK.DESC}{r}"] for r in range(1, ws.max_row + 1)
+            if ev[f"Checks!{CK.DESC}{r}"]]
 
 
-def test_missing_crew_without_shifts_is_warned(doc):
+def test_missing_crew_without_shifts_is_warned(doc, tmp_path):
     doc["crews"] = [c for c in doc["crews"]
                     if not (c["scope"] == "library" and c["name"] == "Pour crew")]
-    plain = build.build(doc, style=style.load_style(), exported_at="x", host="h")
-    assert not [n for n in _notes(plain) if "no shifts at export" in n]
+    plain = H.build_wb(doc, tmp_path, "plain.xlsx")
+    assert not [n for n in _notes(plain, tmp_path) if "no shifts at export" in n]
     finish = next(a for a in doc["activities"] if a["name"] == "Finish")
     finish["duration_shifts"] = None
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
-    notes = [n for n in _notes(book) if "no shifts at export" in n]
+    book = H.build_wb(doc, tmp_path)
+    notes = [n for n in _notes(book, tmp_path) if "no shifts at export" in n]
     assert notes == [("Finish: crew not in this export and no shifts at export: typing Shifts "
                       "prices labour at 0 -- re-export")]

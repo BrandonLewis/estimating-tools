@@ -63,7 +63,7 @@ def test_a_new_resource_line_in_an_existing_activity(path):
     cs = H.read(path)
     assert cs.ops == [{"op": "resource.create", "ref": "new:r1", "fields": {
         "activity_id": 2, "name": "Pump", "quantity": "2", "unit_cost": "80",
-        "component_type": "equipment"}}]
+        "component_type": "equipment", "sort_order": 0}}]
     assert cs.summary == ["Cost Report row 15: new line 'Pump'"]
     assert not any("not priced live" in n for n in cs.notes)
     assert not any("pasted" in line for line in cs.summary + cs.notes)
@@ -188,7 +188,7 @@ def test_a_new_activity_between_two_existing_ones(path):
         {"op": "activity.update", "ref": "new:a1", "fields": {"duration_shifts": "3"}},
         {"op": "resource.create", "ref": "new:r1", "fields": {
             "activity_id": "new:a1", "name": "Pump", "quantity": "2", "unit_cost": "80",
-            "component_type": "equipment"}},
+            "component_type": "equipment", "sort_order": 0}},
     ]
     assert "Cost Report row 20: new activity 'Dewater'" in cs.summary
     assert any("the new activity 'Dewater' in its item's total" in n for n in cs.notes)

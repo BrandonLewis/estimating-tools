@@ -31,6 +31,27 @@ def validate_cross_references(config: dict) -> None:
         _check_work_packages(config)
 
 
+def check_one_task_per_code(config: dict) -> None:
+    """A fieldbook book built from a spec: no item has two labor blocks on
+    one cost code. Spec read-back keys a task by its code, so the second
+    block could not be read back. A build from the read model keys tasks by
+    slot and skips this check, and validation does not run it (bm-sync's
+    specs may repeat a code)."""
+    for i, item in enumerate(config.get("items") or []):
+        seen: set = set()
+        for block in item.get("labor") or []:
+            code = block.get("cost_code")
+            if code in (None, ""):
+                continue
+            if code in seen:
+                where = item.get("item_no", i)
+                raise ValueError(
+                    f"items[{where!r}]: two labor blocks on cost code {code!r} -- a spec "
+                    "keeps one task per cost code in an item (read-back keys tasks by code)"
+                )
+            seen.add(code)
+
+
 def _check_crew_id_uniqueness(crews: list[dict]) -> None:
     seen: dict[str, int] = {}
     for i, crew in enumerate(crews):

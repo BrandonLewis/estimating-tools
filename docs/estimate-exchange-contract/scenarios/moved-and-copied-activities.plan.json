@@ -1,0 +1,243 @@
+{
+ "created": {
+  "new:a1": "activity",
+  "new:r1": "resource",
+  "new:r2": "resource",
+  "new:s1": "step"
+ },
+ "deleted": [
+  {
+   "cascade": {},
+   "id": 4,
+   "index": 10,
+   "kind": "resource"
+  }
+ ],
+ "dry_run": true,
+ "ops": [
+  {
+   "after": {
+    "markup_percentage": "12.00"
+   },
+   "before": {
+    "markup_percentage": "10.00"
+   },
+   "index": 0,
+   "op": "estimate.update",
+   "ref": 1
+  },
+  {
+   "after": {
+    "item_id": 3,
+    "parent_id": null,
+    "sort_order": 1
+   },
+   "before": {
+    "item_id": 2,
+    "parent_id": null,
+    "sort_order": 1
+   },
+   "index": 1,
+   "op": "activity.move",
+   "ref": 6
+  },
+  {
+   "after": {
+    "assembly_type": "GENERIC",
+    "count": "1",
+    "crew_factor": "1.000",
+    "estimate_item_id": 1,
+    "hours_per_shift": "8.0",
+    "name": "Excavate",
+    "production_unit": "DAYS",
+    "sort_order": "1"
+   },
+   "index": 2,
+   "op": "activity.create",
+   "ref": "new:a1"
+  },
+  {
+   "after": {
+    "duration_shifts": "3.00"
+   },
+   "before": {
+    "duration_shifts": null
+   },
+   "index": 3,
+   "op": "activity.update",
+   "ref": "new:a1"
+  },
+  {
+   "after": {
+    "duration": "4.00",
+    "duration_unit": "HOURS",
+    "name": "Strip"
+   },
+   "index": 4,
+   "op": "step.add",
+   "ref": "new:s1"
+  },
+  {
+   "after": {
+    "component_type": "equipment",
+    "includes_burden": "False",
+    "labor_cost_basis": "production",
+    "name": "CAT 336",
+    "quantity": "32",
+    "sort_order": "0",
+    "unit_cost": "185"
+   },
+   "index": 5,
+   "op": "resource.create",
+   "ref": "new:r1"
+  },
+  {
+   "after": {
+    "burden_percentage": "10.00",
+    "component_type": "labor",
+    "includes_burden": "False",
+    "labor_cost_basis": "production",
+    "name": "Carpenters",
+    "quantity": "2",
+    "sort_order": "0",
+    "unit_cost": "400"
+   },
+   "index": 6,
+   "op": "resource.create",
+   "ref": "new:r2"
+  },
+  {
+   "after": {
+    "quantity": "32.000"
+   },
+   "before": {
+    "quantity": "30.000"
+   },
+   "index": 7,
+   "op": "resource.update",
+   "ref": 1
+  },
+  {
+   "after": {
+    "crew_id": 1,
+    "members": [
+     {
+      "classification": "Laborer",
+      "count": "3.00",
+      "hourly_rate_override": "50.00",
+      "labor_rate_id": null,
+      "sort_order": 0
+     },
+     {
+      "classification": "OPER",
+      "count": "1.00",
+      "hourly_rate_override": null,
+      "labor_rate_id": 1,
+      "sort_order": 0
+     }
+    ]
+   },
+   "before": {
+    "crew_id": 1,
+    "members": [
+     {
+      "classification": "Laborer",
+      "count": "2.00",
+      "hourly_rate_override": "50.00",
+      "labor_rate_id": null,
+      "sort_order": 0
+     },
+     {
+      "classification": "OPER",
+      "count": "1.00",
+      "hourly_rate_override": null,
+      "labor_rate_id": 1,
+      "sort_order": 0
+     }
+    ]
+   },
+   "index": 8,
+   "op": "crew.update_members",
+   "ref": 1
+  },
+  {
+   "after": {
+    "crew_id": 1,
+    "duration_shifts": "3.00"
+   },
+   "before": {
+    "crew_id": null,
+    "duration_shifts": "3.00"
+   },
+   "index": 9,
+   "op": "activity.set_crew",
+   "ref": "new:a1"
+  },
+  {
+   "index": 10,
+   "op": "resource.delete",
+   "ref": 4
+  }
+ ],
+ "totals": {
+  "after": {
+   "bid_total": "36489.20",
+   "bid_totals": [
+    {
+     "amount": "36489.20",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "563.85",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "4132.00",
+   "total_estimated_cost": "32350.00"
+  },
+  "before": {
+   "bid_total": "20163.00",
+   "bid_totals": [
+    {
+     "amount": "20163.00",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "556.90",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2059.50",
+   "total_estimated_cost": "18095.00"
+  }
+ },
+ "warnings": []
+}

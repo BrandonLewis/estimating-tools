@@ -57,7 +57,7 @@ def test_a_same_book_copy_changed_only_in_quantity_keeps_its_rate_link(tmp_path)
     assert cs.ops == [{"op": "resource.create", "ref": "new:r1", "fields": {
         "activity_id": 1, "name": "CAT 336", "quantity": "40", "unit_cost": "185",
         "component_type": "equipment", "labor_cost_basis": "production",
-        "includes_burden": False, "equipment_rate_id": 7}}]
+        "includes_burden": False, "equipment_rate_id": 7, "sort_order": 0}}]
 
 
 @pytest.mark.parametrize("letter, value", [(CR.UCOST, 190), (CR.DESC, "CAT 340"),
@@ -75,6 +75,29 @@ def test_an_edited_copy_is_created_plain(tmp_path, letter, value):
     assert "unit_cost" in op["fields"]
 
 
+@pytest.mark.parametrize("letter, value, field", [(CR.BURD, 15, "burden_percentage"),
+                                                  (CR.PROD, 3, "time_value"),
+                                                  (CR.BASIS, "flat", "labor_cost_basis")])
+def test_a_copy_with_an_edited_non_cost_input_is_created_plain(tmp_path, letter, value,
+                                                                field):
+    """Rule 11 (#459): every input the row binds but the quantity must equal
+    the source's for the copy to keep its rate link -- not only name, type,
+    unit and unit cost."""
+    path = _book(tmp_path, H.linked_doc())
+
+    def copy(ws):
+        r = H.cr_row(ws, "RESOURCE", 1)
+        new = H.insert_copies(ws, r, r, H.block_end(ws, 1))
+        ws[f"{CR.QTY}{new}"] = 40
+        ws[f"{letter}{new}"] = value
+    _edit(path, copy)
+    cs = H.read(path)
+    (op,) = cs.ops
+    assert op["op"] == "resource.create" and "equipment_rate_id" not in op["fields"]
+    assert op["fields"]["unit_cost"] == "185" and field in op["fields"]
+    assert any("an edited copy of resource 1, unlinked" in s for s in cs.summary)
+
+
 def test_a_linked_paste_from_another_book_is_sent_without_unit_cost(tmp_path):
     path = _book(tmp_path, H.linked_doc())
     _edit(path, lambda ws: _paste(ws, 2, {CR.DESC: "Pump", CR.QTY: 2, CR.UCOST: 80}))
@@ -82,7 +105,7 @@ def test_a_linked_paste_from_another_book_is_sent_without_unit_cost(tmp_path):
     assert cs.ops == [{"op": "resource.create", "ref": "new:r1", "fields": {
         "activity_id": 2, "name": "Pump", "quantity": "2", "component_type": "equipment",
         "labor_cost_basis": "production", "includes_burden": False,
-        "equipment_rate_id": 7}}]
+        "equipment_rate_id": 7, "sort_order": 0}}]
     assert any("today's library rate" in n for n in cs.notes)
 
 
@@ -122,7 +145,7 @@ def test_a_typed_resource_is_created_and_named_as_not_priced_live(tmp_path):
     cs = H.read(path)
     assert cs.ops == [{"op": "resource.create", "ref": "new:r1", "fields": {
         "activity_id": 5, "name": "Pump", "quantity": "1", "unit_cost": "250",
-        "component_type": "equipment"}}]
+        "component_type": "equipment", "sort_order": 0}}]
     assert any("not priced live" in n and "'Pump'" in n for n in cs.notes)
 
 
@@ -379,7 +402,7 @@ def test_a_resource_cut_into_another_activity(tmp_path):
         {"op": "resource.create", "ref": "new:r1", "fields": {
             "activity_id": 1, "name": "Concrete", "quantity": "1", "unit_cost": "1000.01",
             "component_type": "material", "labor_cost_basis": "production",
-            "includes_burden": False}},
+            "includes_burden": False, "sort_order": 0}},
         {"op": "resource.delete", "ref": 7, "v": "bab71daf430b3e97", "fields": {}}]
 
 
@@ -452,7 +475,7 @@ def test_a_parent_copied_with_its_children(tmp_path):
     assert cs.ops[0]["fields"] == {"estimate_item_id": 1, "name": "Walls",
                                    "assembly_type": "GENERIC", "production_rate": "1.5",
                                    "production_unit": "DAYS", "hours_per_shift": "8",
-                                   "crew_factor": "1.1", "count": 2}
+                                   "crew_factor": "1.1", "count": 2, "sort_order": 2}
     assert any("not priced live" in n and "'Walls'" in n for n in cs.notes)
 
 

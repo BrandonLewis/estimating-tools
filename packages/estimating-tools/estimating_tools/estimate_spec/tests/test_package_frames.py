@@ -46,7 +46,7 @@ def test_frames_carry_lines_titles_and_spares():
     assert [ln.key for ln in hauling.lines] == [HAUL_KEY]
     (line,) = hauling.lines
     assert (line.item_sheet, line.slot, line.line_index, line.qty, line.plug_price,
-            line.task_key, line.uom) == ("2 - 8IN MAIN", "02", 0, 460, 18, "task[02-200]", "CY")
+            line.task_key, line.uom) == ("2 - 8IN MAIN", "02", 0, 460, 18, "task[02]", "CY")
     assert [v.name for v in hauling.vendors] == ["Dirt Movers", "Bulk Haul Co", "", "", "", ""]
     assert [v.is_spare for v in hauling.vendors][-4:] == [True] * 4
     dm = column(hauling, "Dirt Movers")
@@ -186,7 +186,7 @@ def test_as_scope_shape():
 
 def test_as_scope_names_the_self_perform_tasks_the_package_switches():
     assert frame("Valves").as_scope()["items"] == [{"item_no": "3", "item_sheet": "3 - VALVES", "source": "ARR",
-                      "arr_sp": "{ref:3 - VALVES!task[02-510].arr_cost}"}]
+                      "arr_sp": "{ref:3 - VALVES!task[01].arr_cost}"}]
 
 
 def test_carry_is_a_package_lines_dollars_per_unit():

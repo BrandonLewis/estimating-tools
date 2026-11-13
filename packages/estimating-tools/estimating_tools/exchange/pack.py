@@ -37,6 +37,9 @@ class Pack(Protocol):
       (HeavyBook's Checks figures), changes it cannot take in place, and
       notes. ``book`` is the reader's opened book, ``fresh`` the parsed
       payload. Patch and refresh call it through ``patch.verify.extras``.
+      Its ``stale`` names what the structural lines are about; a patch
+      stamps them (``stamp``'s ``stale``), and the pack reports the stamp's
+      names again (``stamp.stale_of``) until the book is rebuilt.
     """
 
     name: str          # "heavybook", "fieldbook", "acme-bridge-book"

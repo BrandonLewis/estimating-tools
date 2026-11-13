@@ -15,14 +15,23 @@ def doc():
 
 
 @pytest.fixture
-def book(doc):
-    from estimating_tools.heavybook import build, style
-    return build.build(doc, style=style.load_style(), exported_at="2026-10-20T09:00:00Z",
-                       host="www.bidsheet.ai")
+def built(doc, tmp_path):
+    """The fixture payload built by the heavybook pack (its path)."""
+    from estimating_tools.heavybook.tests import _readback as H
+    return H.build_book(doc, tmp_path / "book.xlsx")
 
 
 @pytest.fixture
-def evaluated(book, tmp_path):
-    """The built book's formulas evaluated by pycel (``ev["Sheet!A1"]``)."""
-    from estimating_tools.estimate_spec.tests._formula_eval import evaluate
-    return evaluate(book, tmp_path)
+def book(built):
+    from openpyxl import load_workbook
+    return load_workbook(built)
+
+
+@pytest.fixture
+def evaluated(built):
+    """The built book's values as its build cached them (xlcalc):
+    ``ev["Sheet!A1"]``."""
+    from openpyxl import load_workbook
+    wb = load_workbook(built, data_only=True)
+    return {f"{ws.title}!{c.coordinate}": c.value
+            for ws in wb.worksheets for row in ws.iter_rows() for c in row}

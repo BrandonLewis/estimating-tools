@@ -249,12 +249,65 @@ def _lookup(a):
     return v
 
 
+_WILD = frozenset("*?~")
+
+
+#: An index of a range with non-ASCII text: the linear search answers.
+_LINEAR = object()
+
+
+def _index_key(x):
+    """What an exact MATCH compares ``x`` by (``values.compare``: text case
+    blind, numbers as floats, logicals apart); None for a blank or an error,
+    which an exact MATCH never finds. Only ASCII text is keyed: there
+    ``lower()`` is exactly the linear search's case-blind regex, which for
+    other text (the Kelvin sign, dotted capital I, final sigma) is not."""
+    if x is None or isinstance(x, Err):
+        return None
+    if isinstance(x, bool):
+        return ("b", x)
+    if isinstance(x, str):
+        return ("s", x.lower())
+    return ("n", float(x))
+
+
+def _ascii(x) -> bool:
+    return not isinstance(x, str) or x.isascii()
+
+
+def _exact_index(rng):
+    """``{key: first 1-based position}`` of ``rng``'s values, built once per
+    range per evaluation and kept on the evaluator. Building reads every
+    value, so a range with a cell not yet computed raises ``Need`` here, as
+    the linear search would, and the index is built on the retry. A range
+    holding non-ASCII text gets no index (None): the linear search keeps
+    its exact text equivalence."""
+    cache = rng.reader.__dict__.setdefault("_match_index", {})
+    key = (rng.sheet, rng.top, rng.left, rng.bottom, rng.right)
+    index = cache.get(key)
+    if index is None:
+        values = rng.values()
+        index = {} if all(_ascii(x) for x in values) else _LINEAR
+        if index is not _LINEAR:
+            for i, x in enumerate(values, start=1):
+                k = _index_key(x)
+                if k is not None:
+                    index.setdefault(k, i)
+        cache[key] = index
+    return None if index is _LINEAR else index
+
+
 def _match(args, here):
     v = _lookup(args[0])
     rng = args[1]
     if not isinstance(rng, Range) or (rng.height != 1 and rng.width != 1):
         return NA
     mode = 1 if len(args) < 3 or args[2] is MISSING else _int(args[2])
+    if mode == 0 and v is not None and _ascii(v)             and not (isinstance(v, str) and _WILD & set(v)):
+        index = _exact_index(rng)
+        if index is not None:
+            found = index.get(_index_key(v))
+            return NA if found is None else float(found)
     found = _position(rng.values(), v, 0 if mode == 0 else (1 if mode > 0 else -1))
     return found if isinstance(found, Err) else float(found)
 

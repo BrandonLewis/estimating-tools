@@ -1,7 +1,10 @@
-"""Fieldbook registered as an exchange pack. Until roadmap 1.11 (the fieldbook
-design spec, 2026-10-31-fieldbook-on-the-contract-design.md) lands, fieldbook
-builds from a spec and reads back into it, so build, read and patch refuse
-here and name the path that works today."""
+"""Fieldbook registered as an exchange pack. Its declaration is
+``packs/fieldbook/pack.yaml`` with ``format.yaml``'s layout map lifted in
+(fieldbook spec, delivery 1). Building a book from the read model is
+delivery 2, and reading, patching and refreshing one through the engine
+delivery 3 (they turn on together, so no apply is ever committed that the
+book cannot be patched from): until then build, read, patch and refresh
+refuse here and name the path that works today."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -46,10 +49,10 @@ class FieldbookPack:
                      "(reading into a change set is roadmap 1.11)")
 
     def patch(self, book: Path, change_set, result, payload):
-        raise NotYet("fieldbook has no server identity to patch yet (roadmap 1.11)")
+        raise NotYet("fieldbook patches through the engine in delivery 3 (roadmap 1.11)")
 
     def refresh(self, book: Path, payload, *, dry_run: bool = False):
-        raise NotYet("fieldbook has no server identity to refresh yet (roadmap 1.11)")
+        raise NotYet("fieldbook refreshes through the engine in delivery 3 (roadmap 1.11)")
 
     def templates(self) -> list[InsertKind]:
         """The prototype rows fieldbook names: the task row plus the layout map's kinds."""
@@ -57,13 +60,19 @@ class FieldbookPack:
         return [InsertKind(kind=k, name=f"est.tpl.{k}") for k in kinds]
 
     def declaration(self):
-        """Fieldbook's layout map, lifted (``exchange.declaration.lift_layout_map``)."""
+        """``pack.yaml``, with the layout map's navigator section and
+        prototypes lifted in (``exchange.declaration.lift_layout_map``)."""
+        from importlib import resources
+
+        import yaml
+
         from estimating_tools.estimate_spec.format_pack import bundled_pack
         from estimating_tools.exchange.declaration import lift_layout_map, load
 
-        pack = bundled_pack()
-        return load(lift_layout_map(pack.layout_map or {}, pack=FORMAT_NAME,
-                                    version=FORMAT_VERSION))
+        text = resources.files("estimating_tools.estimate_spec").joinpath(
+            "packs/fieldbook/pack.yaml").read_text(encoding="utf-8")
+        return load(lift_layout_map(bundled_pack().layout_map or {}, pack=FORMAT_NAME,
+                                    version=FORMAT_VERSION, into=yaml.safe_load(text)))
 
 
 def pack() -> FieldbookPack:

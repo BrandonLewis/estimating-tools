@@ -1,11 +1,11 @@
-"""Payload text is never a live formula: only ``formulas.Formula`` values
-are, so an item description ``=1+1`` or a resource named
-``=HYPERLINK(...)`` stays the text the estimator typed into BidSheet.ai."""
+"""Payload text is never a live formula: only the template's formulas are,
+so an item description ``=1+1`` or a resource named ``=HYPERLINK(...)``
+stays the text the estimator typed into BidSheet.ai."""
 from __future__ import annotations
 
 from openpyxl import load_workbook
 
-from estimating_tools.heavybook import build, formulas, style
+from estimating_tools.heavybook.tests import _readback as H
 
 HOSTILE = {
     "description": "=1+1",
@@ -13,20 +13,18 @@ HOSTILE = {
     "error": "#N/A",
 }
 
-#: Formula cells per sheet in the fixture book -- every one a builder's.
-#: Per sheet. The Cost Report's 27, the Crews' 6 and the templates' 11 block
-#: owner tags (steps, resources, markers, members, banners, crew ends) are
-#: chain formulas (``formulas.owner_id``, ``formulas.crew_id``); the Crews'
-#: 8 data rows and the templates' prototype member each carry the crew-row
-#: helper (``formulas.crew_row``).
-FORMULA_CELLS = {"Bid Form": 31, "Recap": 63, "Cost Report": 261, "Crews": 27, "Rates": 0,
-                 "Schedule": 4, "Checks": 165, "Flat": 42, "_shares": 56, "_cal": 0, "_wb": 0,
-                 "_templates": 71}
+#: Formula cells per sheet in the fixture book -- every one the template's
+#: (a prototype row's formulas, placed), or the engine's owner-row helper
+#: (the Cost Report's ``AJ``, the Crews' ``R``) on every filled row and
+#: prototype. A change of the template moves these; re-count them from a
+#: fresh build.
+FORMULA_CELLS = {"Bid Form": 63, "Recap": 74, "Cost Report": 403, "Crews": 38, "Rates": 0,
+                 "Schedule": 267, "Checks": 347, "Flat": 65, "Allocation": 72,
+                 "Bid Coverage": 6, "_cal": 0, "_wb": 0, "_templates": 326}
 
 
-def _build(doc):
-    return build.build(doc, style=style.load_style(), exported_at="2026-10-20T09:00:00Z",
-                       host="www.bidsheet.ai")
+def _build(doc, tmp_path):
+    return load_workbook(H.build_book(doc, tmp_path / "hostile.xlsx"))
 
 
 def _cells_with(book, value):
@@ -42,14 +40,7 @@ def _hostile_doc(doc):
 
 
 def test_payload_text_starting_with_equals_is_text(doc, tmp_path):
-    book = _build(_hostile_doc(doc))
-    for value in HOSTILE.values():
-        cells = _cells_with(book, value)
-        assert cells, value
-        assert all(c.data_type == "s" for c in cells), value
-    path = tmp_path / "hostile.xlsx"
-    build.save(book, path)
-    reloaded = load_workbook(path)
+    reloaded = _build(_hostile_doc(doc), tmp_path)
     for value in HOSTILE.values():
         cells = _cells_with(reloaded, value)
         assert cells, value
@@ -65,9 +56,3 @@ def test_every_formula_cell_is_a_builder_formula(book):
         for c in ws._cells.values():
             if isinstance(c.value, str) and c.value.startswith("="):
                 assert c.data_type == "f", (ws.title, c.coordinate, c.value)
-
-
-def test_builders_return_formula_markers():
-    assert isinstance(formulas.row_total(5), formulas.Formula)
-    assert isinstance(formulas.crew_sum("A", None), formulas.Formula)
-    assert isinstance(formulas.item_breakdown_split("B", 5, "_shares", 2, 1), formulas.Formula)

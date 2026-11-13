@@ -68,16 +68,17 @@ def unclean(path: Path, pack) -> list:
     return []
 
 
-def stamp_cells(opened, payload: dict, exported_at: str) -> dict:
+def stamp_cells(opened, payload: dict, exported_at: str, stale=()) -> dict:
     """``{ref: value}`` on the stamp sheet that make ``payload`` the book's
     baseline: the stamp (the opened book's, upgraded in memory when it was
-    older, with the new baseline, estimate ``v`` and export time) and the
-    baseline chunks, clearing the old chunks past the new last one."""
+    older, with the new baseline, estimate ``v`` and export time, and
+    ``stale`` added to its stale list) and the baseline chunks, clearing the
+    old chunks past the new last one."""
     chunks, meta = baseline.encode(payload)
     stamp = exchange_stamp.with_baseline(
         dict(opened.stamp.raw), meta,
         estimate_v=(payload.get("estimate") or {}).get("v", opened.stamp.estimate_v),
-        exported_at=exported_at)
+        exported_at=exported_at, stale=stale)
     out = {exchange_stamp.CELL: exchange_stamp.dumps(stamp)}
     for n, chunk in enumerate(chunks, start=1):
         out[f"B{n}"] = chunk

@@ -2,6 +2,9 @@
 # contents don't vary by platform line endings (the drift gate compares
 # LF-normalized content, not raw zip bytes — those still differ by timestamps).
 packages/estimating-tools/** text=auto eol=lf
+# The exchange contract's fixtures are compared as written (LF) by
+# scripts/exchange_contract_tables.py --check and the goldens test.
+docs/estimate-exchange-contract/** text eol=lf
 # Regression fixtures (books built by an earlier release) are committed untouched.
 packages/estimating-tools/**/*.xlsx binary
 

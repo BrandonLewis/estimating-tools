@@ -1,0 +1,98 @@
+{
+ "created": {
+  "new:r1": "resource"
+ },
+ "deleted": [
+  {
+   "cascade": {},
+   "id": 3,
+   "index": 1,
+   "kind": "resource"
+  }
+ ],
+ "dry_run": true,
+ "ops": [
+  {
+   "after": {
+    "component_type": "labor",
+    "includes_burden": "False",
+    "labor_cost_basis": "production",
+    "name": "Foreman",
+    "quantity": "1",
+    "sort_order": "0",
+    "time_unit": "HOURS",
+    "time_value": "4.00",
+    "unit_cost": "300"
+   },
+   "index": 0,
+   "op": "resource.create",
+   "ref": "new:r1"
+  },
+  {
+   "index": 1,
+   "op": "resource.delete",
+   "ref": 3
+  }
+ ],
+ "totals": {
+  "after": {
+   "bid_total": "19800.20",
+   "bid_totals": [
+    {
+     "amount": "19800.20",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "557.05",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2026.50",
+   "total_estimated_cost": "17765.00"
+  },
+  "before": {
+   "bid_total": "20163.00",
+   "bid_totals": [
+    {
+     "amount": "20163.00",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "556.90",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2059.50",
+   "total_estimated_cost": "18095.00"
+  }
+ },
+ "warnings": []
+}

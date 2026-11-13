@@ -1,7 +1,7 @@
 """The writer's row ops on a real HeavyBook book, against the Excel simulator
 the read-back suite trusts (``_fieldbook.paste_template_rows``,
 ``simulate_delete_row``): the same cells and formulas on every sheet, and
-pycel prices both books the same."""
+xlcalc prices both books the same."""
 from __future__ import annotations
 
 import re
@@ -11,9 +11,9 @@ from openpyxl import load_workbook
 
 from estimating_tools.estimate_spec.tests._fieldbook import (paste_template_rows,
                                                              simulate_delete_row)
-from estimating_tools.estimate_spec.tests._formula_eval import evaluate
 from estimating_tools.exchange import rowops, writer
 from estimating_tools.heavybook.tests import _readback as H
+from estimating_tools.heavybook.tests._readback import evaluate
 
 #: The sheets HeavyBook's declaration binds, and the stamp's: no #REF! there.
 BOUND = {H.CR_TAB, H.CW_TAB, H.BF_TAB, H.RT_TAB, "_wb"}
@@ -71,9 +71,11 @@ def _edited(tmp_path, cells=None):
 
 def test_the_writer_edits_a_heavybook_book_as_excel_does(tmp_path):
     built, p, ours, done = _edited(tmp_path)
-    # The Foreman's Checks and Flat rows pointed at its row: they read #REF!,
-    # as after Excel's own delete, and only off the bound sheets.
-    assert done.lost and {s for s, _r, _t in done.lost} <= set(p["sheets"]) - BOUND
+    # The template's formulas find the Foreman's row by key, never by
+    # address: deleting it leaves no #REF! anywhere (the code build's Checks
+    # and Flat rows read it by address, and read #REF! as after Excel's own
+    # delete).
+    assert done.lost == []
     mine, excel = load_workbook(ours), _simulated(built, p)
     for title in p["sheets"]:
         assert _cells(mine[title]) == _cells(excel[title]), title

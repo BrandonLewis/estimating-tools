@@ -772,7 +772,7 @@ def driven_cells(spec: dict, frames: list) -> dict:
         for n, keys in fr.sp_tasks.items():
             mine = out.setdefault(n, {})
             for block in (items.get(n) or {}).get("labor") or []:
-                if f"task[{block.get('cost_code', '')}]" not in keys:
+                if f"task[{block.get('slot', '')}]" not in keys:
                     continue
                 for member in block.get("crew") or []:
                     mine.setdefault(("CREW", member.get("trade")), fr.title)

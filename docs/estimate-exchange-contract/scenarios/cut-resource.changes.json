@@ -1,0 +1,47 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [
+  "Cost Report row 10: the new line 'Foreman' prices live here, but reaches the Flat sheet and the Checks rows only after the apply and a rebuild"
+ ],
+ "ops": [
+  {
+   "fields": {
+    "activity_id": 1,
+    "component_type": "labor",
+    "includes_burden": false,
+    "labor_cost_basis": "production",
+    "name": "Foreman",
+    "quantity": "1",
+    "sort_order": 0,
+    "time_unit": "HOURS",
+    "time_value": "4",
+    "unit_cost": "300"
+   },
+   "op": "resource.create",
+   "ref": "new:r1"
+  },
+  {
+   "fields": {},
+   "op": "resource.delete",
+   "ref": 3,
+   "v": "3e5541b841ecfc01"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 10,
+   "sheet": "Cost Report"
+  },
+  {
+   "op_index": 1,
+   "row": null,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Cost Report row 10: line 'Foreman' moves here from activity 2",
+  "Cost Report: line 'Foreman' (resource 3) deleted"
+ ]
+}

@@ -23,7 +23,7 @@ from __future__ import annotations
 from estimating_tools.exchange import baseline as exchange_baseline
 from estimating_tools.exchange import stamp as exchange_stamp
 from estimating_tools.exchange.stamp import StampError
-from estimating_tools.heavybook import ACCEPTED_FORMATS, FORMAT_NAME, FORMAT_VERSION, layout
+from estimating_tools.heavybook import ACCEPTED_FORMATS, FORMAT_NAME, codebook
 from estimating_tools.heavybook.columns import CR, CW
 
 #: The layout versions ``upgrade`` turns into a stamp.
@@ -49,7 +49,7 @@ def upgrade(raw: dict, wb) -> dict:
     # Inside the function: ``pack`` imports this module and this module
     # needs ``pack.bare_host``; each imports the other lazily so the two load
     # in either order.
-    from estimating_tools.heavybook.declaration import generate
+    from estimating_tools.heavybook.declaration import CODE_VERSION, generate
     from estimating_tools.heavybook.pack import bare_host
 
     if not isinstance(raw, dict) or not exchange_stamp.is_legacy(raw):
@@ -86,12 +86,12 @@ def upgrade(raw: dict, wb) -> dict:
         raise StampError(f"the layout in {exchange_stamp.SHEET}!{exchange_stamp.CELL} "
                          "names no tabs")
     layout_doc = {k: v for k, v in raw.items() if k not in _LIFTED}
-    layout_doc["layout_version"] = layout.LAYOUT_VERSION
+    layout_doc["layout_version"] = codebook.LAYOUT_VERSION
     # A layout-2 book's owner tags are stored constants, and its Crews sheet
     # has no crew-row helper column: its declaration says so (no derived
     # tag, no helper formula), so the reader reads and checks what is there.
     return exchange_stamp.make(
-        pack=FORMAT_NAME, version=FORMAT_VERSION,
+        pack=FORMAT_NAME, version=CODE_VERSION,
         declaration=generate(tabs=tabs, derived=False),
         host=host, estimate_id=raw.get("estimate_id"), estimate_v=raw.get("estimate_v"),
         exported_at=exported_at, baseline=meta, page=page,

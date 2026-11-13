@@ -156,7 +156,7 @@ def test_a_layout2_book_detects_ok_and_loads_an_upgraded_stamp(tmp_path):
     assert book.decl.sheets["crews"].tags["parent"].derived == ()
     assert "owner_row" not in book.decl.sheets["crews"].tags
     assert "*" not in book.decl.sheets["crews"].formulas
-    assert book.doc == H.fixture_doc()
+    H.assert_old_book_doc(book.doc)
     assert book.tab("cost_report") == "Cost Report"
 
 

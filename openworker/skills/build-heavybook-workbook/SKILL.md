@@ -1,6 +1,6 @@
 ---
 name: build-heavybook-workbook
-description: Build the HeavyBook estimate workbook for a BidSheet.ai estimate — an outlined Cost Report with live formulas that match BidSheet.ai to the cent, plus Bid Form, Recap, Crews, Rates, Schedule, Checks and Flat sheets — from the estimate's workbook payload, fetched with est-estimate fetch. Read-only against BidSheet.ai; writes a local .xlsx. Use for "HeavyBook workbook", "estimate workbook for estimate N", "export the estimate to Excel (HeavyBook)". For a spec-driven fieldbook workbook use build-estimate-workbook instead.
+description: Build the HeavyBook estimate workbook for a BidSheet.ai estimate — an outlined Cost Report with live formulas that match BidSheet.ai to the cent, plus Bid Form, Recap, Crews (crew-priced activities price from it live), Rates, Schedule, Checks, Flat and Allocation sheets — from the estimate's workbook payload, fetched with est-estimate fetch. Read-only against BidSheet.ai; writes a local .xlsx. Use for "HeavyBook workbook", "estimate workbook for estimate N", "export the estimate to Excel (HeavyBook)". For a spec-driven fieldbook workbook use build-estimate-workbook instead.
 ---
 
 > **Setup:** If `import estimating_tools` fails, install the bundled wheels: `pip install "$(ls <resources_path>/../_dist/bimforge-*.whl | tail -1)" "$(ls <resources_path>/../_dist/estimating_tools-*.whl | tail -1)[plugin-core]"` — `<resources_path>` is the path `load_skill` returned for this skill. Then retry. (`openworker/install.py` normally does this at install time, so you should only need the fallback on a fresh or relocated Python env.)
@@ -26,7 +26,9 @@ estimate in BidSheet.ai and re-exporting clears them).
    patches it from a fetch of the same items; a long `--items` list is fine,
    the fetch pages itself and merges the pages into one file). Then build:
    `est-estimate build --pack heavybook <estimate>.workbook.json -o <estimate>.xlsx`.
-   `est-estimate heavybook build` is the same builder with the style options.
+   `est-estimate heavybook build` is the same builder, and both take the
+   output last instead of `-o` (`... <estimate>.workbook.json <estimate>.xlsx`). Without
+   `--pack`, `build` refuses a payload and names the pack to use.
    To rebuild a book the estimator has edited, write to a new file name
    (`-o <estimate>.rebuilt.xlsx`), never over the edited book.
    **Once per machine:** if the fetch is refused (exit 2) with "no BidSheet.ai token stored", ask
@@ -58,20 +60,50 @@ estimate in BidSheet.ai and re-exporting clears them).
 
 ## Styling
 
-An organization can restyle the book with a style pack directory holding
-`tokens.yaml` and/or `sheets.yaml` (partial files merge over the bundled
-style): pass `--style DIR` (to `build --pack heavybook` or `heavybook build`, the same
-builder), or set `estimating.heavycivil_style` in the org
-profile. Structure (columns, hidden id/`v` cells) cannot be restyled.
+The book's look is its template (`heavybook/template/` in the package:
+`pack.yaml` and `template.xlsx`, the pack `heavybook` version 2). `--style` and
+the profile's `estimating.heavycivil_style` no longer apply and are ignored
+with a warning. To restyle or extend the book, copy that directory, edit the
+copy's `template.xlsx` in Excel (and its `pack.yaml` for a new filled column or
+label; keep `pack: heavybook` and version 2), and build with
+`est-estimate build --pack heavybook payload.json -o book.xlsx --template DIR`
+(or `est-estimate heavybook build ... --template DIR`). The
+build lints the copy and refuses, naming the cell, a formula a filled row would
+break; the book reads back like any HeavyBook book (the template's README lists
+what an edit may do). The template is edited in Excel, never regenerated from
+code.
 
 ## What the estimator can edit
 
 Inputs are tinted: resource lines, production, shifts, counts and crew members
 on the Cost Report and Crews sheets; markup, item scope and bid price
 overrides on the Bid Form. Totals follow live. To send the edits back to
-BidSheet.ai, use the `apply-heavybook-workbook` skill: it runs `est-estimate apply`, which
-reads the book, dry-runs the change set, and applies it only on the estimator's yes.
+BidSheet.ai, use the `apply-estimate-workbook` skill: it runs `est-estimate read`
+and `est-estimate apply`, which read the book, dry-run the change set, and apply it
+only on the estimator's yes.
 
 The book also carries a hidden `_templates` sheet: the prototype rows Estimate
 Navigator, the Excel add-in, copies when it inserts a new activity, resource
 line, step or crew member. Leave it hidden and unedited; read-back never reads it.
+Allocation (which activity's cost pays which item, its fraction, cost and
+man-hours) and Bid Coverage (which schedules each bid total sums) are visible
+sheets you may reference with SUMIF or a pivot; `_cal` (the schedule's working
+days), `_wb` and `_templates` stay hidden.
+
+## Known limits
+
+- Labels on Cost Report rows (an activity's export labour, an item's scope,
+  export total and calculated unit price) stay as built through a refresh; a
+  rebuild updates them. So an item brought into scope in BidSheet.ai refuses
+  the refresh and asks for a rebuild, and an item excluded there refreshes with
+  a note that its scope label reads as built until a rebuild.
+- Adding or deleting an activity changes the allocation between items, and
+  only a rebuild lays it out (the Allocation sheet is as of the build). Until
+  a rebuild, item totals leave out a new activity (or still include a deleted
+  one), the Checks sheet reads DIFF for those items, and the patch after the
+  apply notes it.
+- The `hc.tpl.*` prototype names on `_templates` are fixed: never rename them
+  in a copy of the template, since the pack names its insert kinds by the
+  shipped names.
+- Books built by earlier plugin versions (HeavyBook version 1) keep reading,
+  applying, patching and refreshing; rebuild one to get the template's sheets.

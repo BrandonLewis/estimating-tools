@@ -1,0 +1,101 @@
+{
+ "created": {
+  "crew:2": "crew"
+ },
+ "deleted": [],
+ "dry_run": true,
+ "ops": [
+  {
+   "after": {
+    "crew_id": "crew:2",
+    "members": [
+     {
+      "classification": "Finisher",
+      "count": "4.00",
+      "hourly_rate_override": "60.00",
+      "labor_rate_id": null,
+      "sort_order": 0
+     }
+    ]
+   },
+   "before": {
+    "crew_id": "crew:2",
+    "members": [
+     {
+      "classification": "Finisher",
+      "count": "3.00",
+      "hourly_rate_override": "60.00",
+      "labor_rate_id": null,
+      "sort_order": 0
+     }
+    ]
+   },
+   "index": 0,
+   "op": "crew.update_members",
+   "ref": 2
+  }
+ ],
+ "totals": {
+  "after": {
+   "bid_total": "21219.20",
+   "bid_totals": [
+    {
+     "amount": "21219.20",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "556.55",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2155.50",
+   "total_estimated_cost": "19055.00"
+  },
+  "before": {
+   "bid_total": "20163.00",
+   "bid_totals": [
+    {
+     "amount": "20163.00",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "556.90",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2059.50",
+   "total_estimated_cost": "18095.00"
+  }
+ },
+ "warnings": [
+  "library crew 2 copied into this estimate as crew crew:2"
+ ]
+}

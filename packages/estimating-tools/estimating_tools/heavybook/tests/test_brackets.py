@@ -16,8 +16,6 @@ from estimating_tools.estimate_spec.tests._fieldbook import (
     simulate_delete_row,
     simulate_insert_copied_row,
 )
-from estimating_tools.estimate_spec.tests._formula_eval import evaluate as _evaluate
-from estimating_tools.heavybook import build, style
 from estimating_tools.heavybook.columns import CR, CW
 from estimating_tools.heavybook.tests import _readback as H
 
@@ -25,7 +23,7 @@ from estimating_tools.heavybook.tests import _readback as H
 def evaluate(book, path):
     """Evaluate into ``path`` (made if missing), so before/after saves differ."""
     path.mkdir(parents=True, exist_ok=True)
-    return _evaluate(book, path)
+    return H.evaluate(book, path)
 
 
 def _f(v):
@@ -227,7 +225,7 @@ def test_a_deleted_member_leaves_the_crew_chain_intact(doc, book, tmp_path, gone
 def test_a_member_added_to_a_crew_with_none(doc, tmp_path):
     crew = next(c for c in doc["crews"] if c["scope"] == "estimate")
     crew["members"] = []
-    book = build.build(doc, style=style.load_style(), exported_at="x", host="h")
+    book = H.build_wb(doc, tmp_path)
     ws, head, end = _crew_rows(book, crew["id"])
     assert end == head + 1
     _insert_typed_row(ws, end, {CW.CODE: "Laborer", CW.COUNT: 2})

@@ -98,7 +98,7 @@ def test_insert_copies_prototype_rows_and_moves_everything_below(tmp_path):
     assert ws["C5"].value == "=A5*2"
     assert ws["H8"].value == 1.5 and ws["H8"].number_format == "0.000"
     assert [str(r) for r in ws.merged_cells.ranges] == ["D2:E3"]
-    assert _sqrefs(ws.data_validations) == ["B6 B7", "F4:F13"]
+    assert _sqrefs(ws.data_validations) == ["B6:B7", "F4:F13"]
     assert [str(cf.sqref) for cf in ws.conditional_formatting] == ["G4:G13"]
 
 
@@ -279,7 +279,9 @@ def test_a_delete_under_a_chart_or_a_note_is_refused(tmp_path):
     path = _decorated(tmp_path)
     _refused(path, [rowops.DeleteRows("Sheet", 9)], "anchored")
     _refused(path, [rowops.DeleteRows("Sheet", 15)], "note")
-    _refused(path, [rowops.InsertRows("Sheet", 21, "Proto", 3, 3)], "table T1")
+    # An insert inside a table grows it (test_rowops_tables); a delete of
+    # one of its rows is refused.
+    _refused(path, [rowops.DeleteRows("Sheet", 21)], "table T1")
 
 
 def test_a_lost_reference_on_another_sheet_needs_lost_ok(tmp_path):
@@ -418,7 +420,7 @@ def test_a_copied_validation_reads_its_own_row(tmp_path):
     path = _validated_proto(tmp_path)
     writer.edit(path, rows=[rowops.InsertRows("Sheet", 6, "Proto", 3, 3, times=2)])
     (dv,) = load_workbook(path)["Sheet"].data_validations.dataValidation
-    assert str(dv.sqref) == "B6 B7" and dv.formula1 == "A6>0"
+    assert str(dv.sqref) == "B6:B7" and dv.formula1 == "A6>0"
 
 
 UID = b' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision" xr:uid='

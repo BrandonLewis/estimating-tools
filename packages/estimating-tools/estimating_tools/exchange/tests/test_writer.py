@@ -309,21 +309,6 @@ def test_a_chartsheet_is_refused(tmp_path):
     _refused(path, {"Notes": {"A1": 1}}, "Notes is not a worksheet")
 
 
-def test_a_missing_custom_properties_part_is_refused(tmp_path):
-    wb = Workbook()
-    wb.active["A1"] = 1
-    p = tmp_path / "plain.xlsx"
-    wb.save(p)
-    before = p.read_bytes()
-    try:
-        writer.set_custom_properties(p, {"k": "v"})
-    except ValueError as exc:
-        assert "no custom document properties part" in str(exc)
-    else:
-        raise AssertionError("expected ValueError")
-    assert p.read_bytes() == before
-
-
 def test_write_patches_cells_and_properties_in_one_pass(tmp_path):
     path = _book(tmp_path)
     before = _entries(path)

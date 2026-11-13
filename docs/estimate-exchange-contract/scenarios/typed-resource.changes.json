@@ -1,0 +1,31 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [
+  "Cost Report row 15: not priced live in this book: the typed line 'Pump' (its cost, and on the Flat sheet and the Checks rows) -- it shows after the apply and a rebuild"
+ ],
+ "ops": [
+  {
+   "fields": {
+    "activity_id": 2,
+    "component_type": "equipment",
+    "name": "Pump",
+    "quantity": "1",
+    "sort_order": 0,
+    "unit_cost": "250"
+   },
+   "op": "resource.create",
+   "ref": "new:r1"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 15,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Cost Report row 15: new line 'Pump'"
+ ]
+}

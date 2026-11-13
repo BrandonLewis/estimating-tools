@@ -352,6 +352,8 @@ class Resource:
     equipment_rate_id: int | None
     material_cost_id: int | None
     v: str
+    #: Free text (fieldbook: a line's source and vendor, ``QUOTE · Vendor``).
+    description: str = ""
 
     @property
     def rate_link(self):
@@ -398,6 +400,12 @@ class Rate:
     unit: str
     rate: Decimal | None
 
+    @property
+    def link(self) -> str:
+        """The rate as a resource's rate link names it (``Resource.rate_link``):
+        ``labor:<id>``, ``equipment:<id>`` or ``material:<id>``."""
+        return f"{self.kind}:{self.id}"
+
 
 @dataclass(frozen=True)
 class Share:
@@ -434,6 +442,10 @@ class Workbook:
     def _crews_by_id(self):
         return {c.id: c for c in self.crews}
 
+    @functools.cached_property
+    def _elements_by_id(self):
+        return {e.id: e for e in self.elements}
+
     def item(self, item_id):
         return self._items_by_id.get(item_id)
 
@@ -442,6 +454,9 @@ class Workbook:
 
     def crew(self, crew_id):
         return self._crews_by_id.get(crew_id)
+
+    def element(self, element_id):
+        return self._elements_by_id.get(element_id)
 
     def rates_by_kind(self, kind):
         return tuple(r for r in self.rates if r.kind == kind)
@@ -599,7 +614,7 @@ def _resource(row, n):
                               nullable=True),
         material_cost_id=_id(row.get("material_cost_id"), f"{where}.material_cost_id",
                              nullable=True),
-        v=v)
+        v=v, description=row.get("description") or "")
 
 
 def _crew(row, n):

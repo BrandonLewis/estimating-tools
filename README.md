@@ -115,7 +115,7 @@ A bid runs through the skills roughly in this order; every one is also a CLI.
 |---|---|---|
 | start | `intake-project`, `project-briefing`, `scaffold-project` | `est-intake`, `est-scaffold` |
 | quantities | `quantity-takeoff`, `measure-plans`, `read-station-plans`, `earthwork-takeoff`, `rebar-schedule`, `dxf-to-bim`, `bim-to-takeoff`, `audit-quantities`, `push-takeoff` | `est-takeoff`, `est-rebar`, `est-bim` |
-| estimate | `estimate-project`, `build-estimate-workbook`, `build-assemblies`, `price-estimate`, `bm-sync`, `save-scaffolds`, `estimate-template` | `est-estimate`, `est-hist` |
+| estimate | `estimate-project`, `build-estimate-workbook`, `build-heavybook-workbook`, `apply-estimate-workbook`, `build-assemblies`, `price-estimate`, `bm-sync`, `save-scaffolds`, `estimate-template` | `est-estimate`, `est-hist` |
 | quotes | `solicit-quotes`, `capture-quote`, `compare-quotes`, `compare-item-quotes`, `quote-coverage`, `apply-quotes`, `manage-work-packages` | `est-quotespace`, `est-quotes` |
 | schedule | `schedule-export`, `cost-load-schedule`, `stage-model` | `est-schedule`, `est-gantt` |
 | documents | `draft-an-rfi`, `subcontract-risk-review`, `pdf-extraction`, `excel-automation` | `est-letterhead` |

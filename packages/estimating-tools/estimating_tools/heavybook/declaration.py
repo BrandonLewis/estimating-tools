@@ -1,11 +1,11 @@
-"""HeavyBook's declaration (engine spec, Layer 2), generated from
-``columns.py`` and the letter-bearing tables below -- the source of truth for
+"""The declaration of a code-built (version 1) HeavyBook book (engine spec,
+Layer 2), generated from ``columns.py`` and the letter-bearing tables below:
 which column holds each bound field, export value and formula, which cell a
-marker's cue sits in and what text a writer puts on a row; the reader takes
-them from the declaration (``exchange.reader.fields``, ``exchange.reader.scan``)
--- so the shipped ``pack.yaml`` and the stamped declaration cannot drift from the code.
-``generate(tabs)`` takes the styled tab titles for a built book; the shipped
-file uses the defaults. ``generate(derived=False)`` is the declaration of a
+marker's cue sits in and what text the retired writers put on a row. Such a
+book carries it in its stamp; the legacy upgrades (``legacy.upgrade``,
+``legacy.upgrade_step2a``) generate it for books stamped before it. The
+version-2 pack's declaration is its template's ``pack.yaml``.
+``generate(tabs)`` takes the book's tab titles. ``generate(derived=False)`` is the declaration of a
 book whose owner tags are stored constants (layout 2: 0.1.95 and 0.1.96,
 upgraded in memory by ``legacy.upgrade``): no tag is derived, and the Crews
 sheet has no crew-row helper column."""
@@ -15,14 +15,16 @@ import json
 
 from estimating_tools.exchange import stamp as exchange_stamp
 from estimating_tools.exchange.declaration import SCHEMA_VERSION
-from estimating_tools.heavybook import FORMAT_NAME, FORMAT_VERSION
+from estimating_tools.heavybook import FORMAT_NAME
 from estimating_tools.heavybook import columns as C
 from estimating_tools.heavybook.columns import BF, CK, CR, CW, RT
-from estimating_tools.heavybook.layout import (
-    DERIVED, FIRST_ROW, HEADER_ROW, NAVIGATOR_STATUSES, TEMPLATE_NAMES)
-from estimating_tools.heavybook.sheets.cost_report import END_CUE
-from estimating_tools.heavybook.sheets.crews import CREW_END_CUE, LIBRARY_BANNER
-from estimating_tools.heavybook.sheets.rates import _TITLES
+from estimating_tools.heavybook.codebook import (CREW_END_CUE, DERIVED, END_CUE, FIRST_ROW,
+                                                 HEADER_ROW, LIBRARY_BANNER,
+                                                 NAVIGATOR_STATUSES, TEMPLATE_NAMES)
+from estimating_tools.heavybook.codebook import RATE_TITLES as _TITLES
+
+#: The pack version a code-built book stamps (the declaration generated here describes one).
+CODE_VERSION = "1"
 
 __all__ = ["DEFAULT_TABS", "DERIVED", "as_json", "dumps", "generate"]
 
@@ -145,7 +147,7 @@ def _formulas(sheet: str, *, crew_helper: bool = True) -> dict:
 
 def _parent(sheet: str, column: str, *, derived: bool) -> dict:
     """The parent tag: derived for the sheet's block rows and markers
-    (``layout.DERIVED``), or stored everywhere (a layout-2 book)."""
+    (``codebook.DERIVED``), or stored everywhere (a layout-2 book)."""
     return {"column": column, "derived": list(DERIVED[sheet]) if derived else []}
 
 
@@ -173,7 +175,7 @@ def generate(tabs: dict | None = None, *, derived: bool = True) -> dict:
         crew_tags["owner_row"] = CW.OWNER
     return {
         "schema": SCHEMA_VERSION,
-        "pack": {"name": FORMAT_NAME, "version": FORMAT_VERSION, "contract": "1"},
+        "pack": {"name": FORMAT_NAME, "version": CODE_VERSION, "contract": "1"},
         "kind": "code",
         "stamp": {"name": exchange_stamp.NAME, "sheet": exchange_stamp.SHEET,
                   "cell": exchange_stamp.CELL, "property": exchange_stamp.PROPERTY},

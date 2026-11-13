@@ -5,6 +5,7 @@ anything was reported), through the HeavyBook pack, the oracle."""
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -137,6 +138,22 @@ def test_a_server_deleted_row_is_removed(tmp_path):
     with pytest.raises(LookupError):
         H.cr_row(ws, "RESOURCE", 3)
     assert _read(path).ops == []
+    # The Foreman's Checks and Flat rows are display rows: blanked, with a note.
+    assert [n for n in report.notes if "no longer has are blanked" in n] == [
+        "Checks: 1 resource row(s) BidSheet.ai no longer has are blanked; a rebuild removes them",
+        "Flat: 1 resource row(s) BidSheet.ai no longer has are blanked; a rebuild removes them"]
+
+
+def test_a_server_deleted_row_of_a_code_built_book_leaves_its_checks_row_reading_ref(
+        tmp_path):
+    import shutil
+
+    path = tmp_path / "v1.xlsx"
+    shutil.copy(Path(H.__file__).parent / "fixtures" / "v1-book.xlsx", path)
+    fresh = H.fixture_doc()
+    fresh["resources"] = [r for r in fresh["resources"] if r["id"] != 3]
+    report = hb_pack.pack().refresh(path, fresh)
+    assert report.clean and report.rows_removed == 1
     # The Foreman's Checks row pointed at its row: it reads #REF! (a note).
     assert any("#REF!" in n for n in report.notes)
 

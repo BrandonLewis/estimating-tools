@@ -286,7 +286,7 @@ def test_crew_rows_price_hours_by_rate_into_the_cost_type_column(wb):
     ws = wb[ITEM2]
     r = task_block(ws, "02-100")["CREW"][0]
     lookup = "'Rates'!$A$5:$H$12"
-    assert ws[f"F{r}"].value == f"=D{r}*E{r}*'Rates'!$B$2"
+    assert ws[f"F{r}"].value == f"=D{r}*E{r}*IF($Z{r}=\"HOURS\",1,'Rates'!$B$2)"
     assert ws[f"G{r}"].value == f'=IFERROR(VLOOKUP($A{r},{lookup},8,FALSE),"")'
     assert ws[f"H{r}"].value == f'=IFERROR(VLOOKUP($A{r},{lookup},2,FALSE),"No rate")'
     assert ws[f"K{r}"].value == f'=IF(H{r}="Labor",F{r},0)'          # MH: labor hours only
@@ -427,14 +427,17 @@ def test_a_blank_cost_code_fails_validation():
         validate_spec(spec, pack=fieldbook_pack())
 
 
-def test_two_tasks_with_the_same_cost_code_in_one_item_are_refused():
-    # Two labor blocks naming the same cost code publish the same
-    # `task[02-100]` instance key on one sheet -- without the engine's
-    # duplicate-key guard, the second task's exports silently clobber the
-    # first's and the recap/cost summary price the wrong block.
+def test_two_tasks_with_the_same_cost_code_in_one_item_are_refused_in_a_spec():
+    # Spec read-back keys a task by its cost code, so a spec with two
+    # labor blocks on one code in an item would build a book it cannot
+    # read back. A build from the read model keys tasks by slot and may
+    # (test_fieldbook_slots).
     spec = example_spec()
-    spec["items"][1]["labor"].append(copy.deepcopy(spec["items"][1]["labor"][0]))
-    with pytest.raises(ValueError, match="02-100"):
+    second = copy.deepcopy(spec["items"][1]["labor"][0])
+    second["slot"] = "03"
+    spec["items"][1]["labor"].append(second)
+    with pytest.raises(ValueError,
+                       match=r"items\['2'\]: two labor blocks on cost code '02-100'"):
         build(spec)
 
 
@@ -807,7 +810,7 @@ def test_inserting_a_copied_crew_row_keeps_its_absolute_rates_reference():
     simulate_insert_copied_row(ws, at_row=end_r, copy_from_row=copy_from)
 
     new_row = end_r                                   # the copy landed where END used to be
-    assert ws[f"F{new_row}"].value == f"=D{new_row}*E{new_row}*'Rates'!$B$2"
+    assert ws[f"F{new_row}"].value == f"=D{new_row}*E{new_row}*IF($Z{new_row}=\"HOURS\",1,'Rates'!$B$2)"
     assert ws[f"G{new_row}"].value == (
         f'=IFERROR(VLOOKUP($A{new_row},\'Rates\'!$A$5:$H$12,8,FALSE),"")')
     assert ws[f"H{new_row}"].value == (

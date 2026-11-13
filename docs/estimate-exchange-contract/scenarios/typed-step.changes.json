@@ -1,0 +1,27 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [],
+ "ops": [
+  {
+   "fields": {
+    "activity_id": 4,
+    "duration": "1",
+    "duration_unit": "DAYS",
+    "name": "Strip"
+   },
+   "op": "step.add",
+   "ref": "new:s1"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 23,
+   "sheet": "Cost Report"
+  }
+ ],
+ "summary": [
+  "Cost Report row 23: new step 'Strip'"
+ ]
+}

@@ -28,6 +28,7 @@ def _chain(optional):
     }
     cr["markers"] = {"OA": {}, "OB": {}, "OC": {}, "END": {}}
     cr["formulas"] = {"*": ["AJ"], "ITEM": ["R"], "ITEM.included": ["AI"]}
+    cr["fields"]["MEMBER"] = {"classification": "A", "count": "C"}   # what a member is made from
     return Blocks(D.load(doc).sheets["cost_report"])
 
 

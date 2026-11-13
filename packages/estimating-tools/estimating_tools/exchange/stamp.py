@@ -7,6 +7,15 @@ it covers, and how the baseline is stored (``exchange.baseline``'s meta; the
 chunks sit in column B under the stamp cell). Packs put what only they read
 under ``extra``.
 
+``stale`` (optional; absent on a book as built, and on every book stamped
+before it): what the book shows as of export that BidSheet.ai changed while
+a patch took a new baseline (``Pack.refresh_extras``' ``stale``: ``shares``,
+``crews``, ``rates``, or a priced display source ``<sheet key>.<SOURCE>``).
+The baseline no longer differs from BidSheet.ai there, so the stamp keeps
+the list and every later patch and refresh reports it -- as a note, since
+taking BidSheet.ai's other changes cannot make it worse; only a name found
+changed again blocks a refresh. Nothing clears the list but a rebuild.
+
 Readers accept HeavyBook's ``hc.layout`` and fieldbook's ``est.layout`` as
 names for books stamped before this document. A HeavyBook book built before
 step 2 holds its layout JSON in the same cell (``is_legacy``): it has no
@@ -35,6 +44,26 @@ SCHEMA_VERSION = 1
 CELL_LIMIT = 32767
 
 
+#: The BidSheet.ai host a build stamps when it is given none.
+DEFAULT_HOST = "www.bidsheet.ai"
+
+
+def bare_host(host: str) -> str:
+    """``HTTPS://WWW.X.ai/a?q#f`` or ``www.x.ai`` -> ``www.x.ai`` (port kept):
+    the host a build stamps. Blank gives the default; any scheme other than
+    https is refused (``ValueError``)."""
+    host = str(host).strip()
+    if not host:
+        return DEFAULT_HOST
+    if "://" in host:
+        scheme, host = host.split("://", 1)
+        if scheme.lower() != "https":
+            raise ValueError("the BidSheet.ai host must be https")
+    for sep in "/?#":
+        host = host.split(sep, 1)[0]
+    return host.lower() or DEFAULT_HOST
+
+
 class StampError(ValueError):
     """The stamp cell does not hold a stamp this package reads."""
 
@@ -54,6 +83,7 @@ class Stamp:
     baseline: dict
     extra: dict
     raw: dict
+    stale: tuple = ()
 
 
 def dumps(doc: dict) -> str:
@@ -120,22 +150,42 @@ def parse(doc) -> Stamp:
     declaration = doc.get("declaration")
     if not isinstance(declaration, dict):
         raise StampError("the stamp's declaration is not an object")
+    stale = stale_of(doc)
     extra = doc.get("extra")
     return Stamp(contract=doc["contract"], pack=dict(pack), schema=schema,
                  declaration=declaration, host=str(doc.get("host") or ""),
                  estimate_id=doc.get("estimate_id"), estimate_v=estimate_v,
                  exported_at=str(doc.get("exported_at") or ""), page=page,
                  item_ids=None if ids is None else list(ids), baseline=dict(doc["baseline"]),
-                 extra=dict(extra) if isinstance(extra, dict) else {}, raw=doc)
+                 extra=dict(extra) if isinstance(extra, dict) else {}, raw=doc,
+                 stale=tuple(stale))
 
 
-def with_baseline(doc: dict, meta: dict, *, estimate_v, exported_at: str) -> dict:
+def stale_of(doc) -> tuple:
+    """The stamp document's ``stale`` names; ``()`` when it has none (a book
+    as built, or stamped before the field). A ``stale`` that is not a list
+    of names is ``StampError``, as ``parse`` refuses it: a book whose stamp
+    says something is stale is never read as having nothing stale. A pack
+    reads a parsed stamp's ``Stamp.stale``."""
+    stale = doc.get("stale", []) if isinstance(doc, dict) else []
+    if not (isinstance(stale, list) and all(isinstance(s, str) for s in stale)):
+        raise StampError("the stamp's stale list is not a list of names")
+    return tuple(stale)
+
+
+def with_baseline(doc: dict, meta: dict, *, estimate_v, exported_at: str,
+                  stale=()) -> dict:
     """A copy of ``doc`` whose baseline, estimate ``v`` and export time are the
-    ones a patch or refresh just established. Nothing else changes."""
+    ones a patch or refresh just established, and whose ``stale`` list gains
+    ``stale`` (it never loses a name: only a rebuild clears it). Nothing else
+    changes."""
     out = dict(doc)
     out["baseline"] = dict(meta)
     out["estimate_v"] = estimate_v
     out["exported_at"] = exported_at
+    names = list(dict.fromkeys([*stale_of(doc), *stale]))
+    if names:
+        out["stale"] = names
     return out
 
 

@@ -278,7 +278,8 @@ def test_several_rows_added_in_several_blocks(tmp_path):
     assert report.clean and report.rows_added == 3
     assert any("line 'Water' added to activity 'Excavate' from BidSheet.ai" in w
                for w in report.written)
-    assert any("Checks: 3 figure(s) BidSheet.ai has now have no row" in n for n in report.notes)
+    assert ("Checks: 3 resource row(s) BidSheet.ai has now are not in the book; a rebuild adds "
+            "them") in report.notes
     ws = H.open_book(path)[H.CR_TAB]
     for rid in (10, 11, 12):
         H.cr_row(ws, "RESOURCE", rid)
@@ -367,6 +368,9 @@ def test_an_item_excluded_on_the_server_refreshes(tmp_path):
     report = _refresh(path, doc)
     assert report.clean
     assert _ops(path) == []
+    number = item["item_number"]
+    assert (f"item {number} was excluded in BidSheet.ai; its Cost Report scope label reads "
+            "as built until a rebuild") in report.notes
 
 
 def test_an_item_brought_into_scope_on_the_server_needs_a_rebuild(tmp_path):
@@ -464,7 +468,11 @@ def test_every_declared_export_value_refuses_an_edit(tmp_path, key, tab, kind, l
 # -- the Checks sheet ------------------------------------------------------------------
 
 def _carpenters(path):
-    ws = H.open_book(path)["Checks"]
+    """The BidSheet.ai figure of each Checks row named Carpenters, as the
+    book shows it (a formula over the row's hidden label, cached)."""
+    from openpyxl import load_workbook
+
+    ws = load_workbook(path, data_only=True)["Checks"]
     return [ws[f"{CK.BIDSHEET}{r}"].value for r in range(1, ws.max_row + 1)
             if ws[f"{CK.DESC}{r}"].value == "Carpenters"]
 
@@ -615,8 +623,8 @@ def test_a_member_count_both_sides_set_differently_is_a_collision(tmp_path):
 def test_a_block_deleted_on_both_sides_needs_a_rebuild_only_for_its_cost_shares(tmp_path):
     """Walls and its child Ties deleted in the book (one activity.delete)
     and in BidSheet.ai: no "deleted in BidSheet.ai" for Ties. The shares the
-    two paid are gone from the payload, and the _shares sheet holds constants,
-    so the cost-share guard still asks for a rebuild."""
+    two paid are gone from the payload, and the Allocation sheet lays the
+    shares out as of the build, so a rebuild is still asked for."""
     path = _book(tmp_path)
     _excel_delete_block(path, 2, 3)
     fresh = H.fixture_doc()
@@ -626,7 +634,7 @@ def test_a_block_deleted_on_both_sides_needs_a_rebuild_only_for_its_cost_shares(
     report = _refresh(path, fresh)
     assert not report.collisions
     (only,) = report.structural
-    assert "cost shares" in only
+    assert "share rows, which the Allocation sheet lays out" in only
 
 
 def test_a_typed_indirect_cost_replaced_by_the_refresh_is_noted(tmp_path):
@@ -694,7 +702,8 @@ def test_checks_rows_alike_in_name_and_figure_follow_their_own_rows(tmp_path):
                                                                v="2" * 16)
     assert _refresh(path, fresh).clean
     assert _carpenters(path) == [2178, 1452]
-    # A Checks formula typed over: that row is left as it is, with a note.
+    # A Checks formula typed over: the rows are display rows found by their
+    # id tags, so each still takes its own figure.
     wb = H.open_book(path)
     ws = wb["Checks"]
     first = next(r for r in range(1, ws.max_row + 1) if ws[f"{CK.DESC}{r}"].value == "Carpenters")
@@ -706,7 +715,6 @@ def test_checks_rows_alike_in_name_and_figure_follow_their_own_rows(tmp_path):
     report = _refresh(path, again)
     assert report.clean
     assert _carpenters(path) == [2178, 2904]
-    assert any(f"Checks row {first}" in n and "reads like another row" in n for n in report.notes)
 
 
 # -- cached values (#370) -------------------------------------------------------------

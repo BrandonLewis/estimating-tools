@@ -1,0 +1,35 @@
+{
+ "estimate_id": 1,
+ "estimate_v": "ac6cc8eec0e04323",
+ "notes": [
+  "Crews row 11: library crew 'Pour crew': BidSheet.ai copies it into this estimate and edits the copy; the library crew and other estimates are not changed"
+ ],
+ "ops": [
+  {
+   "fields": {
+    "members": [
+     {
+      "classification": "Finisher",
+      "count": "4",
+      "hourly_rate_override": "60",
+      "labor_rate_id": null,
+      "sort_order": 0
+     }
+    ]
+   },
+   "op": "crew.update_members",
+   "ref": 2,
+   "v": "331a990f8c627d9c"
+  }
+ ],
+ "rows": [
+  {
+   "op_index": 0,
+   "row": 11,
+   "sheet": "Crews"
+  }
+ ],
+ "summary": [
+  "Crews row 11: Pour crew member 'Finisher' count 3 → 4"
+ ]
+}

@@ -107,7 +107,7 @@ def test_a_step2a_book_detects_ok_and_reads_clean(tmp_path):
     assert "*" not in crews.formulas
     assert book.stamp.extra["upgraded_from"] == "2a"
     assert book.stamp.exported_at == "2026-11-05T00:00:00Z"
-    assert book.doc == H.fixture_doc()
+    H.assert_old_book_doc(book.doc)
 
 
 def test_a_step2a_book_reads_an_edit_as_a_fresh_book_does(tmp_path):

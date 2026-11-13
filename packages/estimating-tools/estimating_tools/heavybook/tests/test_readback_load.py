@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from openpyxl import Workbook
@@ -29,9 +30,14 @@ def test_load_decodes_the_baseline(path):
     assert book.kinds["cost_report"]["kinds"]["STEPS"] == {"parent": "Z"}
 
 
-def test_layout_1_book_is_refused(path):
+def test_layout_1_book_is_refused(tmp_path):
     """A book from before the exchange stamp holds its layout JSON in the
-    stamp cell (no ``schema``); it is refused by its layout version."""
+    stamp cell (no ``schema``); it is refused by its layout version. (A
+    code-built book carries its layout in the stamp's ``extra``.)"""
+    import shutil
+
+    path = tmp_path / "v1.xlsx"
+    shutil.copy(Path(H.__file__).parent / "fixtures" / "v1-book.xlsx", path)
     wb = H.open_book(path)
     meta = json.loads(wb["_wb"]["A1"].value)
     legacy = dict(meta["extra"]["layout"], format="heavybook", layout_version=1,
@@ -214,7 +220,7 @@ def test_the_book_takes_its_tabs_and_kinds_from_the_declaration(path):
     from estimating_tools.exchange.reader import book as B
     wb = load_workbook(path)
     doc = json.loads(wb["_wb"]["A1"].value)
-    del doc["extra"]["layout"]                  # nothing in the reader may need it
+    assert "layout" not in doc["extra"]         # nothing in the reader may need it
     wb["_wb"]["A1"] = exchange_stamp.dumps(doc)
     wb.save(path)
     opened = B.load(path)
