@@ -94,9 +94,12 @@ def test_the_reader_knows_every_kind_tag(units):
 def test_formula_columns_are_the_packs(units):
     # An input written through `formula:` (crew days, a line's qty and price,
     # the bid qty -- a number, or a formula the spec itself carries) is an
-    # input, not a formula a literal could be typed over.
+    # input, not a formula a literal could be typed over. A cell laid out
+    # only for some repeat elements (`if_it`: the labor lane on a labor line,
+    # which only a build from the read model writes) is no spec book's.
     for name, kind, cells in _tagged_rows(units):
-        got = {c for c, cell in cells.items() if "formula" in cell and not _is_input(cell)}
+        got = {c for c, cell in cells.items()
+               if "formula" in cell and not _is_input(cell) and "if_it" not in cell}
         want = set(L.formula_columns(kind, label=(cells.get("A") or {}).get("value"),
                                      in_task=name == "task", takeoff_kind=TAKEOFF_UNITS.get(name)))
         assert got == want, (name, kind)
@@ -200,10 +203,11 @@ def test_takeoff_list_keys_match_each_takeoff_units_own_list_param(units):
 def test_baseline_sheets_are_the_book_sheets_other_than_rates_and_codes(recipes):
     # Rates grows with new rates (not fixed-shape) and Codes is regenerated
     # (decision 9) -- every other book sheet's shape depends only on the
-    # items, which read-back has already confirmed match the spec.
+    # items, which read-back has already confirmed match the spec. Crews is
+    # the read model's crew copies: read-only, and never laid out for a spec.
     sheet_names = {s["sheet_name"] for s in recipes["book"] if "for_each" not in s}
     assert set(L.BASELINE_SHEETS) <= sheet_names
-    assert sheet_names - set(L.BASELINE_SHEETS) == {"Rates", "Codes"}
+    assert sheet_names - set(L.BASELINE_SHEETS) == {"Rates", "Codes", "Crews"}
 
 
 def test_the_shown_but_unread_text_cells_are_the_packs(units):

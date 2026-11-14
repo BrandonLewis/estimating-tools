@@ -17,6 +17,11 @@ from estimating_tools.exchange import model
 from estimating_tools.exchange import stamp as exchange_stamp
 
 
+class StampRefused(ValueError):
+    """The book cannot carry this stamp: the read model refuses the payload,
+    or the stamp is past one Excel cell. Nothing is stamped."""
+
+
 @dataclass(frozen=True)
 class Baseline:
     """What a build from the read model stamps: the payload (the book's
@@ -30,7 +35,7 @@ class Baseline:
 
 def write(wb, base: Baseline, declaration) -> None:
     """Stamp ``wb`` (an openpyxl workbook) with ``base`` and ``declaration``
-    (a loaded ``exchange.declaration.Declaration``). ValueError for a
+    (a loaded ``exchange.declaration.Declaration``). ``StampRefused`` for a
     payload the read model refuses, or a stamp past one cell."""
     from openpyxl.packaging.custom import StringProperty
     from openpyxl.workbook.defined_name import DefinedName
@@ -39,7 +44,7 @@ def write(wb, base: Baseline, declaration) -> None:
         data = model.parse(base.payload)
         chunks, meta = exchange_baseline.encode(base.payload)
     except (model.PayloadError, exchange_baseline.BaselineError) as exc:
-        raise ValueError(f"the read model cannot be laid out: {exc}") from exc
+        raise StampRefused(f"the read model cannot be laid out: {exc}") from exc
     host = exchange_stamp.bare_host(base.host)
     page, item_ids = exchange_stamp.page_of(base.payload)
     doc = exchange_stamp.make(pack=declaration.pack.name, version=declaration.pack.version,
@@ -49,7 +54,7 @@ def write(wb, base: Baseline, declaration) -> None:
                               item_ids=item_ids)
     text = exchange_stamp.dumps(doc)
     if len(text) > exchange_stamp.CELL_LIMIT:
-        raise ValueError(f"the book's stamp is {len(text)} characters; Excel holds "
+        raise StampRefused(f"the book's stamp is {len(text)} characters; Excel holds "
                          f"{exchange_stamp.CELL_LIMIT} per cell -- build fewer items per page")
     ws = wb.create_sheet(exchange_stamp.SHEET)
     ws.sheet_state = "hidden"

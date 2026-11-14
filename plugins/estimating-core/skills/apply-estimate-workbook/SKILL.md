@@ -1,6 +1,6 @@
 ---
 name: apply-estimate-workbook
-description: Send an estimator's edits in an estimate workbook built from BidSheet.ai (HeavyBook, or any exchange pack's book) back to BidSheet.ai — run est-estimate read on the edited .xlsx and show its problems, run est-estimate apply to dry-run it and show the plan, and only on the estimator's yes run apply --commit, which applies and patches the book in place (edited inputs, rows inserted with Estimate Navigator, copied, pasted and typed rows, cut-and-pasted activities and lines, deletes). Also brings BidSheet.ai's changes into the book in place with est-estimate refresh (collisions are shown, never resolved). Writes to BidSheet.ai. Use for "apply my workbook edits", "send the workbook back", "push the edited estimate workbook", "send the HeavyBook workbook back", "refresh my workbook from BidSheet.ai", "pull BidSheet.ai changes into the workbook". To build the book in the first place use build-heavybook-workbook; a fieldbook spec workbook goes back through build-estimate-workbook's read-back and bm-sync.
+description: Send an estimator's edits in an estimate workbook built from BidSheet.ai (HeavyBook, or any exchange pack's book) back to BidSheet.ai — run est-estimate read on the edited .xlsx and show its problems, run est-estimate apply to dry-run it and show the plan, and only on the estimator's yes run apply --commit, which applies and patches the book in place (edited inputs, rows inserted with Estimate Navigator, copied, pasted and typed rows, cut-and-pasted activities and lines, deletes). Also brings BidSheet.ai's changes into the book in place with est-estimate refresh (collisions are shown, never resolved). Writes to BidSheet.ai. Use for "apply my workbook edits", "send the workbook back", "push the edited estimate workbook", "send the HeavyBook workbook back", "refresh my workbook from BidSheet.ai", "pull BidSheet.ai changes into the workbook". To build the book in the first place use build-heavybook-workbook; a fieldbook book can be built from BidSheet.ai with `~/.estimating/bin/est-estimate build --pack fieldbook` (see build-estimate-workbook) but does not send back here yet (delivery 3); a fieldbook spec workbook goes back through build-estimate-workbook's read-back and bm-sync.
 ---
 
 > **Setup:** the `est-*` tools are **not on `PATH`** — every command below names its shim under `~/.estimating/bin/`, which this plugin's SessionStart hook creates. If a shim is missing, run `python <plugin-root>/scripts/ensure_tools.py` (the plugin root is this skill's directory's grandparent); it builds the shared runtime and prints one line saying what happened. Then retry.
@@ -24,6 +24,11 @@ Estimate Navigator, the Excel add-in, inserts new activities, lines, steps and
 crew members from the book's hidden prototype rows. Read-back recognises a new
 row by its structure — a row carrying a kind and no id — so a prototype row
 copied in by hand reads the same, and its position decides where it goes.
+
+> **Fieldbook is not yet sendable.** A fieldbook book built from BidSheet.ai
+> (`~/.estimating/bin/est-estimate build --pack fieldbook`) carries its stamp and declaration, but
+> `read`, `apply`, `patch` and `refresh` refuse it as "not yet" until delivery 3, which
+> waits on BidManager #1701. Say so and stop; do not route it through bm-sync.
 
 ## The rule: you run the commands, never the payload
 

@@ -61,11 +61,10 @@ def test_lifting_into_a_declaration_that_has_a_navigator_is_refused():
 
 
 @pytest.mark.parametrize("call", [
-    lambda p, tmp: p.build({}, tmp / "x.xlsx", options={}),
     lambda p, tmp: p.read(tmp / "x.xlsx"),
     lambda p, tmp: p.patch(tmp / "x.xlsx", None, None, {}),
     lambda p, tmp: p.refresh(tmp / "x.xlsx", {}),
 ])
-def test_the_pack_still_refuses_to_build_read_patch_and_refresh(call, tmp_path):
+def test_the_pack_still_refuses_to_read_patch_and_refresh(call, tmp_path):
     with pytest.raises(NotYet):
         call(FieldbookPack(), tmp_path)

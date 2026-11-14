@@ -34,6 +34,17 @@ the other:
   the shipped four-layer model (see `references/estimate-spec-model.md`)
   and are profile-governed: the output is the workbook shape the org's
   estimators build in by hand.
+- **`~/.estimating/bin/est-estimate build --pack fieldbook <estimate>.workbook.json OUT.xlsx`**
+  (fieldbook from BidSheet.ai) — builds the same fieldbook book from an estimate's
+  workbook payload instead of a spec: fetch the payload with `~/.estimating/bin/est-estimate fetch` as
+  `build-heavybook-workbook` does, to a file you never open. The book is stamped with the
+  exchange stamp, carries a read-only Crews sheet of the estimate's crew copies, and its
+  Checks sheet sets the book's item direct costs (rule 11) and bid (rule 12) beside
+  BidSheet.ai's. Until BidManager #1701, rule 11 shows an expected ✗ on items with timed
+  equipment, labour burden, or an activity count or crew factor other than 1 (BidSheet.ai
+  prices those differently). It does **not** send back yet: `read`, `apply`, `patch` and
+  `refresh` on a fieldbook book stay "not yet" until delivery 3 (waits on BidManager #1701). Until then a
+  fieldbook book from a spec still goes back through read-back and `bm-sync` below.
 - **`~/.estimating/bin/est-estimate cip-buildup <config.json>`** — the BM-aligned CIP
   structure-buildup workbook: a normalized `Rates` sheet, one buildup
   sheet per structure with generic cost blocks, and a sub-spread that

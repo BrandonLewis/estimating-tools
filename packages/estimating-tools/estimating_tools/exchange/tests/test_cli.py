@@ -183,13 +183,6 @@ def test_build_pack_names_the_installed_packs_when_unknown(tmp_path, capsys):
     assert "heavybook" in capsys.readouterr().err
 
 
-def test_build_pack_fieldbook_says_not_yet(tmp_path, capsys):
-    src = tmp_path / "e1.workbook.json"
-    src.write_text(json.dumps(H.fixture_doc()))
-    assert cli.main(["build", "--pack", "fieldbook", str(src)]) == 2
-    assert "build SPEC.yaml" in capsys.readouterr().err
-
-
 def test_build_with_a_yaml_still_means_fieldbook(tmp_path):
     """`est-estimate build SPEC.yaml` keeps its meaning (the authoring path)."""
     bad = tmp_path / "nope.estimate.yaml"
@@ -671,12 +664,16 @@ def test_fetch_without_a_token_is_refused_locally(capsys):
     assert "fetch refused" in capsys.readouterr().err
 
 
-def test_a_not_yet_message_does_not_double_the_pack_name(tmp_path, capsys):
-    src = tmp_path / "e1.workbook.json"
-    src.write_text(json.dumps(H.fixture_doc()))
-    assert cli.main(["build", "--pack", "fieldbook", str(src)]) == 2
+def test_a_not_yet_message_does_not_double_the_pack_name(capsys):
+    from estimating_tools.estimate_spec import pack as fb_pack
+    from estimating_tools.exchange.types import NotYet
+    from estimating_tools.exchange import cli as xcli
+    p = fb_pack.pack()
+    with pytest.raises(NotYet) as exc:
+        p.refresh(None, {})
+    assert xcli._not_yet(p, exc.value) == 2
     err = capsys.readouterr().err
-    assert err.startswith("fieldbook builds") and "fieldbook: fieldbook" not in err
+    assert err.startswith("fieldbook refreshes") and "fieldbook: fieldbook" not in err
 
 
 def _book_for_host(tmp_path, host):

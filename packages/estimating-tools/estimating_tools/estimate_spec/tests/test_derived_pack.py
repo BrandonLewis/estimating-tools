@@ -109,7 +109,7 @@ def test_an_inherited_layout_map_that_does_not_fit_is_refused_at_load(tmp_path, 
 
 
 def test_a_renamed_index_row_key_is_refused_at_load(tmp_path):
-    root = derived_pack_dir(tmp_path, replace={'key: "cs[{it.item_no}]"': 'key: "row[{it.item_no}]"',
+    root = derived_pack_dir(tmp_path, replace={'key: "cs[{it.sheet}]"': 'key: "row[{it.sheet}]"',
                                                "Cost Summary!cs[": "Cost Summary!row["})
     with pytest.raises(fp.FormatPackError, match=r"does not fit this pack.*cs\[\*\]\.bid"):
         fp.load_pack(root)

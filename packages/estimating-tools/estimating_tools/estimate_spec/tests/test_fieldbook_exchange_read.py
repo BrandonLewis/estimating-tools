@@ -217,7 +217,7 @@ def _three_items(where):
         "id": 37, "activity_id": 24, "time_value": "1", "v": "c000000000000037"})
     config["items"].append({
         "recipe": "lump_sum", "sheet": ITEM3, "item_no": "3", "description": "Hydrants",
-        "qty": 4, "uom": "EA", "exchange": {"id": 13, "v": "a000000000000013"},
+        "qty": 4, "uom": "EA", "server_cost": 0, "exchange": {"id": 13, "v": "a000000000000013"},
         "labor": [{"slot": "01", "cost_code": "03-100", "description": "Set hydrants",
                    "exchange": {"id": 24, "v": "b000000000000024"},
                    "crew": [{"trade": "Superintendent", "count": 1, "days": 1,

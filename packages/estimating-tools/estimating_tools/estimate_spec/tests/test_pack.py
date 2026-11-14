@@ -46,12 +46,10 @@ def test_a_real_fieldbook_book_detects_as_ok(tmp_path):
     assert fb_pack.pack().detect(read_facts(out)) == "ok"
 
 
-def test_read_build_and_patch_refuse_until_1_11(tmp_path):
+def test_read_and_patch_refuse_until_1_11(tmp_path):
     p = fb_pack.pack()
     with pytest.raises(NotYet, match="read-back"):
         p.read(tmp_path / "b.xlsx")
-    with pytest.raises(NotYet, match="est-estimate build"):
-        p.build({}, tmp_path / "b.xlsx", options={})
     with pytest.raises(NotYet, match="patches through the engine in delivery 3"):
         p.patch(tmp_path / "b.xlsx", None, None, {})
     with pytest.raises(NotYet, match="refreshes through the engine in delivery 3"):
