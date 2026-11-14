@@ -1,0 +1,109 @@
+{
+  "_comment": "Perplexity plugin split. Every skill under plugins/*/skills must appear exactly once: in one bundle or in 'excluded'. Skills listed in 'shared' may appear in several bundles. scripts/build_perplexity_plugins.py enforces this and the import limits.",
+  "limits": {
+    "max_skills": 32,
+    "max_files": 1000,
+    "max_total_bytes": 20000000,
+    "max_text_file_bytes": 100000,
+    "max_mcp_servers": 15
+  },
+  "excluded": {
+    "apply-heavybook-workbook": "renamed stub; apply-estimate-workbook replaces it",
+    "review-quotes": "superseded by compare-quotes / apply-quotes",
+    "triage-feedback": "maintainer-only"
+  },
+  "bundles": {
+    "estimating-core": {
+      "displayName": "Estimating Core",
+      "description": "Project intake, estimate build/price/push, assemblies, imports, and workbooks over the BidSheet.ai MCP.",
+      "runtime_from": "estimating-core",
+      "agents": [
+        "estimating-core/agents/estimator-agent.md"
+      ],
+      "skills": [
+        "estimating-reference",
+        "estimate-project",
+        "intake-project",
+        "scaffold-project",
+        "create-org-profile",
+        "project-briefing",
+        "import-estimate",
+        "push-estimate",
+        "price-estimate",
+        "estimate-template",
+        "save-scaffolds",
+        "bm-sync",
+        "build-assemblies",
+        "create-assemblies",
+        "push-assemblies",
+        "import-assemblies",
+        "import-cost-codes",
+        "import-rates",
+        "import-historicals",
+        "build-estimate-workbook",
+        "build-heavybook-workbook",
+        "apply-estimate-workbook",
+        "cost-load-schedule",
+        "schedule-export",
+        "report-issue",
+        "pdf-extraction",
+        "excel-automation"
+      ],
+      "mcp_from": "estimating-core"
+    },
+    "estimating-buyout": {
+      "displayName": "Estimating Buyout & Quotes",
+      "description": "Work packages, vendor directory, quote solicitation, intake, leveling, and subcontract risk review.",
+      "runtime_from": "estimating-core",
+      "agents": [],
+      "skills": [
+        "manage-work-packages",
+        "sync-work-packages",
+        "solicit-quotes",
+        "intake-quotes",
+        "capture-quote",
+        "compare-quotes",
+        "compare-item-quotes",
+        "apply-quotes",
+        "quote-coverage",
+        "import-directory",
+        "sync-directory",
+        "subcontract-risk-review",
+        "draft-an-rfi"
+      ],
+      "mcp_from": "estimating-core"
+    },
+    "estimating-takeoff-bim": {
+      "displayName": "Takeoff & BIM",
+      "description": "Plan measurement, quantity/earthwork/rebar takeoff, DXF/IFC authoring, sheets, and takeoff push to BidSheet.ai.",
+      "runtime_from": "estimating-core",
+      "agents": [
+        "calc-bim/agents/drafting-agent.md"
+      ],
+      "skills": [
+        "quantity-takeoff",
+        "earthwork-takeoff",
+        "rebar-schedule",
+        "push-takeoff",
+        "audit-quantities",
+        "measure-plans",
+        "read-station-plans",
+        "dxf-to-bim",
+        "build-structure",
+        "author-structure-model",
+        "bim-to-takeoff",
+        "ifc-to-dxf",
+        "draw-control-sheet",
+        "draw-layout-sheet",
+        "draw-structure-sheet",
+        "show-structure-earth",
+        "stage-model",
+        "pdf-extraction"
+      ],
+      "mcp_from": "estimating-core"
+    }
+  },
+  "shared": [
+    "pdf-extraction"
+  ]
+}
