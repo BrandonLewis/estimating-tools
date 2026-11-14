@@ -350,13 +350,22 @@
       "warnings": []
     }
   ],
+  "contract_version": "1.0",
   "crews": [
     {
       "code": "EX-1",
       "crew_factor": "1.050",
+      "estimate_hourly_cost": "161.7",
+      "estimate_hours_per_shift": "10.00",
       "hourly_rate": "154.0000",
       "hours_per_shift": "10.00",
+      "hours_per_shift_differs": false,
       "id": 1,
+      "library_crew_id": null,
+      "library_hourly_cost": null,
+      "library_hours_per_shift": null,
+      "library_name": null,
+      "library_status": "missing",
       "members": [
         {
           "classification": "Laborer",
@@ -379,14 +388,24 @@
       ],
       "name": "Excavation crew",
       "scope": "estimate",
-      "v": "5e68b40e2a6f0914"
+      "v": "5e68b40e2a6f0914",
+      "variance_per_hour": null,
+      "variance_percent": null
     },
     {
       "code": "PC-1",
       "crew_factor": "1.000",
+      "estimate_hourly_cost": "180",
+      "estimate_hours_per_shift": "8.00",
       "hourly_rate": "180.0000",
       "hours_per_shift": "8.00",
+      "hours_per_shift_differs": false,
       "id": 2,
+      "library_crew_id": 2,
+      "library_hourly_cost": "180",
+      "library_hours_per_shift": "8.00",
+      "library_name": "Pour crew",
+      "library_status": "active",
       "members": [
         {
           "classification": "Finisher",
@@ -400,7 +419,9 @@
       ],
       "name": "Pour crew",
       "scope": "library",
-      "v": "331a990f8c627d9c"
+      "v": "331a990f8c627d9c",
+      "variance_per_hour": "0",
+      "variance_percent": "0.00"
     }
   ],
   "elements": [

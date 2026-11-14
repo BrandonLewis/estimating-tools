@@ -107,6 +107,10 @@ derives it; never sent). A field marked **read-only** is shown and never
 written. `docs/estimate-exchange-contract/read-model.json` is one real
 document.
 
+**`contract_version`** -- the contract version the read model is written
+to, as `MAJOR.MINOR` (`"1.0"`; BidSheet.ai #1680). Computed; part 6 says
+what a reader does with it.
+
 **`estimate`** -- the estimate itself.
 - id: `id`; `v`.
 - in: `markup_percentage`, `markup_amount` (`estimate.update`); the
@@ -208,6 +212,19 @@ page activity uses that the estimate may use.
   `crew.update_members` (`classification`, `count`, `labor_rate_id`,
   `hourly_rate_override`, `sort_order`); `effective_hourly_rate` is
   computed. Every roster write reissues the member ids.
+- computed, read-only, outside `v` (BidSheet.ai #1756): the crew's library
+  source and how far the estimate's copy has drifted from it.
+  `library_crew_id` and `library_name` name the source; `library_status` is
+  `active`, `inactive` or `missing`. A source in an organisation the
+  estimate may not use reads `missing` and is not named. A library crew an
+  activity links directly (legacy) is its own source, with zero variance.
+  `library_hourly_cost`, `estimate_hourly_cost` and `variance_per_hour` are
+  exact decimal strings with trailing zeros trimmed (`"161.7"`, `"180"`);
+  `variance_percent` keeps two decimals, rounded half up (`"50.00"`);
+  `library_hours_per_shift` and `estimate_hours_per_shift` keep two
+  decimals (`"8.00"`). Only an `active` source reports a variance:
+  otherwise the variance fields are `null` and `hours_per_shift_differs`
+  is `false`.
 
 **`rates`** -- the library rows the page's resources and crews reference,
 and only those: `labor` (`{id, classification, unit, rate}`, unit `HR`),
@@ -490,10 +507,10 @@ book's prototypes and stamp.
 
 ## 6. Versioning and change
 
-- **The version.** The read model will carry `contract_version` as
-  `MAJOR.MINOR` (BidSheet.ai #1680). Until it does, this document declares the
-  version it describes (its header), and a reader treats an absent field as
-  `1.0`.
+- **The version.** The read model carries `contract_version` as
+  `MAJOR.MINOR` (BidSheet.ai #1680), and this document's header declares the
+  version it describes. A reader treats an absent field as `1.0` (a read
+  model written before #1680).
 - **Minor:** a new op, a new field, a new section, a loosened precondition.
   Readers ignore what they do not know. **Major:** a changed rule, a removed
   or renamed op or field, a change in what `v` covers.
