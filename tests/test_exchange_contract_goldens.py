@@ -157,6 +157,13 @@ def moved_and_copied_activities(wb):
     cw[f"{CW.COUNT}{H.cw_row(cw, 'MEMBER', 1)}"] = 3
 
 
+def copied_activity_with_library_crew(wb):
+    """Activity 6 runs library crew 2, so its copy's set_crew copies that crew in."""
+    cr = wb[H.CR_TAB]
+    first, last = H.cr_row(cr, "ACTIVITY", 6), H.cr_row(cr, "END", parent=6)
+    H.insert_copies(cr, first, last, last + 1)
+
+
 def formula_overwritten(wb):
     cr = wb[H.CR_TAB]
     cr[f"{CR.LAB}{H.cr_row(cr, 'ACTIVITY', 2)}"] = 1000
@@ -187,6 +194,9 @@ CHANGED = {
     "deleted-activity": (deleted_activity, {"activity.delete"}),
     "deleted-member": (deleted_member, {"crew.update_members"}),
     "edited-library-crew": (edited_library_crew, {"crew.update_members"}),
+    "copied-activity-with-library-crew": (copied_activity_with_library_crew,
+                                          {"activity.create", "activity.update",
+                                           "activity.set_crew"}),
     "moved-and-copied-activities": (moved_and_copied_activities, {
         "estimate.update", "activity.move", "activity.create", "activity.update", "step.add",
         "resource.create", "resource.update", "crew.update_members", "activity.set_crew",
@@ -328,11 +338,17 @@ def test_bidsheet_s_dry_run_of_a_scenario_is_checked_in_beside_it(name):
     assert [r["op"] for r in plan["ops"]] == [op["op"] for op in ops]
     made = {op["ref"]: _kind(op["op"]) for op in ops
             if op["op"] in CREATING and str(op.get("ref", "")).startswith("new:")}
-    tokens = {k: v for k, v in plan["created"].items() if not k.startswith("crew:")}
+    tokens = {k: v for k, v in plan["created"].items()
+              if not k.startswith(("crew:", "crew_member:"))}
     assert tokens == made
     copies = {k for k in plan["created"] if k.startswith("crew:")}
-    assert copies <= {f"crew:{op['ref']}" for op in ops if op["op"] == "crew.update_members"}
+    assert copies <= ({f"crew:{op['ref']}" for op in ops if op["op"] == "crew.update_members"}
+                      | {f"crew:{op['fields']['crew_id']}" for op in ops
+                         if op["op"] == "activity.set_crew"})
     assert all(plan["created"][k] == "crew" for k in copies)
+    members = {k for k in plan["created"] if k.startswith("crew_member:")}
+    assert all(plan["created"][k] == "member" for k in members)
+    assert not members or copies
     deletes = {(_kind(op["op"]), op["ref"]) for op in ops if op["op"].endswith(".delete")}
     assert {(d["kind"], d["id"]) for d in plan["deleted"]} == deletes
     assert set(plan["totals"]) == {"before", "after"}

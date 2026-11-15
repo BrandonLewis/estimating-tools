@@ -145,6 +145,38 @@ units:
       table: "$A${row:first}:$H${row:end}"
       names: "$A${row:first}:$A${row:end}"
 
+  # ------------------------------------------------------------------- Crews
+  # BidSheet.ai's crew copies, read-only: no input styles, no tags (nothing
+  # here is bound, so nothing is ever sent). A crew row (name, code, $/hr),
+  # then one row per member (trade, count, $/hr).
+  crews_head:
+    rows:
+      - cells: { A: { value: "Crews", style: band_title } }
+        merge: "A:D"
+        fill_row: band
+      - cells:
+          A: { value: "Crew / member", style: head_left }
+          B: { value: "Code",          style: head }
+          C: { value: "Count",         style: head }
+          D: { value: "$/hr",          style: head }
+
+  crew_block:
+    params:
+      name:    { type: string }
+      code:    { type: string }
+      rate:    { type: number }
+      members: { type: list }
+    rows:
+      - cells:
+          A: { value: "{p.name}", style: label_bold }
+          B: { value: "{p.code}", style: calc_text, optional: true }
+          D: { value: "{p.rate}", style: calc_rate }
+      - repeat: p.members
+        cells:
+          A: { value: "{it.trade}", style: label }
+          C: { value: "{it.count}", style: calc_hours }
+          D: { value: "{it.rate}",  style: calc_rate, optional: true }
+
   # -------------------------------------------------------------------- Codes
   # The cost-code dropdown's source, one row per code: the org's code list
   # (the spec's cost_codes) first, then each task code not on it, in order
@@ -340,6 +372,16 @@ units:
       type_subcontract: { type: string, default: Subcontract }
       type_equipment:   { type: string, default: Equipment }
       type_other:       { type: string, default: Other }
+      # A labor line: BidSheet.ai's lump-priced labor (no time; from_model
+      # only -- a spec's lines are never labor). It prices B*G in the labor
+      # lane (L) and its ok-flag accepts the type; every other line's
+      # `ok_kind_*` is empty, so spec books are unchanged.
+      type_labor:       { type: string, default: Labor }
+      ok_kind_labor:    { type: string, default: ',H{r}="Labor"' }
+      ok_kind_material:    { type: string, default: "" }
+      ok_kind_subcontract: { type: string, default: "" }
+      ok_kind_equipment:   { type: string, default: "" }
+      ok_kind_other:       { type: string, default: "" }
       src_quote:        { type: string, default: QUOTE }
       src_plug:         { type: string, default: PLUG }
       # A package line (`source: pkg`) shows the package sheet's QUOTE/PLUG label.
@@ -407,13 +449,14 @@ units:
                validation: { list: [Material, Subcontract, Equipment, Other] } }
           I: { value: "{p.src_{it.source}}", style: input_text, validation: { list: [QUOTE, PLUG] } }
           J: { value: "{it.vendor}",     style: input_text, optional: true }
+          L: { formula: '=IF(H{r}="Labor",B{r}*G{r},0)', style: lane_labor, if_it: { cost_type: labor } }
           M: { formula: '=IF(H{r}="Equipment",B{r}*G{r},0)', style: lane_equip }
           N: { formula: '=IF(OR(H{r}="Material",H{r}="Other"),B{r}*G{r},0)', style: lane_matl }
           O: { formula: '=IF(H{r}="Subcontract",B{r}*G{r},0)', style: lane_sub }
           P: { formula: "=SUM(L{r}:O{r})", style: calc_money }
           Q: { value: LINE, style: tag }
           R: { formula: "=R{r-1}", style: tag }
-          S: { formula: '=IF(AND(ISNUMBER(B{r}),ISNUMBER(G{r}),OR(H{r}="Material",H{r}="Subcontract",H{r}="Equipment",H{r}="Other")),IF(OR(AND(B{r}<>0,G{r}<>0),AND(U{r}="SP",B{r}=0,V{r}<>0){p.ok_{it.source}}),1,0),0)', style: tag }
+          S: { formula: '=IF(AND(ISNUMBER(B{r}),ISNUMBER(G{r}),OR(H{r}="Material",H{r}="Subcontract",H{r}="Equipment",H{r}="Other"{p.ok_kind_{it.cost_type}})),IF(OR(AND(B{r}<>0,G{r}<>0),AND(U{r}="SP",B{r}=0,V{r}<>0){p.ok_{it.source}}),1,0),0)', style: tag }
           T: { formula: '=IF(R{r}="",1,0)', style: tag }
           U: { value: "{it.u_tag}", style: tag, optional: true }
           V: { formula: "={it.arr_qty}*{it.arr_price}", style: tag }
@@ -598,7 +641,7 @@ units:
     exports:
       first: "{row:heads+2}"
 
-  unbalance_row:                       # one instance per bid item, key unbalance_row[ITEM_NO]
+  unbalance_row:                       # one instance per bid item, key unbalance_row[SHEET] (unique; item numbers may repeat)
     params:
       item_no:     { type: string }
       description: { type: string }
@@ -644,7 +687,7 @@ units:
     exports:
       first: "{row:heads+2}"
 
-  cost_summary_row:                    # one instance per bid item, key cs[ITEM_NO]
+  cost_summary_row:                    # one instance per bid item, key cs[SHEET] (unique; item numbers may repeat)
     params:
       item_no:     { type: string }
       sheet:       { type: string }
@@ -661,7 +704,7 @@ units:
           H: { formula: "=SUM(D{r}:G{r})",              style: calc_money }
           I: { formula: "={ref:{p.sheet}!recap.plug}",  style: calc_money }
           J: { formula: "=D{r}*{mk_labor}+E{r}*{mk_equip}+F{r}*{mk_matl}+G{r}*{mk_sub}", style: calc_money }
-          K: { formula: "={ref:Markup!unbalance_row[{p.item_no}].amount}", style: calc_money }
+          K: { formula: "={ref:Markup!unbalance_row[{p.sheet}].amount}", style: calc_money }
           L: { formula: "=(H{r}+J{r}+K{r})/(1-{bond_pct})", style: calc_money }
         mark: row
     exports:
@@ -701,7 +744,7 @@ units:
       bid:    "$L${row:total}"
 
   # ---------------------------------------------------------- Bid Form rows
-  bid_form_row:                        # one instance per bid item, key bf[ITEM_NO]
+  bid_form_row:                        # one instance per bid item, key bf[SHEET] (unique; item numbers may repeat)
     params:
       item_no:     { type: string }
       sheet:       { type: string }
@@ -713,7 +756,7 @@ units:
           B: { value: "{p.description}", style: label }
           C: { formula: "={ref:{p.sheet}!item_header.qty}", style: bidform_qty }
           D: { value: "{p.uom}",         style: label }
-          E: { formula: "=IF(C{r}=0,0,ROUND({ref:Cost Summary!cs[{p.item_no}].bid}/C{r},2))", style: bidform_amount }
+          E: { formula: "=IF(C{r}=0,0,ROUND({ref:Cost Summary!cs[{p.sheet}].bid}/C{r},2))", style: bidform_amount }
           F: { formula: "=C{r}*E{r}",    style: bidform_amount }
         mark: row
     exports:
@@ -824,6 +867,33 @@ units:
           - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
           - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
 
+  # Rules 11 and 12 exist on a read-model build only (config._server, set by
+  # from_model): the book's figures beside BidSheet.ai's, as values.
+  check_server_cost:                   # per item (rule 11)
+    params: { item_no: { type: string }, sheet: { type: string }, server: { type: number } }
+    rows:
+      - cells:
+          A: { value: 11, style: calc_text }
+          B: { value: "Item direct cost = BidSheet.ai's", style: label }
+          C: { value: "{p.item_no}", style: calc_text }
+          D: { formula: "={ref:{p.sheet}!recap.direct}", style: calc_money }
+          E: { value: "{p.server}", style: calc_money }
+          F: { formula: '=IFERROR(IF(ABS(D{r}-E{r})<=MAX(0.01,0.0005*ABS(E{r})),"✓","✗"),"✗")', style: status }
+        conditional:
+          - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
+          - { cells: F, formula: '=$F{r}="✗"', style: status_bad }
+
+  check_server_bid:                    # one row (rule 12): shown, not counted
+    params: { server: { type: number }, markup: { type: string } }
+    rows:
+      - cells:
+          A: { value: 12, style: calc_text }
+          B: { value: "Bid (book) beside BidSheet.ai's primary bid total", style: label }
+          C: { value: "markup ${p.markup}", style: calc_text }
+          D: { formula: "={ref:Bid Form!bid_form_total.total}", style: calc_money }
+          E: { value: "{p.server}", style: calc_money }
+          F: { value: "—", style: calc_text }
+
   check_bid_form:                      # per item: a pooled check could hide one item's rounding slip
     params: { item_no: { type: string }, sheet: { type: string } }
     rows:
@@ -831,9 +901,9 @@ units:
           A: { value: 6, style: calc_text }
           B: { value: "Bid Form amount = Cost Summary bid", style: label }
           C: { value: "{p.item_no}", style: calc_text }
-          D: { formula: "={ref:Bid Form!bf[{p.item_no}].amount}", style: calc_money }
-          E: { formula: "={ref:Cost Summary!cs[{p.item_no}].bid}", style: calc_money }
-          F: { formula: '=IFERROR(IF(ABS(D{r}-E{r})<={ref:Bid Form!bf[{p.item_no}].qty}*0.005+0.005,"✓","✗"),"✗")', style: status }
+          D: { formula: "={ref:Bid Form!bf[{p.sheet}].amount}", style: calc_money }
+          E: { formula: "={ref:Cost Summary!cs[{p.sheet}].bid}", style: calc_money }
+          F: { formula: '=IFERROR(IF(ABS(D{r}-E{r})<={ref:Bid Form!bf[{p.sheet}].qty}*0.005+0.005,"✓","✗"),"✗")', style: status }
         conditional:
           - { cells: F, formula: '=$F{r}="✓"', style: status_ok }
           - { cells: F, formula: '=$F{r}="✗"', style: status_bad }

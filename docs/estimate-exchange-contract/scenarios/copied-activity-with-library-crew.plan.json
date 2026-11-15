@@ -1,0 +1,113 @@
+{
+ "created": {
+  "crew:2": "crew",
+  "crew_member:3": "member",
+  "new:a1": "activity"
+ },
+ "deleted": [],
+ "dry_run": true,
+ "ops": [
+  {
+   "after": {
+    "assembly_type": "GENERIC",
+    "count": "1",
+    "crew_factor": "1.000",
+    "estimate_item_id": 2,
+    "hours_per_shift": "8.0",
+    "name": "Finish",
+    "production_unit": "DAYS",
+    "sort_order": "1"
+   },
+   "index": 0,
+   "op": "activity.create",
+   "ref": "new:a1"
+  },
+  {
+   "after": {
+    "duration_shifts": "2.00"
+   },
+   "before": {
+    "duration_shifts": null
+   },
+   "index": 1,
+   "op": "activity.update",
+   "ref": "new:a1"
+  },
+  {
+   "after": {
+    "crew_id": "crew:2",
+    "duration_shifts": "2.00"
+   },
+   "before": {
+    "crew_id": null,
+    "duration_shifts": "2.00"
+   },
+   "index": 2,
+   "op": "activity.set_crew",
+   "ref": "new:a1"
+  }
+ ],
+ "totals": {
+  "after": {
+   "bid_total": "23331.20",
+   "bid_totals": [
+    {
+     "amount": "23331.20",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "555.95",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2347.50",
+   "total_estimated_cost": "20975.00"
+  },
+  "before": {
+   "bid_total": "20163.00",
+   "bid_totals": [
+    {
+     "amount": "20163.00",
+     "display_order": 0,
+     "id": 1,
+     "includes_unscheduled": true,
+     "is_primary": true,
+     "name": "Base Bid",
+     "schedule_ids": [
+      1
+     ]
+    },
+    {
+     "amount": "556.90",
+     "display_order": 1,
+     "id": 2,
+     "includes_unscheduled": false,
+     "is_primary": false,
+     "name": "Alternate 1",
+     "schedule_ids": [
+      2
+     ]
+    }
+   ],
+   "markup_total": "2059.50",
+   "total_estimated_cost": "18095.00"
+  }
+ },
+ "warnings": [
+  "library crew 2 copied into this estimate as crew crew:2"
+ ]
+}

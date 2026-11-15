@@ -34,6 +34,47 @@ def test_a_cell_may_reference_an_export_laid_out_later_on_its_sheet(tmp_path):
     assert ws[f"E{target_row}"].value == "LABOR"
 
 
+# ---- an empty repeat's landmarks ------------------------------------------
+
+def test_an_empty_repeat_marks_the_row_above_it(tmp_path):
+    """`mark_first`/`mark_last` on a `repeat:` over nothing land on the row
+    above it, so a range written over the repeat stays well-formed. The range
+    covers that row, so it must be a text row (here, the head)."""
+    def units(doc):
+        doc["units"]["probe"] = {"params": {"lines": {"type": "list"}}, "rows": [
+            {"cells": {"A": {"value": "PROBE HEAD"}}, "mark": "head"},
+            {"repeat": "p.lines", "cells": {"A": {"value": "{it}"}},
+             "mark_first": "first", "mark_last": "last"},
+            {"cells": {"A": {"value": "PROBE SUM"},
+                       "B": {"formula": "=SUM(B{row:first}:B{row:last})+{row:head}*0"}}}]}
+
+    def recipes(doc):
+        doc["recipes"]["setup"]["units"].insert(1, {"unit": "probe", "params": {"lines": []}})
+
+    ws = B.generate(legacy_example(), patched_pack(tmp_path, units=units, recipes=recipes))["SETUP"]
+    head = _row_of(ws, "A", "PROBE HEAD")
+    total = _row_of(ws, "A", "PROBE SUM")
+    assert total == head + 1                             # the repeat laid out no rows
+    assert ws[f"B{total}"].value == f"=SUM(B{head}:B{head})+{head}*0"
+
+
+def test_an_empty_repeat_on_a_sheets_first_row_is_refused(tmp_path):
+    """With no row above it, an empty repeat has nothing to mark: row 0
+    would make every range over it an invalid reference."""
+    def units(doc):
+        doc["units"]["probe"] = {"anchor": {"col": "A", "row": 1},
+                                 "params": {"lines": {"type": "list"}}, "rows": [
+            {"repeat": "p.lines", "cells": {"A": {"value": "{it}"}},
+             "mark_first": "first", "mark_last": "last"}]}
+
+    def recipes(doc):
+        doc["recipes"]["setup"]["units"].insert(
+            1, {"unit": "probe", "sheet": "Probe", "params": {"lines": []}})
+
+    with pytest.raises(R.RecipeError, match="first row"):
+        B.generate(legacy_example(), patched_pack(tmp_path, units=units, recipes=recipes))
+
+
 # ---- patched-pack helper itself --------------------------------------------
 
 def test_patched_pack_breaks_anchor_sharing(tmp_path):

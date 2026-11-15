@@ -706,6 +706,16 @@ def test_an_apostrophe_sheet_name_round_trips():
         assert split_sheet_ref(sheet_qualified(name, "$A$1")) == (name, "$A$1")
 
 
+def test_a_bang_inside_an_instance_keys_brackets_is_not_the_sheet_separator():
+    """A per-item key carries its item's sheet name, which may hold a "!"."""
+    from estimating_tools.estimate_spec.build import split_sheet_ref
+
+    assert split_sheet_ref("Cost Summary!cs[1 - GO!].bid") == ("Cost Summary", "cs[1 - GO!].bid")
+    assert split_sheet_ref("'A!B'!cs[x!].bid") == ("A!B", "cs[x!].bid")
+    assert split_sheet_ref("A!B!recap.mh") == ("A!B", "recap.mh")
+    assert split_sheet_ref("cs[1 - GO!].bid") == (None, "cs[1 - GO!].bid")
+
+
 def test_a_rendered_formula_against_an_apostrophe_sheet_is_valid():
     """Every address built from a sheet name -- the cross-sheet ref, the
     cover's per-item total and its sheet_ref -- carries the doubled quote."""

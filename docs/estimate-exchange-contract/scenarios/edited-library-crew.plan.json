@@ -8,6 +8,9 @@
   {
    "after": {
     "crew_id": "crew:2",
+    "member_ids": [
+     "member:0.0"
+    ],
     "members": [
      {
       "classification": "Finisher",

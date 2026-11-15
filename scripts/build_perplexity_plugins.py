@@ -15,7 +15,7 @@ per-text-file size, MCP server count).
 """
 from __future__ import annotations
 
-import argparse, json, shutil, sys, zipfile
+import argparse, json, re, shutil, sys, zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -60,6 +60,34 @@ def check_assignment(cfg: dict, skills: dict[str, Path]) -> list[str]:
         for key in ("runtime_from", "mcp_from"):
             if key in spec and not (PLUGINS / spec[key]).is_dir():
                 errs.append(f"{b}: {key} '{spec[key]}' is not a plugin")
+    return errs
+
+
+MAX_DESCRIPTION = 1024  # Perplexity's skill description cap
+_FRONTMATTER = re.compile(r"\A---\r?\n(.*?)\r?\n---\r?\n", re.S)
+
+
+def check_frontmatter(name: str, skill_md: Path) -> list[str]:
+    """Perplexity's upload parses SKILL.md frontmatter as strict YAML and needs
+    a name and a description of at most 1024 characters."""
+    import yaml  # PyYAML; the workflow installs it
+    m = _FRONTMATTER.match(skill_md.read_text(encoding="utf-8"))
+    if not m:
+        return [f"{name}: SKILL.md has no --- frontmatter block"]
+    try:
+        fm = yaml.safe_load(m.group(1))
+    except yaml.YAMLError as e:
+        return [f"{name}: SKILL.md frontmatter is not valid YAML ({str(e).splitlines()[0]})"]
+    if not isinstance(fm, dict):
+        return [f"{name}: SKILL.md frontmatter is not a mapping"]
+    errs = []
+    if fm.get("name") != name:
+        errs.append(f"{name}: frontmatter name is {fm.get('name')!r}, expected {name!r}")
+    desc = fm.get("description")
+    if not isinstance(desc, str) or not desc.strip():
+        errs.append(f"{name}: frontmatter has no description")
+    elif len(desc) > MAX_DESCRIPTION:
+        errs.append(f"{name}: description is {len(desc)} characters (max {MAX_DESCRIPTION})")
     return errs
 
 
@@ -156,6 +184,9 @@ def main(argv=None) -> int:
     cfg = json.loads(Path(args.config).read_text(encoding="utf-8"))
     skills = all_skills()
     errs = check_assignment(cfg, skills)
+    shipped = sorted({s for spec in cfg["bundles"].values() for s in spec["skills"] if s in skills})
+    for s in shipped:
+        errs += check_frontmatter(s, skills[s] / "SKILL.md")
     if errs:
         print("\n".join("ERROR: " + e for e in errs)); return 1
     warn_excluded_refs(cfg, skills)

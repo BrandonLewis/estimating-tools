@@ -502,6 +502,10 @@ def _report_apply_failure(exc, change_set, dry_run: bool, request_id) -> None:
                 _err(f"  op {idx} came from {place}")
     for c in body.get("conflicts") or []:
         _err(f"  conflict: {c}")
+    if exc.status == 400 and "contract major mismatch" in str(body.get("error") or ""):
+        read_at = getattr(change_set, "contract_version", None)
+        _err(f"  this book was read at contract {read_at}, and BidSheet.ai has moved to "
+             "another major -- update estimating-tools, then rebuild the book (nothing applied)")
     rid = getattr(exc, "request_id", None) or request_id
     # No answer, or a server error, to a request that went out may have come
     # after the apply was done.
@@ -577,7 +581,8 @@ def cmd_apply(args) -> int:
     request_id = args.request_id or (None if dry_run else str(uuid.uuid4()))
     try:
         outcome = client.apply(estimate_id, cs.ops, dry_run=dry_run,
-                               request_id=request_id, host=host)
+                               request_id=request_id, host=host,
+                               contract_version=getattr(cs, "contract_version", None))
     except ValueError as exc:
         _err(f"apply refused: {exc} (nothing sent)")
         return 1

@@ -170,14 +170,18 @@ def sheet_qualified(sheet, addr):
 def split_sheet_ref(key):
     """`SHEET!NAME` -> (sheet, name); a key without a separator -> (None, key).
 
-    The split is on the LAST separator: an export name never contains one,
-    while a sheet name legally may. The sheet may be written bare or quoted
+    The split is on the LAST separator before any `[`: an export name never
+    contains one outside an instance key's brackets (which may carry a sheet
+    name, `cs[1 - GO!].bid`), while a sheet name legally may, but never a
+    bracket (Excel refuses one). The sheet may be written bare or quoted
     (`'Crew Rates'!x`), the way the workbook itself spells it; inside quotes an
     apostrophe is doubled, the inverse of `sheet_qualified`.
     """
-    if SHEET_SEP not in key:
+    head = key.split("[", 1)[0]
+    if SHEET_SEP not in head:
         return None, key
-    sheet, _, name = key.rpartition(SHEET_SEP)
+    at = head.rindex(SHEET_SEP)
+    sheet, name = key[:at], key[at + 1:]
     m = _QUOTED_SHEET.match(sheet)
     if m:
         sheet = m.group(1).replace(QUOTE * 2, QUOTE)
@@ -1080,11 +1084,20 @@ class EstimateBuilder:
                     if "export_each" in rowdef:
                         each_rows.append((rowdef["export_each"], it, r))
                     local[0] += 1
-                if first is not None:
-                    if "mark_first" in rowdef:
-                        landmarks[rowdef["mark_first"]] = first
-                    if "mark_last" in rowdef:
-                        landmarks[rowdef["mark_last"]] = last
+                if first is None:
+                    # An empty repeat marks the row above it, so a range
+                    # written over it stays well-formed. That range then
+                    # covers the row above: a unit must keep a text row
+                    # (a header) there, or a SUM over the repeat counts it.
+                    first = last = local[0] - 1
+                    if first < 1 and ("mark_first" in rowdef or "mark_last" in rowdef):
+                        raise R.RecipeError(
+                            f"unit {unit_name!r}: an empty repeat on the sheet's first "
+                            f"row has no row above it to mark; give the unit a header row")
+                if "mark_first" in rowdef:
+                    landmarks[rowdef["mark_first"]] = first
+                if "mark_last" in rowdef:
+                    landmarks[rowdef["mark_last"]] = last
                 continue
             if "when" in rowdef and not self._truthy(params, rowdef["when"]):
                 continue
@@ -1817,7 +1830,7 @@ def generate(config, pack=None, *, stamp=True, spec_name=None, brand=None, quote
             raise ValueError(f"schema violation: {path}: {exc.message}") from exc
 
     from estimating_tools.estimate_spec.validate import validate_cross_references
-    validate_cross_references(config)
+    validate_cross_references(config, member_trades=exchange is None)
     if exchange is None and readback_family(effective_pack) == "fieldbook":
         from estimating_tools.estimate_spec.validate import check_one_task_per_code
         check_one_task_per_code(config)

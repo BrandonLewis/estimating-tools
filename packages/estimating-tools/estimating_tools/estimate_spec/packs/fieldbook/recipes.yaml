@@ -132,7 +132,7 @@ book:
           bid_date: { from: config.bid_date, default: "" }
       - unit: bid_form_row
         for_each: book.items
-        key: "bf[{it.item_no}]"
+        key: "bf[{it.sheet}]"
         params:
           item_no: "{it.item_no}"
           sheet: "{it.sheet}"
@@ -150,7 +150,7 @@ book:
       - unit: cost_summary_head
       - unit: cost_summary_row
         for_each: book.items
-        key: "cs[{it.item_no}]"
+        key: "cs[{it.sheet}]"
         params:
           item_no: "{it.item_no}"
           sheet: "{it.sheet}"
@@ -184,7 +184,7 @@ book:
       - unit: unbalance_head
       - unit: unbalance_row
         for_each: book.items
-        key: "unbalance_row[{it.item_no}]"
+        key: "unbalance_row[{it.sheet}]"
         params:
           item_no: "{it.item_no}"
           description: "{it.description}"
@@ -201,15 +201,19 @@ book:
     print: { orientation: portrait, fit_to_width: 1, repeat_rows: "1:3" }
     units:
       - unit: checks_head
-      - { unit: check_takeoff,  for_each: book.items, key: "ck1[{it.item_no}]", params: &check_item { item_no: "{it.item_no}", sheet: "{it.sheet}" } }
-      - { unit: check_rates,    for_each: book.items, key: "ck2[{it.item_no}]", params: *check_item }
-      - { unit: check_lines,    for_each: book.items, key: "ck3[{it.item_no}]", params: *check_item }
+      - { unit: check_takeoff,  for_each: book.items, key: "ck1[{it.sheet}]", params: &check_item { item_no: "{it.item_no}", sheet: "{it.sheet}" } }
+      - { unit: check_rates,    for_each: book.items, key: "ck2[{it.sheet}]", params: *check_item }
+      - { unit: check_lines,    for_each: book.items, key: "ck3[{it.sheet}]", params: *check_item }
       - { unit: check_unbalance }
-      - { unit: check_recap,    for_each: book.items, key: "ck5[{it.item_no}]", params: *check_item }
-      - { unit: check_bid_form, for_each: book.items, key: "ck6[{it.item_no}]", params: *check_item }
-      - { unit: check_codes,    for_each: book.items, key: "ck7[{it.item_no}]", params: *check_item }
-      - { unit: check_operator, for_each: book.items, key: "ck8[{it.item_no}]", params: *check_item }
-      - { unit: check_code_list, when: config.cost_codes, for_each: book.items, key: "ck9[{it.item_no}]", params: *check_item }
+      - { unit: check_recap,    for_each: book.items, key: "ck5[{it.sheet}]", params: *check_item }
+      - { unit: check_bid_form, for_each: book.items, key: "ck6[{it.sheet}]", params: *check_item }
+      - { unit: check_codes,    for_each: book.items, key: "ck7[{it.sheet}]", params: *check_item }
+      - { unit: check_operator, for_each: book.items, key: "ck8[{it.sheet}]", params: *check_item }
+      - { unit: check_code_list, when: config.cost_codes, for_each: book.items, key: "ck9[{it.sheet}]", params: *check_item }
+      - { unit: check_server_cost, when: config._server, for_each: book.items, key: "ck11[{it.sheet}]",
+          params: { item_no: "{it.item_no}", sheet: "{it.sheet}", server: { from: it.server_cost, default: 0 } } }
+      - { unit: check_server_bid, when: config._server.bid,
+          params: { server: { from: config._server.bid }, markup: { from: config._server.markup_text } } }
       - { unit: check_packages, when: config._packages, for_each: config._packages, key: "ck10[{it.name}]",
           params: { name: "{it.name}", sheet: "{it.title}" } }
 
@@ -237,6 +241,21 @@ book:
               # library plus local rows"); a local rate has neither.
               tag: { from: it.exchange.tag, default: "" }
               ref: { from: it.exchange.ref, default: "" }
+
+  - sheet_name: Crews
+    position: before_items
+    when: config.crew_copies   # the read model's crews; a spec's own crews[] lay out no sheet
+    column_widths: { A: 30, B: 12, C: 10, D: 10 }
+    units:
+      - unit: crews_head
+      - unit: crew_block
+        for_each: config.crews
+        key: "crew[{it.id}]"
+        params:
+          name: "{it.description}"
+          code: { from: it.code, default: "" }
+          rate: { from: it.rate, default: 0 }
+          members: "{it.members}"
 
   - sheet_name: Codes
     position: before_items

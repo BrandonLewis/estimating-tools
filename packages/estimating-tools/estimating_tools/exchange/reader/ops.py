@@ -171,9 +171,10 @@ NO_STEPS_COPY = ("a copied activity with a STEPS marker needs at least one step 
                  "of its steps between STEPS and START, or delete the copy")
 
 #: Fields a copy or cut carries from its source's payload row: they have no
-#: cell in the book, so the estimator cannot have changed them.
+#: cell in the book, so the estimator cannot have changed them. A resource's
+#: ``supplier`` is writable but outside ``v`` (BidSheet.ai #1780, #490).
 UNPRICED_ACTIVITY = ("description",)
-UNPRICED_RESOURCE = ("description", "trade", "pieces", "activity_code_id")
+UNPRICED_RESOURCE = ("description", "trade", "pieces", "activity_code_id", "supplier")
 
 #: A copied activity whose source has rows of a kind the book does not show
 #: (``Sheet.not_shown``) is created without them (#439).
@@ -712,6 +713,8 @@ def build(book, ch, problems) -> ChangeSet:
                              "no kind; add bid items in BidSheet.ai"))
     for sheet, row, what in ch.skipped:
         b.notes.append(event(b.tab(sheet), row, f"{what} was skipped"))
-    cs = ChangeSet(estimate_id=book.model.estimate.id, estimate_v=book.model.estimate.v)
+    version = book.doc.get("contract_version")
+    cs = ChangeSet(estimate_id=book.model.estimate.id, estimate_v=book.model.estimate.v,
+                   contract_version=version if isinstance(version, str) else None)
     b.finish(cs)
     return cs

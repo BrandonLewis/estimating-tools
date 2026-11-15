@@ -753,7 +753,7 @@ def test_a_copied_stepped_activity_keeps_its_steps_codes(tmp_path):
 def _described(doc):
     res = next(r for r in doc["resources"] if r["id"] == 1)
     res.update({"description": "Long reach", "activity_code_id": 31, "trade": "Operators",
-                "pieces": "2"})
+                "pieces": "2", "supplier": "Acme Rentals"})
     return doc
 
 
@@ -768,8 +768,10 @@ def test_a_linked_resource_cut_keeps_its_link_cost_and_unpriced_fields(tmp_path)
     assert create["op"] == "resource.create" and create["fields"]["activity_id"] == 5
     assert {k: create["fields"].get(k) for k in (
         "equipment_rate_id", "unit_cost", "description", "activity_code_id", "trade",
-        "pieces")} == {"equipment_rate_id": 7, "unit_cost": "185", "description": "Long reach",
-                       "activity_code_id": 31, "trade": "Operators", "pieces": "2"}
+        "pieces", "supplier")} == {"equipment_rate_id": 7, "unit_cost": "185",
+                                   "description": "Long reach", "activity_code_id": 31,
+                                   "trade": "Operators", "pieces": "2",
+                                   "supplier": "Acme Rentals"}
     assert (delete["op"], delete["ref"]) == ("resource.delete", 1)
 
 
@@ -782,9 +784,23 @@ def test_a_copied_resource_carries_its_unpriced_fields(tmp_path):
     _edit(path, copy)
     (op,) = H.read(path).ops
     assert {k: op["fields"].get(k) for k in ("description", "activity_code_id", "trade",
-                                             "pieces")} == {
+                                             "pieces", "supplier")} == {
         "description": "Long reach", "activity_code_id": 31, "trade": "Operators",
-        "pieces": "2"}
+        "pieces": "2", "supplier": "Acme Rentals"}
+
+
+def test_a_copied_resource_with_no_supplier_does_not_send_one(tmp_path):
+    # BidSheet.ai reads "no supplier" as "" (#1780); a copy sends nothing for it.
+    doc = H.fixture_doc()
+    assert next(r for r in doc["resources"] if r["id"] == 1)["supplier"] == ""
+    path = _book(tmp_path, doc)
+
+    def copy(ws):
+        r = H.cr_row(ws, "RESOURCE", 1)
+        H.insert_copies(ws, r, r, H.block_end(ws, 1))
+    _edit(path, copy)
+    (op,) = H.read(path).ops
+    assert op["op"] == "resource.create" and "supplier" not in op["fields"]
 
 
 def test_a_copied_activity_carries_its_description(tmp_path):
@@ -1024,3 +1040,11 @@ def test_a_parent_copied_without_its_child_and_pasted_above_itself_is_a_copy(tmp
     wb = H.open_book(path)
     walls = H.cr_row(wb[H.CR_TAB], "ACTIVITY", 2)          # the upper (copied) Walls
     assert next(x["row"] for x in cs.rows if x["op_index"] == 0) == walls
+
+
+def test_a_star_step_over_a_mapping_is_a_path_typo():
+    """``"*"`` fans out over a list; over a dict it would walk the keys and let
+    a mistyped path pass silently."""
+    with pytest.raises(TypeError, match="list"):
+        H._parents({"estimate": {"crews": []}}, ["estimate", "*"])
+    assert H._parents({"crews": [{"a": 1}, {"a": 2}]}, ["crews", "*"]) == [{"a": 1}, {"a": 2}]

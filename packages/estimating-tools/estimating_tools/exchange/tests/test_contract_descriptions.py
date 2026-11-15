@@ -33,3 +33,12 @@ def test_a_copy_takes_a_bound_field_from_its_row_not_its_source():
                                                           "trade": "OPER"}
     assert ops._unpriced(raw, ops.UNPRICED_RESOURCE, bound={"description": "I"}) == {
         "trade": "OPER"}
+
+
+def test_a_copy_carries_its_sources_supplier_unless_the_sheet_binds_it():
+    raw = {"supplier": "Acme Rentals", "trade": "OPER"}
+    assert ops._unpriced(raw, ops.UNPRICED_RESOURCE) == {"supplier": "Acme Rentals",
+                                                          "trade": "OPER"}
+    assert ops._unpriced(raw, ops.UNPRICED_RESOURCE, bound={"supplier": "I"}) == {
+        "trade": "OPER"}
+    assert ops._unpriced({"supplier": ""}, ops.UNPRICED_RESOURCE) == {}

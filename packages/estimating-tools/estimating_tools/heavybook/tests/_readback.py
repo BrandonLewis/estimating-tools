@@ -48,17 +48,37 @@ def fixture_doc():
 
 
 #: Fixture fields newer than the committed regression books, which are an
-#: earlier release's output, committed untouched: the read gained these in
-#: BidSheet.ai #1622, after those books were built.
+#: earlier release's output, committed untouched: the read gained the project
+#: fields in BidSheet.ai #1622, `contract_version` in #1680 and the crew
+#: library-source and variance fields in #1756, and the resource `supplier` in
+#: #1780, after those books were built.
+#: A ``"*"`` step means every row of that list.
+CREW_FIELDS_SINCE_OLD_BOOKS = ("library_crew_id", "library_name", "library_status",
+                               "library_hourly_cost", "estimate_hourly_cost",
+                               "variance_per_hour", "variance_percent",
+                               "library_hours_per_shift", "estimate_hours_per_shift",
+                               "hours_per_shift_differs")
 FIXTURE_FIELDS_SINCE_OLD_BOOKS = {("estimate", "project", "display_project_id"),
-                                  ("estimate", "project", "project_reference")}
+                                  ("estimate", "project", "project_reference"),
+                                  ("contract_version",),
+                                  ("resources", "*", "supplier"),
+                                  *(("crews", "*", f) for f in CREW_FIELDS_SINCE_OLD_BOOKS)}
+
+
+def _parents(doc, parents: list) -> list:
+    """The nodes ``parents`` reaches in ``doc``; a ``"*"`` step fans out over a list."""
+    nodes = [doc]
+    for key in parents:
+        if key == "*" and not all(isinstance(node, list) for node in nodes):
+            raise TypeError(f"'*' in {parents!r} must step over a list")
+        nodes = [child for node in nodes
+                 for child in (node if key == "*" else [node[key]])]
+    return nodes
 
 
 def _has_path(doc: dict, path: tuple) -> bool:
     *parents, leaf = path
-    for key in parents:
-        doc = doc[key]
-    return leaf in doc
+    return any(leaf in node for node in _parents(doc, parents))
 
 
 def fixture_doc_as_of_old_books():
@@ -66,10 +86,8 @@ def fixture_doc_as_of_old_books():
     doc = fixture_doc()
     for path in FIXTURE_FIELDS_SINCE_OLD_BOOKS:
         *parents, leaf = path
-        node = doc
-        for key in parents:
-            node = node[key]
-        del node[leaf]
+        for node in _parents(doc, parents):
+            node.pop(leaf, None)
     return doc
 
 

@@ -91,7 +91,8 @@ def _applied():
     return fresh
 
 
-def _plan(eid, ops, *, dry_run=True, request_id=None, host=None):
+def _plan(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
     return ApplyResult.from_plan({"created": {}, "deleted": [], "totals": {},
                                   "request_id": request_id or "r"}, dry_run=dry_run)
 

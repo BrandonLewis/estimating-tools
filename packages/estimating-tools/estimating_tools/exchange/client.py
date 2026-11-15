@@ -205,14 +205,19 @@ def fetch(estimate_id, item_ids=None, *, host: str | None = None) -> dict:
 
 
 def apply(estimate_id, ops: list, *, dry_run: bool = True, request_id: str | None = None,
-          host: str | None = None) -> ApplyResult:
+          host: str | None = None, contract_version: str | None = None) -> ApplyResult:
     """``POST /api/estimates/{id}/workbook/apply/``. Dry run unless told
     otherwise; always with a request_id (a server that predates #1676
-    ignores it). A malformed plan from the server is a ClientError that
+    ignores it). ``contract_version``, when given, is the version of the
+    read the ops were written against: BidSheet.ai refuses the whole set
+    (400) when its contract major differs (#1680); a server before #1680
+    ignores it. A malformed plan from the server is a ClientError that
     carries the request_id, so a committed apply can still be replayed."""
     host, token = _credentials(host)
     request_id = request_id or str(uuid.uuid4())
     body = {"ops": list(ops), "dry_run": bool(dry_run), "request_id": request_id}
+    if contract_version is not None:
+        body["contract_version"] = contract_version
     plan = _request("POST", f"{host}/api/estimates/{int(estimate_id)}/workbook/apply/", token,
                     body, request_id=request_id,
                     timeout=TIMEOUT if dry_run else APPLY_TIMEOUT)

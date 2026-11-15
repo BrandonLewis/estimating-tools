@@ -19,7 +19,7 @@ from estimating_tools.heavybook.tests import _readback as H
 
 EXPORTED_AT = "2026-11-08T09:00:00Z"
 HOST = "www.bidsheet.ai"
-ITEM1, ITEM2 = "1 - MOBILIZATION", "2 - 8IN MAIN"
+ITEM1, ITEM2 = "1 - MOBILIZATION", "2 - 8-INCH WATER MAIN"
 
 
 def _item(iid, number, description, unit, quantity):
@@ -30,13 +30,13 @@ def _item(iid, number, description, unit, quantity):
             "v": f"a0000000000000{iid}"}
 
 
-def _activity(aid, item_id, name, code, description, sort_order):
+def _activity(aid, item_id, name, code, description, sort_order, cost="0"):
     return {"id": aid, "estimate_item_id": item_id, "parent_id": None,
             "assembly_type": "GENERIC", "name": name, "description": description,
             "activity_code": {"id": 70 + aid, "code": code}, "count": 1,
             "sort_order": sort_order, "hours_per_shift": "8.0", "production_rate": None,
             "production_unit": "DAYS", "crew_factor": "1.000", "duration_shifts": None,
-            "crew_id": None, "steps": [], "cost": "0", "cost_split": {}, "manhours": "0",
+            "crew_id": None, "steps": [], "cost": cost, "cost_split": {}, "manhours": "0",
             "v": f"b0000000000000{aid}"}
 
 
@@ -56,16 +56,29 @@ def _resource(rid, activity_id, ctype, name, quantity, unit_cost, sort_order, *,
 def payload() -> dict:
     estimate = copy.deepcopy(H.fixture_doc()["estimate"])
     estimate["sections"] = []
+    estimate["project"] = {**estimate.get("project", {}), "title": "Exchange golden"}
+    estimate["markup_percentage"] = "0.00"
+    estimate["markup_amount"] = "0.00"
     return {
         "estimate": estimate,
         "items": [_item(11, "1", "Mobilization", "LS", "1.00"),
                   _item(12, "2", "8-inch water main", "LF", "640.00")],
-        "elements": [], "crews": [], "shares": [],
+        "elements": [], "shares": [],
+        "crews": [{"id": 41, "name": "Pipe crew", "code": "PIPE", "scope": "org",
+                   "hours_per_shift": "8.0", "crew_factor": "1.0", "hourly_rate": "257.40",
+                   "v": "e000000000000041",
+                   "members": [
+                       {"id": 411, "classification": "Superintendent", "count": "1",
+                        "labor_rate_id": 1, "hourly_rate_override": None,
+                        "effective_hourly_rate": "95.00", "sort_order": 0},
+                       {"id": 412, "classification": "Pipelayer", "count": "2",
+                        "labor_rate_id": 2, "hourly_rate_override": None,
+                        "effective_hourly_rate": "81.20", "sort_order": 1}]}],
         "activities": [
             _activity(21, 11, "Mobilize crew and equipment", "01-100",
-                      "Two days: yard load-out, haul\nSet up the yard", 1),
-            _activity(22, 12, "Trench excavation", "02-100", "", 1),
-            _activity(23, 12, "Trench excavation, second heading", "02-100", "", 2)],
+                      "Two days: yard load-out, haul\nSet up the yard", 1, "1520.00"),
+            _activity(22, 12, "Trench excavation", "02-100", "", 1, "38758.40"),
+            _activity(23, 12, "Trench excavation, second heading", "02-100", "", 2, "13400.00")],
         "resources": [
             _resource(31, 21, "labor", "Superintendent", "1", "95.00", 0, time_value="2",
                       time_unit="DAYS", labor=1),
@@ -111,9 +124,16 @@ def config() -> dict:
             {"trade": "Excavator, 320 class", "rate": 145, "kind": "equipment",
              "exchange": {"tag": "RATE", "ref": "equipment:5"}},
             {"trade": "Laborer (local)", "rate": 40, "kind": "labor"}],
+        "crew_copies": True,
+        "_server": {"bid": 20163, "markup_amount": 0,
+                    "markup_text": "0.00"},
+        "crews": [{"id": "PIPE", "description": "Pipe crew", "code": "PIPE", "rate": 257.4,
+                   "members": [{"trade": "Superintendent", "count": 1, "rate": 95},
+                               {"trade": "Pipelayer", "count": 2, "rate": 81.2}],
+                   "exchange": {"id": 41, "v": "e000000000000041"}}],
         "items": [
             {"recipe": "lump_sum", "sheet": ITEM1, "item_no": "1", "description": "Mobilization",
-             "qty": 1, "uom": "LS", "exchange": _ids("a", 11),
+             "qty": 1, "uom": "LS", "exchange": _ids("a", 11), "server_cost": 1520,
              "labor": [{"slot": "01", "cost_code": "01-100",
                         "description": "Mobilize crew and equipment",
                         "notes": ["Two days: yard load-out, haul", "Set up the yard"],
@@ -124,7 +144,7 @@ def config() -> dict:
             {"recipe": "lump_sum", "sheet": ITEM2, "item_no": "2",
              "description": "8-inch water main", "qty": 640, "uom": "LF",
              "notes": ["Trench to 6 ft max"],      # the item's scope note: local
-             "exchange": _ids("a", 12),
+             "exchange": _ids("a", 12), "server_cost": 52158.4,
              "labor": [
                  {"slot": "01", "cost_code": "02-100", "description": "Trench excavation",
                   "exchange": _ids("b", 22),
@@ -145,6 +165,14 @@ def config() -> dict:
                              "exchange": _ids("c", 36)}]}]},
         ],
     }
+
+
+def model_config() -> dict:
+    """What ``from_model(payload())`` returns: ``config()`` less item 2's scope
+    note, which is local (nothing in the read model makes it)."""
+    cfg = copy.deepcopy(config())
+    del cfg["items"][1]["notes"]
+    return cfg
 
 
 def generate(*, exported_at: str = EXPORTED_AT, doc: dict | None = None):

@@ -42,7 +42,9 @@ class ChangeSet(Protocol):
     the contract's ``ops``, the ``rows`` map from op index to the sheet and
     row that produced it (``{"op_index", "sheet", "row"}``; ``row`` None
     for a deleted row), the estimate id, the printout and the JSON written
-    to ``BOOK.changes.json``."""
+    to ``BOOK.changes.json``. A change set may also carry
+    ``contract_version``, the version of the read it was written against;
+    the CLI sends it with the apply when it is there."""
     estimate_id: object
     ops: list
     rows: list
@@ -94,6 +96,47 @@ def _split_ref(ref) -> tuple[str, int]:
     return kind, int(ident)
 
 
+#: ``created`` keys that name a library row the apply copied, by prefix, and
+#: the kind of row each names: ``crew:<library id>`` a crew and, from contract
+#: 1.2, ``crew_member:<library member id>`` a member -- the book's MEMBER row,
+#: the kind the golden plans and ``member_ids`` give it.
+_COPY_KINDS = {"crew": "crew", "crew_member": "member"}
+
+
+def _created(plan: dict) -> dict:
+    """``created`` as ``{key: (kind, id)}``. BidSheet.ai sends each value as
+    the bare integer id (contract part 3), so the kind comes from the key: the
+    op that first names a ``new:`` token made that row (its op prefix gives
+    the kind), and a library copy's key carries its kind. A ``kind:id`` string
+    is read as it stands."""
+    from estimating_tools.exchange.contract import OP_KINDS
+
+    makers = {}
+    for op in plan.get("ops") or []:
+        if isinstance(op, dict) and isinstance(op.get("ref"), str):
+            makers.setdefault(op["ref"], str(op.get("op", "")))
+    out = {}
+    for key, value in (plan.get("created") or {}).items():
+        if isinstance(value, str) and ":" in value:
+            out[key] = _split_ref(value)
+            continue
+        if isinstance(value, bool) or not (
+                isinstance(value, int) or (isinstance(value, str) and value.isdigit())):
+            raise ValueError(f"the server plan has a malformed id {value!r} for {key!r}; "
+                             f"expected an integer")
+        prefix = str(key).partition(":")[0]
+        if prefix in _COPY_KINDS:
+            kind = _COPY_KINDS[prefix]
+        elif prefix == "new" and key in makers:
+            head = makers[key].partition(".")[0]
+            kind = OP_KINDS.get(head, head)
+        else:
+            raise ValueError(f"the server plan created {key!r}, but no op in the plan "
+                             f"names it, so its kind is unknown")
+        out[key] = (kind, int(value))
+    return out
+
+
 @dataclass(frozen=True)
 class ApplyResult:
     """BidSheet.ai's plan, in the shape ``patch`` needs. ``created`` maps the
@@ -117,7 +160,7 @@ class ApplyResult:
                                 ("warnings", list, "a list")):
             if plan.get(key) is not None and not isinstance(plan[key], want):
                 raise ValueError(f"the server plan's {key} is not {name}")
-        created = {tok: _split_ref(ref) for tok, ref in (plan.get("created") or {}).items()}
+        created = _created(plan)
         versions = {_split_ref(ref): v for ref, v in (plan.get("versions") or {}).items()}
         return cls(dry_run=dry_run, created=created, versions=versions,
                    deleted=list(plan.get("deleted") or []),

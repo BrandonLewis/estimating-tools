@@ -6,6 +6,9 @@
   {
    "after": {
     "crew_id": 1,
+    "member_ids": [
+     "member:0.0"
+    ],
     "members": [
      {
       "classification": "OPER",

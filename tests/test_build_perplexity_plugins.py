@@ -64,3 +64,17 @@ def test_missing_agent_is_a_clean_error(isolated_out):
 def test_text_size_limit_enforced(isolated_out):
     r = run_with(isolated_out, lambda c: c["limits"].update(max_text_file_bytes=1000))
     assert r.returncode == 1 and "text file too large" in r.stdout
+
+
+def test_frontmatter_check_catches_bad_yaml_and_long_description(isolated_out):
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from build_perplexity_plugins import check_frontmatter
+    bad = isolated_out / "bad.md"
+    bad.write_text("---\nname: x\ndescription: model it instead of hand math: if a family fits\n---\nbody\n")
+    assert "not valid YAML" in check_frontmatter("x", bad)[0]
+    long = isolated_out / "long.md"
+    long.write_text("---\nname: x\ndescription: " + "a" * 1025 + "\n---\n")
+    assert "1025 characters" in check_frontmatter("x", long)[0]
+    ok = isolated_out / "ok.md"
+    ok.write_text("---\nname: x\ndescription: fine\n---\n")
+    assert check_frontmatter("x", ok) == []

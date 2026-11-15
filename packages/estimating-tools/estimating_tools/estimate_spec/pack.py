@@ -1,9 +1,9 @@
 """Fieldbook registered as an exchange pack. Its declaration is
 ``packs/fieldbook/pack.yaml`` with ``format.yaml``'s layout map lifted in
 (fieldbook spec, delivery 1). Building a book from the read model is
-delivery 2, and reading, patching and refreshing one through the engine
-delivery 3 (they turn on together, so no apply is ever committed that the
-book cannot be patched from): until then build, read, patch and refresh
+delivery 2 (``build``); reading, patching and refreshing one through the
+engine is delivery 3 (they turn on together, so no apply is ever committed
+that the book cannot be patched from): until then read, patch and refresh
 refuse here and name the path that works today."""
 from __future__ import annotations
 
@@ -40,13 +40,35 @@ class FieldbookPack:
         return "none"
 
     def build(self, payload, out: Path, *, options: dict):
-        raise NotYet("fieldbook builds from a spec today: `est-estimate build SPEC.yaml` "
-                     "(building from the read model is roadmap 1.11)")
+        """Build the stamped book from a read-model payload (``from_model``
+        lays it out, ``build.generate`` writes it). ``options``: ``exported_at``
+        and ``host``; the rest are ignored."""
+        from estimating_tools.estimate_spec import build as build_mod
+        from estimating_tools.estimate_spec import identity
+        from estimating_tools.estimate_spec.format_pack import bundled_pack
+        from estimating_tools.estimate_spec.from_model import FromModelError, from_model
+        from estimating_tools.exchange.types import BuildRefused, BuildReport
+        from estimating_tools.xlcalc import cache_or_warn
+
+        try:
+            config = from_model(payload)
+        except FromModelError as exc:
+            raise BuildRefused("payload", str(exc)) from exc
+        base = identity.Baseline(payload=payload, **{
+            k: options[k] for k in ("host", "exported_at") if options.get(k)})
+        out = Path(out)
+        try:
+            wb = build_mod.generate(config, bundled_pack(), exchange=base)
+        except identity.StampRefused as exc:
+            raise BuildRefused("payload", str(exc)) from exc
+        wb.save(out)
+        cache_or_warn(out)
+        return BuildReport(path=out, exported_at=base.exported_at)
 
     def read(self, book: Path):
         raise NotYet("fieldbook reads back into its spec today: "
-                     "`est-estimate read-back SPEC.yaml BOOK` "
-                     "(reading into a change set is roadmap 1.11)")
+                     "`est-estimate read-back SPEC.yaml BOOK` (a fieldbook built from the "
+                     "read model reads back through the engine in delivery 3, roadmap 1.11)")
 
     def patch(self, book: Path, change_set, result, payload):
         raise NotYet("fieldbook patches through the engine in delivery 3 (roadmap 1.11)")

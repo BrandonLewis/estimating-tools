@@ -1,7 +1,7 @@
 # The estimate exchange contract
 
-**Contract version:** 1.0
-**Verified against:** BidSheet.ai's server repository (BidManager) at commit `dfa841ea19b7f2a0640ee19bc851588141cb010a` on `master`, and estimating-tools 0.1.98.
+**Contract version:** 1.2
+**Verified against:** BidSheet.ai's server repository (BidManager) at commit `f49c288e456b1501a025f64fead401006b42a047` on `master`, and estimating-tools 0.1.100.
 
 **Audience:** anyone building a surface that reads an estimate from
 BidSheet.ai, lets an estimator change it, and sends the change back -- a
@@ -58,7 +58,7 @@ estimator before sending the same set again with `dry_run` false and a
 | Direction | Bulk (a client) | Conversational (an agent) |
 |---|---|---|
 | Read | `GET /api/estimates/{id}/workbook/` to a file | `get_estimate_workbook(estimate_id, item_ids=None)` |
-| Apply | `POST /api/estimates/{id}/workbook/apply/` from a file | `apply_estimate_workbook_changes(estimate_id, ops, dry_run=True, request_id=None)` |
+| Apply | `POST /api/estimates/{id}/workbook/apply/` from a file | `apply_estimate_workbook_changes(estimate_id, ops, dry_run=True, request_id=None, contract_version=None)` |
 
 Both legs carry the same payloads and run the same services. **The bulk leg
 is normative for a surface:** a conforming surface moves the read model and
@@ -75,14 +75,16 @@ at most 100 ids per request and merges the pages, recording the ids it asked
 for under `_fetch`.
 
 **The apply.** `POST /api/estimates/{id}/workbook/apply/` takes
-`{"ops": [...], "dry_run": true, "request_id": "..."}`. `dry_run` defaults to
-true and must be a JSON boolean. `request_id` may come instead as the
-`Idempotency-Key` header; when both are sent they must be equal. The answers:
+`{"ops": [...], "dry_run": true, "request_id": "...", "contract_version": "1.0"}`.
+`dry_run` defaults to true and must be a JSON boolean. `request_id` may come
+instead as the `Idempotency-Key` header; when both are sent they must be
+equal. `contract_version` is optional: the version of the read the set was
+written against, as `MAJOR.MINOR` (part 6). The answers:
 
 | Status | Body | When |
 |---|---|---|
 | 200 | the plan (part 3) | the set ran (and, on a dry run, rolled back) |
-| 400 | `{error, op_index}` | an op was refused, or the set is malformed; `op_index` is null for a whole-set problem (not a list, over the cap, a bad `dry_run` or `request_id`) |
+| 400 | `{error, op_index}` | an op was refused, or the set is malformed; `op_index` is null for a whole-set problem (not a list, over the cap, a bad `dry_run`, `request_id` or `contract_version`, or a `contract_version` of another major) |
 | 403 | `{error}` | the user may not edit this estimate |
 | 404 | a not-found error | the estimate does not exist or the user cannot see it |
 | 409 | `{error, conflicts}` | rows the set touches changed since they were read (part 3, Conflicts) |
@@ -106,6 +108,10 @@ each field is marked **id**, **key** (it names a row of another section),
 derives it; never sent). A field marked **read-only** is shown and never
 written. `docs/estimate-exchange-contract/read-model.json` is one real
 document.
+
+**`contract_version`** -- the contract version the read model is written
+to, as `MAJOR.MINOR` (`"1.2"`; BidSheet.ai #1680). Computed; part 6 says
+what a reader does with it.
 
 **`estimate`** -- the estimate itself.
 - id: `id`; `v`.
@@ -181,7 +187,7 @@ document.
 - `steps`: each `{id, name, duration, duration_unit, activity_code_id,
   sort_order, notes, v}`. in (`step.add`, `step.update`): `name`, `duration`,
   `duration_unit`, `activity_code_id`. `sort_order` and `notes` are
-  read-only.
+  read-only; a step is placed with `position` (part 3, Position).
 
 **`resources`** -- the lines (components) under the page's activities.
 - id: `id`; `v`.
@@ -192,7 +198,10 @@ document.
   `component_type` (`labor`, `equipment`, `material`, `subcontractor`,
   `other`), `quantity`, `unit`, `unit_cost`, `trade`, `time_value`,
   `time_unit`, `includes_burden`, `burden_percentage`, `labor_cost_basis`,
-  `pieces`, `sort_order`, `activity_code_id`, and the three rate links.
+  `pieces`, `sort_order`, `activity_code_id`, `supplier`, and the three
+  rate links; or placed with `position` instead of `sort_order` (part 3,
+  Position). `supplier` (text, `""` when none; BidSheet.ai #1780) is not in
+  `v`, so writing it does not move the row's fingerprint.
 - computed: `cost`.
 - `managed_by`: `"allocation"` for a line a subcontractor allocation posts,
   else null (Managed rows, below).
@@ -208,6 +217,23 @@ page activity uses that the estimate may use.
   `crew.update_members` (`classification`, `count`, `labor_rate_id`,
   `hourly_rate_override`, `sort_order`); `effective_hourly_rate` is
   computed. Every roster write reissues the member ids.
+- computed, read-only, outside `v` (BidSheet.ai #1756): the crew's library
+  source and how far the estimate's copy has drifted from it.
+  `library_crew_id` and `library_name` name the source; `library_status` is
+  `active`, `inactive` or `missing`. `missing` means the copy has no
+  library source the estimate can use: the source was hard-deleted (the
+  copy's link is cleared), the crew was built by hand and never linked, or
+  the source is in an organisation the estimate may not use, which is not
+  named. BidSheet.ai cannot tell the first two apart, so no status does.
+  A library crew an
+  activity links directly (legacy) is its own source, with zero variance.
+  `library_hourly_cost`, `estimate_hourly_cost` and `variance_per_hour` are
+  exact decimal strings with trailing zeros trimmed (`"161.7"`, `"180"`);
+  `variance_percent` keeps two decimals, rounded half up (`"50.00"`);
+  `library_hours_per_shift` and `estimate_hours_per_shift` keep two
+  decimals (`"8.00"`). Only an `active` source reports a variance:
+  otherwise the variance fields are `null` and `hours_per_shift_differs`
+  is `false`.
 
 **`rates`** -- the library rows the page's resources and crews reference,
 and only those: `labor` (`{id, classification, unit, rate}`, unit `HR`),
@@ -308,13 +334,13 @@ writes); they are not fingerprinted.
 | `activity.set_links` | activity | required | `element_ids`, `measured_by`, `paid_as_part_of` | none | `element_ids` replaces the set (`[]` unlinks); `""` clears either quantity key. Moves money between pay items. |
 | `activity.set_spread` | activity | required | `basis`, `item_ids`, `scope` | none | `basis` is `direct_cost`, `labor_cost`, `even` or `""`; `scope` is `all` or `chosen`; `item_ids` are the chosen items. Refused on an activity linked to elements. |
 | `activity.set_crew` | activity | required | `crew_id`, `duration_shifts` | none | `crew_id` is an estimate-local crew or a library crew usable on this estimate, never `new:`. `duration_shifts` is refused on a stepped activity. Refused when a later `crew.update_members` in the set first copies the same library crew: edit its members, then assign it. |
-| `step.add` | step | never | `activity_code_id`, `duration`, `duration_unit`, `name` | `activity_id` | `duration_unit` defaults to `DAYS`; `activity_code_id` must sit under the activity's own code. The step goes after the activity's last step. |
-| `step.update` | step | required | `activity_code_id`, `duration`, `duration_unit`, `name` | none | A field left out keeps its value. |
+| `step.add` | step | never | `activity_code_id`, `duration`, `duration_unit`, `name` | `activity_id`, `position` | `duration_unit` defaults to `DAYS`; `activity_code_id` must sit under the activity's own code. Without `position` the step goes after the activity's last step. |
+| `step.update` | step | required | `activity_code_id`, `duration`, `duration_unit`, `name` | `position` | A field left out keeps its value. |
 | `step.delete` | step | required | none | none | The step only. |
-| `resource.create` | resource | never | `activity_code_id`, `burden_percentage`, `component_type`, `description`, `equipment_rate_id`, `includes_burden`, `labor_cost_basis`, `labor_rate_id`, `material_cost_id`, `name`, `pieces`, `quantity`, `sort_order`, `time_unit`, `time_value`, `trade`, `unit`, `unit_cost` | `activity_id` | `includes_burden` is strictly `true` or `false`. |
-| `resource.update` | resource | required | `activity_code_id`, `burden_percentage`, `component_type`, `description`, `equipment_rate_id`, `includes_burden`, `labor_cost_basis`, `labor_rate_id`, `material_cost_id`, `name`, `pieces`, `quantity`, `sort_order`, `time_unit`, `time_value`, `trade`, `unit`, `unit_cost` | none | `quantity`, `unit_cost`, the three rate links, `activity_code_id`, `sort_order` and `labor_cost_basis` cannot be cleared; `time_value`, `burden_percentage`, `pieces` and `time_unit` can. Refused on a managed line. |
+| `resource.create` | resource | never | `activity_code_id`, `burden_percentage`, `component_type`, `description`, `equipment_rate_id`, `includes_burden`, `labor_cost_basis`, `labor_rate_id`, `material_cost_id`, `name`, `pieces`, `quantity`, `sort_order`, `supplier`, `time_unit`, `time_value`, `trade`, `unit`, `unit_cost` | `activity_id`, `position` | `includes_burden` is strictly `true` or `false`. `position` and `sort_order` are never sent together. |
+| `resource.update` | resource | required | `activity_code_id`, `burden_percentage`, `component_type`, `description`, `equipment_rate_id`, `includes_burden`, `labor_cost_basis`, `labor_rate_id`, `material_cost_id`, `name`, `pieces`, `quantity`, `sort_order`, `supplier`, `time_unit`, `time_value`, `trade`, `unit`, `unit_cost` | `position` | `quantity`, `unit_cost`, the three rate links, `activity_code_id`, `sort_order` and `labor_cost_basis` cannot be cleared; `time_value`, `burden_percentage`, `pieces` and `time_unit` can. Refused on a managed line. |
 | `resource.delete` | resource | required | none | none | Refused on a managed line. |
-| `crew.update_members` | crew | required | `members` | none | `members` replaces the roster, each `{classification, count, labor_rate_id, hourly_rate_override, sort_order}`, all but `classification` optional. A library crew is copied into the estimate first (part 4, rule 5); the copy's id is the plan's `created["crew:<library id>"]`. Refused on a library crew no activity of this estimate uses. Member ids are reissued. |
+| `crew.update_members` | crew | required | `members` | none | `members` replaces the roster, each `{classification, count, labor_rate_id, hourly_rate_override, sort_order}`, all but `classification` optional. A library crew is copied into the estimate first (part 4, rule 5); the copy's id is the plan's `created["crew:<library id>"]`. Refused on a library crew no activity of this estimate uses. Member ids are reissued: the plan's `after.member_ids` lists the new ids, one per member sent, in the order sent (1.2). |
 
 A creating op must also carry the fields below. BidSheet.ai checks `activity.create`'s three, `element.create`'s `name`, and `resource.create`'s and `step.add`'s `activity_id` with the set's shape, before the database is touched; `resource.create`'s and `step.add`'s `name` and `step.add`'s `duration` are checked when the op is applied, a 400 naming the op that rolls the whole set back.
 
@@ -341,9 +367,11 @@ A creating op must also carry the fields below. BidSheet.ai checks `activity.cre
   - *Ties and renumbering.* Where the sibling after it ties with the one before, no order fits between them: the surface renumbers the siblings from there down with `activity.update` or `resource.update` `sort_order`, each to the least order that keeps it after the row above, stopping where a gap opens, and merged into that row's own update when it has one. A renumbering carries the row's `v` like any update (rule 3) and the surface shows it.
   - *Managed lines.* A managed line (rule 6) that would need renumbering is never written: the surface refuses the edit before anything is sent (HeavyBook's reader refuses the read and asks for the new line below it).
   - *Reorders.* Existing siblings are never reordered: a row the user moved within its block is not sent, and the surface says BidSheet.ai keeps its order.
-  - *Steps.* `step.add` takes none: a created step goes after its activity's last step. Positions for steps are BidSheet.ai #1681.
+  - *Steps.* A step has no writable `sort_order`: without a `position` a created step goes after its activity's last step.
+  - *Positions (1.1).* `step.add`, `step.update`, `resource.create` and `resource.update` also take `position`, the row's place among its siblings counted from 0 in the order they list: a step's siblings are its activity's steps, a line's the lines under the same activity and parent line. The row goes there and the siblings from there down shift one place; BidSheet.ai renumbers them all, so their `v` changes. A position past the last sibling puts the row last. A negative one, or anything but an integer, is refused, and so is a resource op that sends both `position` and `sort_order`. Without `position` an update keeps the row's place. A surface that sends a row's `position` needs none of the placing and renumbering above for it. HeavyBook's reader sends `sort_order`.
+  - *Member ids (1.2).* `crew.update_members` replaces the roster, so every member id changes. The plan's `after.member_ids` gives the new ids in the order the op sent its members, so a surface pairs them with its own rows without sorting `members`, whose `sort_order`s often tie. A library crew `activity.set_crew` copies reports each copied member in `created` under `crew_member:<library member id>`, unless a later op in the set replaces the copy's roster. A copy made by `crew.update_members` reports none, since that op replaces the copy's roster at once. A replayed `request_id` returns the same ids.
 - **The cap.** More than 5,000 ops is refused whole.
-- **The plan.** The response holds `dry_run`; `ops`, one `{index, op, ref, before, after}` per op in order, `ref` being the op's id or the `new:` token it was sent with, and `before` and `after` holding the fields the op wrote (a create has `after` only, a delete neither), each value as the server formats it, a string: decimals as stored (`"32.000"`), booleans as `"True"` or `"False"`, and a `resource.create`'s rate link as a string id (`"material_cost_id": "1"`). An update's values are read back as stored; a create's `after` is the row as it was created, not re-read, so a value comes back as sent (`"quantity": "1"`). The row ids `activity.create` reports (`estimate_item_id`, `parent_id`) and those in the fixed sets below are integers. Some ops report a fixed set: `section.upsert` always reports `id`, `name`, `schedule_id` and `display_order` after and the three besides `id` before, `activity.move` always `parent_id` and `sort_order`, `activity.set_crew` always `crew_id` and `duration_shifts`, `crew.update_members` adds `crew_id`, and `bid_totals.set`, though an update, returns `after` only, the stored totals with their ids and amounts; `created`, `{"new:<token>": id}` for every row a creating op made, plus `"crew:<library id>": <copy id>` for each library crew a `crew.update_members` copied; `deleted`, `[{index, kind, id, cascade}]`, where an activity's `cascade` lists its `child_activities`, `components` and `steps`, the `element_ids` and `item_ids` whose links went with it and a count of `package_members`, and an element's lists its `quantities` (a count) and the `activities` it was linked to; `warnings`, plain strings -- a library crew's copy note, then the link and spread warnings of every activity an activity op named (`activity <id>: ...`); `totals`, `{before, after}`, each `{bid_total, total_estimated_cost, markup_total, bid_totals}`; and, when one was sent, `request_id` echoed and `replayed`.
+- **The plan.** The response holds `dry_run`; `ops`, one `{index, op, ref, before, after}` per op in order (plus `order` on an op that sent a `position`: its siblings' ids in their new order, the row's own among them, and `position` reported in `before` and `after` as the row's place before and after), `ref` being the op's id or the `new:` token it was sent with, and `before` and `after` holding the fields the op wrote (a create has `after` only, a delete neither), each value as the server formats it, a string: decimals as stored (`"32.000"`), booleans as `"True"` or `"False"`, and a `resource.create`'s rate link as a string id (`"material_cost_id": "1"`). An update's values are read back as stored; a create's `after` is the row as it was created, not re-read, so a value comes back as sent (`"quantity": "1"`). The row ids `activity.create` reports (`estimate_item_id`, `parent_id`) and those in the fixed sets below are integers. Some ops report a fixed set: `section.upsert` always reports `id`, `name`, `schedule_id` and `display_order` after and the three besides `id` before, `activity.move` always `parent_id` and `sort_order`, `activity.set_crew` always `crew_id` and `duration_shifts`, `crew.update_members` adds `crew_id` and, after, `member_ids` (1.2: the new member ids, one per member sent, in the order sent; `members` stays sorted by `sort_order` and carries no ids), and `bid_totals.set`, though an update, returns `after` only, the stored totals with their ids and amounts; `created`, `{"new:<token>": id}` for every row a creating op made, plus `"crew:<library id>": <copy id>` for each library crew the apply copied into the estimate (by `activity.set_crew` or `crew.update_members`) and, since 1.2, `"crew_member:<library member id>": <copy member id>` for each member of a copy `activity.set_crew` made, dropped when a later op in the set replaces the copy's roster; a copy made by `crew.update_members` reports none, since that op replaces the copy's roster at once, so `created` names only rows that still exist; `deleted`, `[{index, kind, id, cascade}]`, where an activity's `cascade` lists its `child_activities`, `components` and `steps`, the `element_ids` and `item_ids` whose links went with it and a count of `package_members`, and an element's lists its `quantities` (a count) and the `activities` it was linked to; `warnings`, plain strings -- a library crew's copy note, then the link and spread warnings of every activity an activity op named (`activity <id>: ...`); `totals`, `{before, after}`, each `{bid_total, total_estimated_cost, markup_total, bid_totals}`; and, when one was sent, `request_id` echoed and `replayed`.
 
 ## 4. Rules every surface honours
 
@@ -490,18 +518,22 @@ book's prototypes and stamp.
 
 ## 6. Versioning and change
 
-- **The version.** The read model will carry `contract_version` as
-  `MAJOR.MINOR` (BidSheet.ai #1680). Until it does, this document declares the
-  version it describes (its header), and a reader treats an absent field as
-  `1.0`.
+- **The version.** The read model carries `contract_version` as
+  `MAJOR.MINOR` (BidSheet.ai #1680), and this document's header declares the
+  version it describes. A reader treats an absent field as `1.0` (a read
+  model written before #1680).
 - **Minor:** a new op, a new field, a new section, a loosened precondition.
   Readers ignore what they do not know. **Major:** a changed rule, a removed
   or renamed op or field, a change in what `v` covers.
 - **Who declares what.** A pack declares the contract major it targets
   (`pack.contract` in its declaration; the book's stamp carries it as
   `contract`), and a reader refuses a book stamped with another major ("this
-  book targets contract N"). Once the apply accepts a version field
-  (BidSheet.ai #1680), it refuses a change set that names another major.
+  book targets contract N"). The apply takes the read's `contract_version`
+  (BidSheet.ai #1680) and refuses, whole and before anything is written, a
+  change set that names another major; a set that names none runs as
+  before. This repository's `est-exchange apply` sends the version of the
+  book's baseline read (none for a book read before #1680), so a book read
+  under one major is refused once BidSheet.ai has moved to the next.
 - **Change process.** A change to BidSheet.ai that changes an op, a field,
   what `v` covers or a rule updates this document in the same release.
   Drift is caught by:
@@ -566,6 +598,7 @@ The goldens are checked in beside this document:
 | `deleted-activity` | an activity's whole block deleted | `activity.delete` |
 | `deleted-member` | a crew member's row deleted | `crew.update_members` |
 | `edited-library-crew` | a library crew member's count | `crew.update_members` |
+| `copied-activity-with-library-crew` | an activity on a library crew copied, so the apply copies the crew in (1.2: `created` names its members) | `activity.create`, `activity.update`, `activity.set_crew` |
 | `moved-and-copied-activities` | the markup, a resource quantity, a typed step, a copied resource, a deleted resource, an activity cut to another item, a crew-priced activity copied, a crew member's count | `estimate.update`, `activity.move`, `activity.create`, `activity.update`, `step.add`, `resource.create`, `resource.update`, `crew.update_members`, `activity.set_crew`, `resource.delete` |
 | `formula-overwritten` | a formula cell typed over | refused: "held a formula and now holds a value" |
 | `all-steps-deleted` | a stepped activity's only step deleted | refused: "all of its steps were deleted" |
