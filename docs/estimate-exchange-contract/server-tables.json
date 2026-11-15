@@ -1,5 +1,5 @@
 {
- "bidmanager_commit": "dfa841ea19b7f2a0640ee19bc851588141cb010a",
+ "bidmanager_commit": "f49c288e456b1501a025f64fead401006b42a047",
  "fingerprints": {
   "activity": "activity_v",
   "crew": "crew_v",
@@ -136,10 +136,18 @@
    "parent_id"
   ],
   "resource.create": [
-   "activity_id"
+   "activity_id",
+   "position"
+  ],
+  "resource.update": [
+   "position"
   ],
   "step.add": [
-   "activity_id"
+   "activity_id",
+   "position"
+  ],
+  "step.update": [
+   "position"
   ]
  },
  "request_id": {
@@ -276,6 +284,7 @@
    "pieces",
    "quantity",
    "sort_order",
+   "supplier",
    "time_unit",
    "time_value",
    "trade",
@@ -296,6 +305,7 @@
    "pieces",
    "quantity",
    "sort_order",
+   "supplier",
    "time_unit",
    "time_value",
    "trade",

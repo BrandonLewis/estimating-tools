@@ -10,7 +10,7 @@ inconsistent config. Pure; no I/O.
 from __future__ import annotations
 
 
-def validate_cross_references(config: dict) -> None:
+def validate_cross_references(config: dict, *, member_trades: bool = True) -> None:
     """Raise ValueError with a locator on the first cross-reference violation.
 
     Checks:
@@ -24,7 +24,8 @@ def validate_cross_references(config: dict) -> None:
     Silent on a healthy config."""
     crews = config.get("crews") or []
     _check_crew_id_uniqueness(crews)
-    _check_crew_member_trades(crews, config.get("rate_table") or [])
+    if member_trades:   # a read-model build keeps BidSheet.ai's crews as they are
+        _check_crew_member_trades(crews, config.get("rate_table") or [])
     _check_item_crew_id_references(config.get("items") or [], crews)
     _check_rate_breakdowns(config.get("rate_table") or [])
     if config.get("work_packages"):

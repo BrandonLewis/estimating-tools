@@ -41,13 +41,18 @@ class ChangeSet:
     """``ops`` for ``apply_estimate_workbook_changes``; ``rows`` maps each op
     back to its book row(s) (``row`` None for a deleted row); ``summary`` is
     one line per change; ``notes`` name what the book does not price live
-    and what BidSheet.ai will do beyond the edit (a library crew copied)."""
+    and what BidSheet.ai will do beyond the edit (a library crew copied).
+    ``contract_version`` is the one the book's baseline read was written to
+    (None for a read from before BidSheet.ai #1680); the apply sends it, so
+    BidSheet.ai refuses the set once its contract major has moved. It is
+    not part of the JSON: the change set files stay as they were."""
     estimate_id: object
     estimate_v: str
     ops: list = field(default_factory=list)
     rows: list = field(default_factory=list)
     summary: list = field(default_factory=list)
     notes: list = field(default_factory=list)
+    contract_version: str | None = None
 
     def as_json(self) -> dict:
         return {"estimate_id": self.estimate_id, "estimate_v": self.estimate_v,

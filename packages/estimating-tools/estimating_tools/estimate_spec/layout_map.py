@@ -172,7 +172,7 @@ def _table_rows(name: str, t: dict, exports: dict, max_row: int):
 
 def _instance_pattern(key: str) -> str:
     """A recipe entry's instance key with each `{...}` placeholder as `*`:
-    `cs[{it.item_no}]` -> `cs[*]`."""
+    `cs[{it.sheet}]` -> `cs[*]`."""
     return re.sub(r"\{[^{}]*\}", "*", key)
 
 

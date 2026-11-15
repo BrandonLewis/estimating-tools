@@ -47,7 +47,8 @@ def _applied(doc=None):
     return fresh
 
 
-def _plan(eid, ops, *, dry_run=True, request_id=None, host=None):
+def _plan(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
     return ApplyResult.from_plan({"created": {}, "deleted": [], "totals": {},
                                   "request_id": request_id or "r"}, dry_run=dry_run)
 
@@ -183,13 +184,6 @@ def test_build_pack_names_the_installed_packs_when_unknown(tmp_path, capsys):
     assert "heavybook" in capsys.readouterr().err
 
 
-def test_build_pack_fieldbook_says_not_yet(tmp_path, capsys):
-    src = tmp_path / "e1.workbook.json"
-    src.write_text(json.dumps(H.fixture_doc()))
-    assert cli.main(["build", "--pack", "fieldbook", str(src)]) == 2
-    assert "build SPEC.yaml" in capsys.readouterr().err
-
-
 def test_build_with_a_yaml_still_means_fieldbook(tmp_path):
     """`est-estimate build SPEC.yaml` keeps its meaning (the authoring path)."""
     bad = tmp_path / "nope.estimate.yaml"
@@ -241,7 +235,8 @@ def test_apply_dry_run_prints_the_plan_and_does_not_patch(monkeypatch, tmp_path,
     path, _ = _edited_book(tmp_path)
     sent = {}
 
-    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         sent.update(eid=eid, ops=ops, dry_run=dry_run, request_id=request_id)
         return ApplyResult.from_plan({"created": {}, "deleted": [], "warnings": ["w1"],
                                       "totals": {"before": 1, "after": 2},
@@ -261,7 +256,8 @@ def test_apply_commit_applies_fetches_and_patches(monkeypatch, tmp_path, capsys)
     fresh = _applied()
     calls = []
 
-    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         calls.append((dry_run, request_id))
         return _plan(eid, ops, dry_run=dry_run, request_id=request_id)
 
@@ -277,7 +273,8 @@ def test_apply_commit_with_a_given_request_id_resends_it(monkeypatch, tmp_path):
     path, _ = _edited_book(tmp_path)
     seen = []
 
-    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         seen.append(request_id)
         return ApplyResult.from_plan({"created": {}, "deleted": [], "totals": {}},
                                      dry_run=dry_run)
@@ -286,6 +283,63 @@ def test_apply_commit_with_a_given_request_id_resends_it(monkeypatch, tmp_path):
     monkeypatch.setattr(client, "fetch", lambda eid, item_ids=None, host=None: _applied())
     assert cli.main(["apply", str(path), "--commit", "--request-id", "retry-1"]) == 0
     assert seen == ["retry-1"]
+
+
+def test_apply_sends_the_contract_version_of_the_books_read(monkeypatch, tmp_path):
+    # BidSheet.ai #1680: the set names the version its baseline read was
+    # written to, so a server whose contract major has moved refuses it.
+    path, _ = _edited_book(tmp_path)
+    read_at = H.fixture_doc()["contract_version"]
+    seen = []
+
+    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
+        seen.append(contract_version)
+        return ApplyResult.from_plan({"created": {}, "deleted": [], "totals": {}},
+                                     dry_run=dry_run)
+
+    monkeypatch.setattr(client, "apply", fake_apply)
+    assert cli.main(["apply", str(path)]) == 0
+    assert seen == [read_at]
+
+
+def test_apply_of_a_book_read_before_the_version_sends_none(monkeypatch, tmp_path):
+    doc = H.fixture_doc()
+    del doc["contract_version"]
+    path = H.build_book(doc, tmp_path / "e1.xlsx")
+    wb = H.open_book(path)
+    ws = wb[H.CR_TAB]
+    ws[f"{CR.QTY}{H.cr_row(ws, 'RESOURCE', 1)}"] = 31
+    H.save_book(wb, path)
+    seen = []
+
+    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
+        seen.append(contract_version)
+        return ApplyResult.from_plan({"created": {}, "deleted": [], "totals": {}},
+                                     dry_run=dry_run)
+
+    monkeypatch.setattr(client, "apply", fake_apply)
+    assert cli.main(["apply", str(path)]) == 0
+    assert seen == [None]
+
+
+def test_apply_refused_on_the_contract_major_says_to_update_and_rebuild(monkeypatch, tmp_path,
+                                                                        capsys):
+    path, _ = _edited_book(tmp_path)
+    read_at = H.fixture_doc()["contract_version"]
+
+    def refuse(*a, **k):
+        raise client.ClientError(
+            "BidSheet.ai refused (400): contract major mismatch: sent 1.0, server 2.0",
+            status=400, sent=True,
+            body={"error": "contract major mismatch: sent 1.0, server 2.0", "op_index": None})
+
+    monkeypatch.setattr(client, "apply", refuse)
+    assert cli.main(["apply", str(path), "--commit"]) == 3
+    err = capsys.readouterr().err
+    assert f"read at contract {read_at}" in err and "update estimating-tools" in err
+    assert "rebuild the book" in err and "outcome is unknown" not in err
 
 
 def test_apply_with_no_changes_sends_nothing(monkeypatch, tmp_path, capsys):
@@ -313,7 +367,8 @@ def test_apply_commit_unknown_outcome_tells_the_user_how_to_replay(monkeypatch, 
                                                                    capsys):
     path, _ = _edited_book(tmp_path)
 
-    def drop(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def drop(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         raise client.ClientError("no answer from BidSheet.ai (TimeoutError); the outcome is "
                                  "unknown", request_id=request_id, sent=True)
 
@@ -326,7 +381,8 @@ def test_apply_commit_unknown_outcome_tells_the_user_how_to_replay(monkeypatch, 
 def test_apply_dry_run_transport_failure_has_no_replay_advice(monkeypatch, tmp_path, capsys):
     path, _ = _edited_book(tmp_path)
 
-    def drop(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def drop(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         raise client.ClientError("could not reach BidSheet.ai: boom", request_id="r", sent=True)
 
     monkeypatch.setattr(client, "apply", drop)
@@ -343,7 +399,8 @@ def test_apply_with_a_bad_host_is_a_clean_error(tmp_path, capsys):
 def test_apply_commit_a_5xx_is_an_unknown_outcome(monkeypatch, tmp_path, capsys):
     path, _ = _edited_book(tmp_path)
 
-    def gateway(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def gateway(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         raise client.ClientError("BidSheet.ai refused (504): gateway timeout", status=504,
                                  request_id=request_id)
 
@@ -356,7 +413,8 @@ def test_apply_commit_a_5xx_is_an_unknown_outcome(monkeypatch, tmp_path, capsys)
 def test_apply_commit_a_4xx_is_not_an_unknown_outcome(monkeypatch, tmp_path, capsys):
     path, _ = _edited_book(tmp_path)
 
-    def refuse(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def refuse(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         raise client.ClientError("BidSheet.ai refused (400): bad op", status=400,
                                  request_id=request_id)
 
@@ -671,12 +729,16 @@ def test_fetch_without_a_token_is_refused_locally(capsys):
     assert "fetch refused" in capsys.readouterr().err
 
 
-def test_a_not_yet_message_does_not_double_the_pack_name(tmp_path, capsys):
-    src = tmp_path / "e1.workbook.json"
-    src.write_text(json.dumps(H.fixture_doc()))
-    assert cli.main(["build", "--pack", "fieldbook", str(src)]) == 2
+def test_a_not_yet_message_does_not_double_the_pack_name(capsys):
+    from estimating_tools.estimate_spec import pack as fb_pack
+    from estimating_tools.exchange.types import NotYet
+    from estimating_tools.exchange import cli as xcli
+    p = fb_pack.pack()
+    with pytest.raises(NotYet) as exc:
+        p.refresh(None, {})
+    assert xcli._not_yet(p, exc.value) == 2
     err = capsys.readouterr().err
-    assert err.startswith("fieldbook builds") and "fieldbook: fieldbook" not in err
+    assert err.startswith("fieldbook refreshes") and "fieldbook: fieldbook" not in err
 
 
 def _book_for_host(tmp_path, host):
@@ -723,7 +785,8 @@ def test_apply_passes_the_stamped_origin_to_apply_and_fetch(monkeypatch, tmp_pat
     path, _ = _edited_book(tmp_path)
     hosts = []
 
-    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None):
+    def fake_apply(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
         hosts.append(("apply", host))
         return _plan(eid, ops, dry_run=dry_run, request_id=request_id)
 

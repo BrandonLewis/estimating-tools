@@ -1,6 +1,6 @@
 ---
 name: apply-estimate-workbook
-description: Send an estimator's edits in an estimate workbook built from BidSheet.ai (HeavyBook, or any exchange pack's book) back to BidSheet.ai — run est-estimate read on the edited .xlsx and show its problems, run est-estimate apply to dry-run it and show the plan, and only on the estimator's yes run apply --commit, which applies and patches the book in place (edited inputs, rows inserted with Estimate Navigator, copied, pasted and typed rows, cut-and-pasted activities and lines, deletes). Also brings BidSheet.ai's changes into the book in place with est-estimate refresh (collisions are shown, never resolved). Writes to BidSheet.ai. Use for "apply my workbook edits", "send the workbook back", "push the edited estimate workbook", "send the HeavyBook workbook back", "refresh my workbook from BidSheet.ai", "pull BidSheet.ai changes into the workbook". To build the book in the first place use build-heavybook-workbook; a fieldbook spec workbook goes back through build-estimate-workbook's read-back and bm-sync.
+description: Send an estimator's edits in an estimate workbook built from BidSheet.ai (HeavyBook, or any exchange pack's book) back to BidSheet.ai — est-estimate read shows the edited .xlsx's problems, est-estimate apply dry-runs it and shows the plan, and only on the estimator's yes apply --commit applies and patches the book in place (edits, inserted, copied and pasted rows, moves, deletes). Also brings BidSheet.ai's changes into the book with est-estimate refresh (collisions are shown, never resolved). Writes to BidSheet.ai. Use for "apply my workbook edits", "send the workbook back", "push the edited estimate workbook", "send the HeavyBook workbook back", "refresh my workbook from BidSheet.ai", "pull BidSheet.ai changes into the workbook". To build the book use build-heavybook-workbook; fieldbook books do not send back here yet (use build-estimate-workbook's read-back and bm-sync).
 ---
 
 > **Setup:** the `est-*` tools are **not on `PATH`** — every command below names its shim under `~/.estimating/bin/`, which this plugin's SessionStart hook creates. If a shim is missing, run `python <plugin-root>/scripts/ensure_tools.py` (the plugin root is this skill's directory's grandparent); it builds the shared runtime and prints one line saying what happened. Then retry.
@@ -25,6 +25,11 @@ crew members from the book's hidden prototype rows. Read-back recognises a new
 row by its structure — a row carrying a kind and no id — so a prototype row
 copied in by hand reads the same, and its position decides where it goes.
 
+> **Fieldbook is not yet sendable.** A fieldbook book built from BidSheet.ai
+> (`~/.estimating/bin/est-estimate build --pack fieldbook`) carries its stamp and declaration, but
+> `read`, `apply`, `patch` and `refresh` refuse it as "not yet" until delivery 3, which
+> waits on BidManager #1701. Say so and stop; do not route it through bm-sync.
+
 ## The rule: you run the commands, never the payload
 
 The change set, the payload and the plan move between the book and
@@ -38,7 +43,7 @@ silent misprice (contract rule 14).
 ## The exchange contract, in one screen
 
 The full contract is `docs/estimate-exchange-contract.md` in the estimating-tools repo
-(contract 1.0); where this summary is shorter or differs, the full contract governs.
+(contract 1.2); where this summary is shorter or differs, the full contract governs.
 
 - An op is `{op, ref, v, fields}`. `ref` is the row's integer id, `new:<token>` for a row
   created earlier in the set, or none for a `section.upsert` that creates. `v` is the row's
@@ -58,8 +63,11 @@ The full contract is `docs/estimate-exchange-contract.md` in the estimating-tool
   (one less than the first's when it goes first, 0 when its block has no existing row); where
   the siblings around it tie, the ones below are renumbered with `sort_order` updates (see
   "Renumbered rows"), and an allocation-posted line that would need renumbering refuses the
-  read. An existing row moved within its block is not sent. A roster op's `rows` point at the
-  member rows it names, a removed member as a null row, never the crew's header.
+  read. An existing row moved within its block is not sent. Since 1.1 a step or line op may
+  send `position` instead, a place counted from 0 that BidSheet.ai renumbers the siblings
+  around; this reader sends `sort_order`. A roster op's `rows` point at the
+  member rows it names, a removed member as a null row, never the crew's header. Since
+  1.2 that op's `after` in the plan carries `member_ids`, its new member ids in the order sent.
 
 The rules every surface honours:
 

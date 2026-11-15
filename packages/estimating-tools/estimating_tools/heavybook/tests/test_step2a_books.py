@@ -165,7 +165,8 @@ def test_a_layout2_book_patched_by_step2a_reads_clean_and_keeps_its_origin(tmp_p
     assert book.decl.sheets["cost_report"].tags["parent"].derived == ()
 
 
-def _plan(eid, ops, *, dry_run=True, request_id=None, host=None):
+def _plan(eid, ops, *, dry_run=True, request_id=None, host=None,
+                   contract_version=None):
     return ApplyResult.from_plan({"created": {}, "deleted": [], "totals": {},
                                   "request_id": request_id or "r"}, dry_run=dry_run)
 

@@ -133,3 +133,60 @@ def test_patch_report_lists_its_notes_last():
     report = PatchReport(cells_written=1, rows_tagged=1, baseline_replaced=True,
                          notes=["Checks row 25: no figure now"])
     assert report.text().endswith("Notes:\n  Checks row 25: no figure now")
+
+
+# ---- created ids as BidSheet.ai sends them ----------------------------------
+
+def _scenarios():
+    from pathlib import Path
+    for parent in Path(__file__).resolve().parents:
+        found = parent / "docs" / "estimate-exchange-contract" / "scenarios"
+        if found.is_dir():
+            return sorted(found.glob("*.plan.json"))
+    return []
+
+
+def _with_real_ids(plan: dict) -> tuple[dict, dict]:
+    """The golden plan with its normalised ``created`` values (each the row's
+    kind) put back as the integer ids BidSheet.ai sends, and what they mean."""
+    want, created = {}, {}
+    for n, (key, kind) in enumerate(sorted(plan["created"].items()), start=501):
+        created[key], want[key] = n, (kind, n)
+    return {**plan, "created": created}, want
+
+
+@pytest.mark.parametrize("path", _scenarios(), ids=lambda p: p.name)
+def test_a_real_plans_integer_ids_read_with_their_kinds(path):
+    import json
+    plan, want = _with_real_ids(json.loads(path.read_text(encoding="utf-8")))
+    assert ApplyResult.from_plan(plan, dry_run=True).created == want
+
+
+def test_the_golden_scenarios_were_found_and_cover_every_kind_of_created_key():
+    import json
+    kinds = {v for p in _scenarios()
+             for v in json.loads(p.read_text(encoding="utf-8"))["created"].values()}
+    assert {"activity", "resource", "crew"} <= kinds
+
+
+def test_integer_ids_take_the_kind_of_the_op_that_made_them():
+    plan = {"ops": [{"index": 0, "op": "activity.create", "ref": "new:a1"},
+                    {"index": 1, "op": "step.add", "ref": "new:s1"},
+                    {"index": 2, "op": "resource.create", "ref": "new:r1"},
+                    {"index": 3, "op": "resource.update", "ref": "new:r1"}],
+            "created": {"new:a1": 504, "new:s1": 77, "new:r1": "41",
+                        "crew:12": 90, "crew_member:7": 301}}
+    assert ApplyResult.from_plan(plan, dry_run=False).created == {
+        "new:a1": ("activity", 504), "new:s1": ("step", 77), "new:r1": ("resource", 41),
+        "crew:12": ("crew", 90), "crew_member:7": ("member", 301)}
+
+
+@pytest.mark.parametrize("created,match", [
+    ({"new:x9": 5}, "new:x9"),            # no op names the token
+    ({"new:r1": True}, "True"),           # a bool is not an id
+    ({"new:r1": 4.5}, "4.5"),
+])
+def test_an_id_whose_kind_or_value_cannot_be_read_is_refused(created, match):
+    plan = {"ops": [{"index": 0, "op": "resource.create", "ref": "new:r1"}], "created": created}
+    with pytest.raises(ValueError, match=match):
+        ApplyResult.from_plan(plan, dry_run=False)

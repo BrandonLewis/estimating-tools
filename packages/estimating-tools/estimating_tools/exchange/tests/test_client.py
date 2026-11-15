@@ -96,6 +96,22 @@ def test_apply_posts_ops_dry_run_and_request_id(home, monkeypatch):
     assert result.dry_run is False and result.created == {}
 
 
+def test_apply_sends_the_contract_version_when_given(home, monkeypatch):
+    _login()
+    calls = _capture(monkeypatch, {"created": {}, "deleted": [], "totals": {}})
+    client.apply(7, [{"op": "x"}], request_id="r-1", contract_version="1.0")
+    body = json.loads(calls[0].data)
+    assert body["contract_version"] == "1.0"
+
+
+def test_apply_without_a_contract_version_leaves_it_out(home, monkeypatch):
+    # The body a server before #1680 has always had; the read predates it.
+    _login()
+    calls = _capture(monkeypatch, {"created": {}, "deleted": [], "totals": {}})
+    client.apply(7, [{"op": "x"}], request_id="r-1")
+    assert "contract_version" not in json.loads(calls[0].data)
+
+
 def test_apply_defaults_to_a_dry_run_and_a_fresh_request_id(home, monkeypatch):
     _login()
     calls = _capture(monkeypatch, {"created": {}, "deleted": [], "totals": {}})

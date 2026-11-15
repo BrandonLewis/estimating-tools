@@ -121,11 +121,12 @@ def test_the_transport_table_names_the_client_s_endpoints_and_the_mcp_tools():
     assert "`GET /api/estimates/{id}/workbook/`" in rows["Read"][1]
     assert "`POST /api/estimates/{id}/workbook/apply/`" in rows["Apply"][1]
     assert "`get_estimate_workbook(estimate_id, item_ids=None)`" in rows["Read"][2]
-    assert ("`apply_estimate_workbook_changes(estimate_id, ops, dry_run=True, request_id=None)`"
-            in rows["Apply"][2])
+    assert ("`apply_estimate_workbook_changes(estimate_id, ops, dry_run=True, request_id=None, "
+            "contract_version=None)`" in rows["Apply"][2])
     assert "`Authorization: Token <token>`" in section(1)
     assert f"at most {client.FETCH_PAGE} ids" in section(1)
     assert "`Idempotency-Key`" in section(1)
+    assert '"contract_version": "1.0"' in section(1)
 
 
 #: Part 2's names for kinds whose fingerprint function is named otherwise.
@@ -373,6 +374,7 @@ def test_part_5_states_the_rows_each_op_came_from_as_the_goldens_hold_them():
 def test_part_6_ties_the_version_to_the_stamp_and_names_the_drift_checks():
     text = " ".join(section(6).split())
     assert "`contract_version`" in text and "BidSheet.ai #1680" in text and "`1.0`" in text
+    assert "`est-exchange apply` sends the version of the book's baseline read" in text
     for check in ("a maintainers' script that is not part of the public distribution",
                   "`tests/test_exchange_contract_doc.py`", "BidSheet.ai's read-back test",
                   "BidSheet.ai's contract test"):

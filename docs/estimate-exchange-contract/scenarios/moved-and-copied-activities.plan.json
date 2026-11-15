@@ -120,6 +120,10 @@
   {
    "after": {
     "crew_id": 1,
+    "member_ids": [
+     "member:8.0",
+     "member:8.1"
+    ],
     "members": [
      {
       "classification": "Laborer",
